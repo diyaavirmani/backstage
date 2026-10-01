@@ -4,11 +4,11 @@ Backstage is a venue coordination agent for Delhi NCR and Bengaluru. Its promise
 
 The product is designed to help organizers explain their full event setup and help hosts coordinate policies, spaces, equipment, requests, and availability. Venue knowledge will be retrieved from a Sanity Knowledge Base through Sanity Context MCP. Booking actions and operational availability will live in an application backend.
 
-## Milestone 1 status
+## Implemented status
 
-The responsive product shell, organizer and host navigation, and event brief form are implemented. The brief validates required fields, checks that the end time follows the start time, and saves and restores the draft in browser local storage. The host page clearly shows that requests and availability are not connected yet.
+The responsive product shell, organizer and host navigation, and event brief form are implemented. The brief validates required fields, checks that the end time follows the start time, and saves and restores the draft in browser local storage. The host page clearly shows that requests and availability are not connected yet. A source-linked six-profile venue research preview, Sanity schemas and Studio route, validated seed/import tools, and live Sanity Context MCP retrieval check are also included.
 
-Venue recommendations, Sanity Context retrieval, account profiles, host applications, booking requests, and live calendars are not connected in this milestone. No venue or booking claims are made by this demo.
+The venue page is a local research preview and does not claim a live Sanity connection. Sanity Context retrieval is implemented as a command but remains unverified until a Knowledge Base, MCP endpoint, and organization token are configured. Conversational recommendations, account profiles, host applications, booking requests, and live calendars are not implemented. Catalog entries are research leads, not partners or bookable inventory.
 
 ## Run locally
 
@@ -19,7 +19,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Copy `.env.example` to `.env.local` only when beginning a later integration; credentials are not required to run milestone 1.
+Open [http://localhost:3000](http://localhost:3000). Sanity credentials are not required for the app or local research preview. For Studio and live imports/retrieval, follow [docs/sanity-setup.md](docs/sanity-setup.md) and keep real credentials in the ignored `.env.local` file.
 
 ## Commands
 
@@ -29,13 +29,19 @@ npm run lint      # run ESLint
 npm run typecheck # run the TypeScript compiler without emitting files
 npm run build     # create a production build
 npm start         # serve a production build
+npm run sanity:validate       # validate source records and unknowns
+npm run sanity:seed:dry-run   # validate intended import without credentials/writes
+npm run sanity:seed           # publish records, skipping existing docs/drafts
+npm run sanity:schema:validate # validate Sanity Studio schema locally
+npm run sanity:schema:deploy   # deploy schema with an authenticated Sanity CLI
+npm run sanity:context-check  # verify real Knowledge Base MCP retrieval
 ```
 
 ## Next milestones
 
-1. Model venue knowledge and source references in Sanity, connect a Sanity Context MCP endpoint, and make real retrieval calls from an agent workflow.
-2. Match full event setups against source-backed venue policies and explain evidence, unknowns, and permitted alternatives.
-3. Add organizer profiles, host applications, operational availability, conflict-safe reservations, host review, and shared preparation checklists.
+1. Connect/configure the Sanity Knowledge Base and Context MCP, run the live retrieval check, and serve reviewed catalogue data from Sanity.
+2. Build a grounded organizer agent that matches full room, equipment, timing, access, eligibility, and policy constraints with citations and unknowns.
+3. Add host onboarding, organizer profiles, operational availability, conflict-safe reservations, host review, and shared preparation checklists.
 4. Consider recurring events, attendance conditions, and cancellation recovery after the core flow is reliable.
 
-See [the product brief](docs/product-brief.md), [architecture](docs/architecture.md), [build log](docs/build-log.md), and [session capture guide](docs/session-capture.md).
+See [the product brief](docs/product-brief.md), [architecture](docs/architecture.md), [Sanity setup](docs/sanity-setup.md), [build log](docs/build-log.md), and [session capture guide](docs/session-capture.md).

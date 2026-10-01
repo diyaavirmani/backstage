@@ -1,20 +1,67 @@
 export type City = "Delhi NCR" | "Bengaluru";
 
 export type SourceReference = {
+  id?: string;
   title: string;
   url: string;
   publisher?: string;
+  sourceType?: "official-page" | "historical-event-listing" | "host-confirmation" | "other";
+  checkedAt?: string;
   accessedAt?: string;
   excerpt?: string;
+};
+
+export type EvidenceType =
+  | "public-documentation"
+  | "host-confirmed"
+  | "historical-event"
+  | "unknown"
+  | "conflicting"
+  | "demonstration";
+
+export type VenueClaim = {
+  id: string;
+  venueId: string;
+  subject: string;
+  claim: string;
+  value: string;
+  evidenceType: EvidenceType;
+  sourceReferenceIds: string[];
+  checkedAt: string;
+  historicalDate?: string;
+  appliesToSpaceId?: string;
+  layout?: string;
+  qualification?: string;
+};
+
+/** Capacity assertions always name a room and layout; unresolved claims stay in VenueClaim. */
+export type CapacityAssertion = {
+  guestCount: number;
+  appliesToSpaceId: string;
+  layout: string;
+  sourceReferenceIds: string[];
+  checkedAt: string;
+};
+
+export type VenueSpace = {
+  id: string;
+  venueId: string;
+  name: string;
+  summary: string;
+  sourceReferenceIds: string[];
+  claimIds: string[];
+  capacity?: CapacityAssertion;
 };
 
 export type Resource = {
   id: string;
   name: string;
   kind: "room" | "equipment" | "service";
-  capacity?: number;
+  capacity?: CapacityAssertion;
   quantity?: number;
   notes?: string;
+  sourceReferenceIds?: string[];
+  availability?: "documented" | "unknown" | "conflicting";
 };
 
 export type EventBrief = {
@@ -44,10 +91,12 @@ export type HostingOpportunity = {
   title: string;
   description: string;
   preferredEventTypes: string[];
-  accessModel: "paid" | "sponsored" | "pro-bono";
-  fulfillmentModel: "instant-booking" | "host-approval";
+  accessModel: "paid" | "sponsored" | "pro-bono" | "unknown";
+  fulfillmentModel: "instant-booking" | "host-approval" | "unknown";
   resources: Resource[];
   sources: SourceReference[];
+  relationshipStatus?: "research-lead" | "host-confirmed" | "demonstration";
+  availability?: "documented" | "unknown" | "conflicting";
 };
 
 export type Venue = {
@@ -60,6 +109,21 @@ export type Venue = {
   permittedActivities: string[];
   eligibility: string[];
   sources: SourceReference[];
+  hostOrganizationId?: string;
+  locality?: string;
+  spaces?: VenueSpace[];
+  claims?: VenueClaim[];
+  relationshipStatus?: "research-lead" | "host-confirmed" | "demonstration";
+};
+
+export type HostingPolicy = {
+  id: string;
+  venueId: string;
+  title: string;
+  statement: string;
+  evidenceType: EvidenceType;
+  sourceReferenceIds: string[];
+  checkedAt: string;
 };
 
 export type MatchExplanation = {

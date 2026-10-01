@@ -1,0 +1,58 @@
+*[_type == "venue" && knowledgeBaseEligible == true && isDemonstration == false && relationshipStatus != "demonstration"]{
+  _id,
+  _type,
+  name,
+  city,
+  locality,
+  summary,
+  relationshipStatus,
+  "hostOrganization": hostOrganization->{name, website},
+  "sources": sourceReferences[]->{title, url, publisher, sourceType, checkedAt, reviewNote},
+  claims[]{
+    subject,
+    claim,
+    value,
+    evidenceType,
+    checkedAt,
+    historicalDate,
+    layout,
+    qualification,
+    "sources": sourceReferences[]->{title, url, publisher, sourceType, checkedAt}
+  },
+  "spaces": spaces[]->{
+    _id,
+    name,
+    spaceType,
+    summary,
+    layout,
+    "sources": sourceReferences[]->{title, url, publisher, sourceType, checkedAt},
+    capacity
+  },
+  "resources": resources[]->{
+    _id,
+    name,
+    resourceType,
+    summary,
+    availability,
+    "sources": sourceReferences[]->{title, url, publisher, sourceType, checkedAt}
+  },
+  "policies": policies[]->{
+    _id,
+    title,
+    statement,
+    evidenceType,
+    checkedAt,
+    "sources": sourceReferences[]->{title, url, publisher, sourceType, checkedAt}
+  },
+  "opportunities": opportunities[]->{
+    _id,
+    title,
+    summary,
+    preferredEventTypes,
+    accessModel,
+    fulfillmentModel,
+    availability,
+    relationshipStatus,
+    "sources": sourceReferences[]->{title, url, publisher, sourceType, checkedAt}
+  }
+}

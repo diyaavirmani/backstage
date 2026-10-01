@@ -10,21 +10,21 @@ Next.js web app
   └── operational API → booking and availability database
 ```
 
-This diagram describes the intended architecture. The Sanity and operational integrations are not connected in milestone 1.
+The Studio schema, local source-backed research catalogue, idempotent import command, and Context retrieval check now exist. A Sanity project and Knowledge Base are still account configuration; the app’s catalogue page currently reads the labelled local research preview.
 
 ## Frontend
 
-The Next.js App Router serves the landing, organizer, and host pages. Most content is rendered as server components. The event brief form is a client component because it needs browser storage and form state. It stores one versioned draft in `localStorage`; that draft stays on the current browser and is not sent to a server.
+The Next.js App Router serves the landing, organizer, host, venue catalogue, and embedded Studio routes. The organizer event brief remains a client component and retains its browser-local draft behavior. The `/venues` page filters the local reviewed research catalogue and identifies its data origin. It is not a live Sanity query.
 
 Shared TypeScript types in `src/types` define event briefs, venue knowledge, sources, hosting opportunities, match explanations, booking requests, resources, and checklist items before backend implementation begins.
 
 ## Sanity content and Knowledge Base
 
-Sanity is the future source of venue knowledge: venue profiles, locations, rooms, equipment, policies, permitted activities, eligibility, host preferences, and relationships among them. Records need maintained source references so a recommendation can explain where its claims came from. A Knowledge Base must be configured from this structured content for Sanity Context retrieval.
+Sanity schemas model venues and host organizations, venue spaces, equipment/shared resources, hosting policies, hosting opportunities, claims, and source references. Claims include values, evidence type, citations, and checked dates; capacity records require a named space and layout. The seed data separates public documentation and historical events, explicitly marks unknowns, and sets the sample venues as research leads. Stable IDs and `createIfNotExists` imports preserve existing host-edited documents. The Knowledge Base query is documented in `docs/sanity-setup.md` and excludes demonstrations and all operational/user data.
 
 ## Agent retrieval
 
-The planned server-side agent will query the Sanity Context MCP endpoint using the event brief and retrieve relevant venue knowledge. It must make real Context retrieval calls, then ground its explanations in returned records and sources. No local fixture search, keyword-only matching, or generic chatbot response should be presented as venue retrieval. Secrets and MCP access remain server-side. This integration is not implemented or connected yet.
+The server-side `sanity:context-check` command uses the supported MCP client and organization Context Viewer token. It lists tools, requires `initial_context` and `knowledge_base_read`, discovers the Knowledge Base ID and entry paths from the live outline, then reads a real entry and source citations. The command exists but has not passed until real credentials and a Knowledge Base-backed endpoint are configured. The website does not yet query Context or present local preview data as live retrieval. MCP access and tokens remain server-side.
 
 ## Operational booking backend
 
@@ -32,4 +32,4 @@ Sanity is for reading venue knowledge. The application backend owns live schedul
 
 ## Environment configuration
 
-`.env.example` contains placeholders for a future Sanity Context endpoint and model provider credential. Milestone 1 does not require either credential and does not call those services.
+`.env.example` contains placeholder public project/dataset identifiers plus server-only import and Context credentials. The app and local preview build without credentials. `.env.local` is ignored. Project writes use `SANITY_PROJECT_IMPORT_TOKEN`; Context reads use the separate `SANITY_ORGANIZATION_TOKEN`.

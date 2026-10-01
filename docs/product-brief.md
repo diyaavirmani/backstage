@@ -30,6 +30,12 @@ People responsible for venues who want to publish hosting opportunities, permitt
 
 Recurring events, attendance conditions, cancellation recovery, and richer calendar and resource allocation workflows are later extensions. Each can follow once source-backed matching and the core request lifecycle are dependable.
 
+## Milestone 2 content foundation
+
+The project includes six researched profiles across Delhi NCR and Bengaluru, linked to dated sources. Each is a research lead, not a partner or booking offer. Publicly documented information, the past Paytm office event listing, and explicit unknowns are represented separately. Capacity is not entered without a room and layout pair. Prices, live availability, and Backstage booking authority remain unknown. The `/venues` catalogue is labelled as local research preview until a live Sanity reader is connected.
+
+Sanity schemas cover venues, host organizations, spaces, resources, policies, hosting opportunities, claims, and source references. Claims preserve their value, evidence type, citations, checked date, and optional historical date. The dataset import and Knowledge Base query are documented in [Sanity setup](sanity-setup.md).
+
 ## Milestone 1 boundary
 
 Milestone 1 provides a local-only event brief draft and an honest host empty state. It does not retrieve venue data or submit requests. Mentioned companies in research are potential leads, not partners; Backstage must never make up their prices, capacity, availability, sponsorship policy, or booking permissions. Any future demonstrations of operations must be labeled as demonstrations.

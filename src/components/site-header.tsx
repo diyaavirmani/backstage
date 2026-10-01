@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export function SiteHeader({ active }: { active?: "organizer" | "host" }) {
+export function SiteHeader({ active }: { active?: "organizer" | "host" | "venues" }) {
   return (
     <header className="site-header">
       <div className="header-inner">
@@ -10,6 +10,7 @@ export function SiteHeader({ active }: { active?: "organizer" | "host" }) {
         </Link>
         <nav className="main-nav" aria-label="Main navigation">
           <Link className={active === "organizer" ? "nav-link active" : "nav-link"} href="/organizer">For organizers</Link>
+          <Link className={active === "venues" ? "nav-link active" : "nav-link"} href="/venues">Venues</Link>
           <Link className={active === "host" ? "nav-link active" : "nav-link"} href="/host">For hosts</Link>
         </nav>
         <Link className="header-action" href="/organizer">Start an event brief <span aria-hidden="true">↗</span></Link>

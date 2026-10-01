@@ -1,0 +1,889 @@
+{
+  "researchDate": "2026-10-02",
+  "sources": [
+    {
+      "id": "source-masters-union-companies",
+      "title": "Drive Innovation & Growth: Partner with Masters’ Union",
+      "url": "https://mastersunion.org/for-companies",
+      "publisher": "Masters’ Union",
+      "sourceType": "official-page",
+      "checkedAt": "2026-10-02",
+      "reviewNote": "Public page describes an invitation for corporate offsites, conferences, and meetings at its campus, with an auditorium, classrooms, and food options."
+    },
+    {
+      "id": "source-masters-union-campus-tour",
+      "title": "Book a Campus Tour: Masters’ Union Campus",
+      "url": "https://mastersunion.org/book-a-campus-tour",
+      "publisher": "Masters’ Union",
+      "sourceType": "official-page",
+      "checkedAt": "2026-10-02",
+      "reviewNote": "Places the campus in Gurugram at DLF Cyber Park and names learning spaces, including an auditorium."
+    },
+    {
+      "id": "source-ofis-events",
+      "title": "Book Corporate Event Spaces in Noida & Gurgaon",
+      "url": "https://ofissquare.com/events-spaces/",
+      "publisher": "Ofis Square",
+      "sourceType": "official-page",
+      "checkedAt": "2026-10-02",
+      "reviewNote": "Describes event space offerings in Gurugram and Noida, with a Sohna Road terrace in Gurugram and auditorium/theatre spaces in Sector 62, Noida."
+    },
+    {
+      "id": "source-gdg-thinkfluence-paytm",
+      "title": "Thinkfluence — GDG Cloud Noida event listing",
+      "url": "https://gdg.community.dev/events/details/google-gdg-cloud-noida-presents-thinkfluence/",
+      "publisher": "GDG Cloud Noida on the Google Developer Groups event platform",
+      "sourceType": "historical-event-listing",
+      "checkedAt": "2026-10-02",
+      "reviewNote": "Lists a Thinkfluence event on 12 September 2026 at Paytm Office, Noida. The event date had passed when checked; this is historical venue evidence only."
+    },
+    {
+      "id": "source-shifu-den",
+      "title": "Shifu Den: A Home for Founders in Bengaluru",
+      "url": "https://den.shifuventures.com/",
+      "publisher": "Shifu Ventures",
+      "sourceType": "official-page",
+      "checkedAt": "2026-10-02",
+      "reviewNote": "Describes a Bengaluru space for founders as pro bono, says events are free, and invites founders, operators, and builders to gather."
+    },
+    {
+      "id": "source-saiacs-ceo-centre",
+      "title": "SAIACS CEO Centre: Conference, Events, Retreats & Stays",
+      "url": "https://saiacs-ceocenter.com/",
+      "publisher": "SAIACS CEO Centre",
+      "sourceType": "official-page",
+      "checkedAt": "2026-10-02",
+      "reviewNote": "Describes event facilities on a North Bengaluru campus, including an auditorium, halls, lawns, dining spaces, Wi-Fi, and parking. It gives some capacity figures without documenting the room layout needed to apply them."
+    }
+  ],
+  "hostOrganizations": [
+    {
+      "id": "hostorg-masters-union",
+      "name": "Masters’ Union",
+      "website": "https://mastersunion.org/",
+      "sourceIds": [
+        "source-masters-union-companies",
+        "source-masters-union-campus-tour"
+      ]
+    },
+    {
+      "id": "hostorg-ofis-square",
+      "name": "Ofis Square",
+      "website": "https://ofissquare.com/",
+      "sourceIds": [
+        "source-ofis-events"
+      ]
+    },
+    {
+      "id": "hostorg-shifu-ventures",
+      "name": "Shifu Ventures",
+      "website": "https://shifuventures.com/",
+      "sourceIds": [
+        "source-shifu-den"
+      ]
+    },
+    {
+      "id": "hostorg-saiacs-ceo-centre",
+      "name": "SAIACS CEO Centre",
+      "website": "https://saiacs-ceocenter.com/",
+      "sourceIds": [
+        "source-saiacs-ceo-centre"
+      ]
+    },
+    {
+      "id": "hostorg-paytm",
+      "name": "Paytm",
+      "sourceIds": [
+        "source-gdg-thinkfluence-paytm"
+      ]
+    }
+  ],
+  "venues": [
+    {
+      "id": "venue-masters-union-gurugram",
+      "name": "Masters’ Union Campus",
+      "city": "Delhi NCR",
+      "locality": "DLF Cyber Park, Udyog Vihar Phase III, Gurugram",
+      "hostOrganizationId": "hostorg-masters-union",
+      "summary": "Masters’ Union’s public company page invites corporate offsites, conferences, and meetings at its Gurugram campus. A separate campus-tour page places the campus at DLF Cyber Park and names an auditorium and collaborative learning spaces.",
+      "sourceIds": [
+        "source-masters-union-companies",
+        "source-masters-union-campus-tour"
+      ],
+      "claims": [
+        {
+          "id": "claim-mu-public-hosting",
+          "subjectId": "venue-masters-union-gurugram",
+          "claimType": "hosting-conditions",
+          "claim": "The public company page invites offsites, conferences, and meetings on campus and mentions an auditorium, well-equipped classrooms, and food options.",
+          "value": "Publicly described hosting invitation; exact room setup, food service terms, and eligibility rules are not specified here.",
+          "evidenceType": "public-documentation",
+          "sourceIds": [
+            "source-masters-union-companies"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-mu-location",
+          "subjectId": "venue-masters-union-gurugram",
+          "claimType": "location",
+          "claim": "The campus-tour page places Masters’ Union in Gurugram at DLF Cyber Park, Udyog Vihar Phase III.",
+          "value": "DLF Cyber Park, Udyog Vihar Phase III, Gurugram",
+          "evidenceType": "public-documentation",
+          "sourceIds": [
+            "source-masters-union-campus-tour"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-mu-capacity-unknown",
+          "subjectId": "venue-masters-union-gurugram",
+          "claimType": "capacity",
+          "claim": "Room and layout-specific attendee capacity.",
+          "value": "Unknown — the reviewed pages do not give capacity by room and layout.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-masters-union-companies",
+            "source-masters-union-campus-tour"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-mu-booking-unknown",
+          "subjectId": "venue-masters-union-gurugram",
+          "claimType": "booking-authority",
+          "claim": "Whether a booking can be made through Backstage and whether requests need host approval.",
+          "value": "Unknown — public event information does not establish Backstage booking permission or approval workflow.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-masters-union-companies"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-mu-availability-unknown",
+          "subjectId": "venue-masters-union-gurugram",
+          "claimType": "availability",
+          "claim": "Current date and room availability.",
+          "value": "Unknown — no operational calendar was available in the reviewed sources.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-masters-union-companies"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-venue-masters-union-gurugram-price-unknown",
+          "subjectId": "venue-masters-union-gurugram",
+          "claimType": "price",
+          "claim": "Price or sponsorship terms.",
+          "value": "Unknown — reviewed public information does not establish price or sponsorship terms.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-masters-union-companies",
+            "source-masters-union-campus-tour"
+          ],
+          "checkedAt": "2026-10-02"
+        }
+      ],
+      "spaces": [
+        {
+          "id": "space-mu-auditorium",
+          "name": "Campus auditorium",
+          "spaceType": "auditorium",
+          "summary": "The company page names an auditorium as a campus event space; the campus-tour page also lists an auditorium among its learning spaces.",
+          "sourceIds": [
+            "source-masters-union-companies",
+            "source-masters-union-campus-tour"
+          ],
+          "capacity": null,
+          "layout": "Unknown — no seating layout is described."
+        },
+        {
+          "id": "space-mu-classrooms",
+          "name": "Campus classrooms",
+          "spaceType": "classroom",
+          "summary": "The company page refers to various well-equipped classrooms. It does not list equipment by room.",
+          "sourceIds": [
+            "source-masters-union-companies"
+          ],
+          "capacity": null,
+          "layout": "Unknown — room configurations are not described."
+        }
+      ],
+      "resources": [],
+      "policies": [],
+      "opportunity": {
+        "id": "opportunity-mu-research-lead",
+        "title": "Publicly described campus event invitation",
+        "summary": "Research lead only. The public page invites some corporate events; Backstage has not been onboarded or authorized to offer this campus.",
+        "preferredEventTypes": [
+          "offsite",
+          "conference",
+          "meeting"
+        ],
+        "accessModel": "unknown",
+        "fulfillmentModel": "unknown",
+        "availability": "unknown",
+        "relationshipStatus": "research-lead",
+        "sourceIds": [
+          "source-masters-union-companies"
+        ]
+      },
+      "relationshipStatus": "research-lead"
+    },
+    {
+      "id": "venue-ofis-gurugram-sohna-road",
+      "name": "Ofis Square — Sohna Road",
+      "city": "Delhi NCR",
+      "locality": "Sohna Road, Gurugram",
+      "hostOrganizationId": "hostorg-ofis-square",
+      "summary": "Ofis Square publicly describes event spaces across Gurugram and Noida and specifically places an open terrace garden on Sohna Road, Gurugram.",
+      "sourceIds": [
+        "source-ofis-events"
+      ],
+      "claims": [
+        {
+          "id": "claim-ofis-gurgaon-terrace",
+          "subjectId": "venue-ofis-gurugram-sohna-road",
+          "claimType": "hosting-conditions",
+          "claim": "Ofis Square describes an open-air terrace garden on Sohna Road for networking and corporate gatherings, with flexible outdoor layouts, lounge access, catering support, and event assistance.",
+          "value": "Publicly described event use and services; this does not establish outside-food permission, current inventory, or room capacity.",
+          "evidenceType": "public-documentation",
+          "sourceIds": [
+            "source-ofis-events"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-ofis-gurgaon-capacity-unknown",
+          "subjectId": "venue-ofis-gurugram-sohna-road",
+          "claimType": "capacity",
+          "claim": "Terrace capacity by layout.",
+          "value": "Unknown — no attendee count is tied to a named terrace layout in the reviewed source.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-ofis-events"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-ofis-gurgaon-availability-unknown",
+          "subjectId": "venue-ofis-gurugram-sohna-road",
+          "claimType": "availability",
+          "claim": "Current date and resource availability.",
+          "value": "Unknown — current availability must be checked with the host.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-ofis-events"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-ofis-gurgaon-booking-unknown",
+          "subjectId": "venue-ofis-gurugram-sohna-road",
+          "claimType": "booking-authority",
+          "claim": "Backstage booking authority and host approval steps.",
+          "value": "Unknown — the public contact and booking information does not authorize bookings through Backstage.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-ofis-events"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-venue-ofis-gurugram-sohna-road-price-unknown",
+          "subjectId": "venue-ofis-gurugram-sohna-road",
+          "claimType": "price",
+          "claim": "Price or sponsorship terms.",
+          "value": "Unknown — reviewed public information does not establish price or sponsorship terms.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-ofis-events"
+          ],
+          "checkedAt": "2026-10-02"
+        }
+      ],
+      "spaces": [
+        {
+          "id": "space-ofis-sohna-terrace",
+          "name": "Open Terrace Garden",
+          "spaceType": "outdoor-event-space",
+          "summary": "Open-air event space on Sohna Road, Gurugram; the page mentions flexible layouts but does not give dimensions or capacities.",
+          "sourceIds": [
+            "source-ofis-events"
+          ],
+          "capacity": null,
+          "layout": "Flexible outdoor layouts are described; the available configurations are unknown."
+        }
+      ],
+      "resources": [
+        {
+          "id": "resource-ofis-sohna-catering-support",
+          "name": "Catering support (details unknown)",
+          "resourceType": "service",
+          "summary": "The venue page mentions catering support for the terrace. Menu, cost, and outside-food rules are not stated.",
+          "sourceIds": [
+            "source-ofis-events"
+          ],
+          "availability": "unknown"
+        }
+      ],
+      "policies": [],
+      "opportunity": {
+        "id": "opportunity-ofis-gurgaon-research-lead",
+        "title": "Publicly listed Gurugram event space",
+        "summary": "Research lead only. Ofis Square publishes event-space information; it has not authorized Backstage to offer or reserve a space.",
+        "preferredEventTypes": [
+          "networking",
+          "corporate gathering",
+          "community meetup"
+        ],
+        "accessModel": "unknown",
+        "fulfillmentModel": "unknown",
+        "availability": "unknown",
+        "relationshipStatus": "research-lead",
+        "sourceIds": [
+          "source-ofis-events"
+        ]
+      },
+      "relationshipStatus": "research-lead"
+    },
+    {
+      "id": "venue-ofis-noida-sector-62",
+      "name": "Ofis Square — Sector 62, Noida",
+      "city": "Delhi NCR",
+      "locality": "Sector 62, Noida",
+      "hostOrganizationId": "hostorg-ofis-square",
+      "summary": "Ofis Square specifically identifies auditorium and theatre event spaces in Sector 62, Noida, and describes event-support features for its venue offering.",
+      "sourceIds": [
+        "source-ofis-events"
+      ],
+      "claims": [
+        {
+          "id": "claim-ofis-noida-spaces",
+          "subjectId": "venue-ofis-noida-sector-62",
+          "claimType": "hosting-conditions",
+          "claim": "The source identifies an auditorium and theatre space in Sector 62, Noida for seminars, conferences, workshops, screenings, and training.",
+          "value": "Publicly described event spaces and example activities; exact permitted-use rules remain unknown.",
+          "evidenceType": "public-documentation",
+          "sourceIds": [
+            "source-ofis-events"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-ofis-noida-av",
+          "subjectId": "venue-ofis-noida-sector-62",
+          "claimType": "equipment",
+          "claim": "The page describes tiered seating, AV systems, display screens, sound systems, stage setup, and breakout spaces for the Sector 62 auditorium/theatre offering.",
+          "value": "Publicly described facilities; exact inventory, quantity, room assignment, and date-specific availability are unknown.",
+          "evidenceType": "public-documentation",
+          "sourceIds": [
+            "source-ofis-events"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-ofis-noida-capacity-unknown",
+          "subjectId": "venue-ofis-noida-sector-62",
+          "claimType": "capacity",
+          "claim": "Attendee capacity for the Sector 62 auditorium and theatre by room layout.",
+          "value": "Unknown — the reviewed source gives no room-and-layout-specific attendee count.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-ofis-events"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-ofis-noida-availability-unknown",
+          "subjectId": "venue-ofis-noida-sector-62",
+          "claimType": "availability",
+          "claim": "Current availability and AV equipment allocation.",
+          "value": "Unknown — public listing is not an operational calendar.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-ofis-events"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-ofis-noida-booking-unknown",
+          "subjectId": "venue-ofis-noida-sector-62",
+          "claimType": "booking-authority",
+          "claim": "Whether Backstage may request or confirm a booking and whether a host approval is required.",
+          "value": "Unknown — the page describes direct booking enquiries, not Backstage authorization.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-ofis-events"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-venue-ofis-noida-sector-62-price-unknown",
+          "subjectId": "venue-ofis-noida-sector-62",
+          "claimType": "price",
+          "claim": "Price or sponsorship terms.",
+          "value": "Unknown — reviewed public information does not establish price or sponsorship terms.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-ofis-events"
+          ],
+          "checkedAt": "2026-10-02"
+        }
+      ],
+      "spaces": [
+        {
+          "id": "space-ofis-noida-auditorium",
+          "name": "Auditorium",
+          "spaceType": "auditorium",
+          "summary": "Ofis Square identifies an auditorium in Sector 62, Noida and describes tiered seating and AV systems without giving a room-specific capacity.",
+          "sourceIds": [
+            "source-ofis-events"
+          ],
+          "capacity": null,
+          "layout": "Tiered seating is described; available seat counts and configurations are unknown."
+        },
+        {
+          "id": "space-ofis-noida-theatre",
+          "name": "Theatre Space",
+          "spaceType": "theatre",
+          "summary": "Ofis Square identifies a theatre space in Sector 62, Noida for screenings, presentations, and training, with screens and sound systems described.",
+          "sourceIds": [
+            "source-ofis-events"
+          ],
+          "capacity": null,
+          "layout": "Tiered seating is described; available seat counts and configurations are unknown."
+        }
+      ],
+      "resources": [
+        {
+          "id": "resource-ofis-noida-av",
+          "name": "Audio-visual facilities (inventory not specified)",
+          "resourceType": "equipment",
+          "summary": "The venue page describes AV systems, display screens, sound systems, and stage setup for Sector 62 event spaces; exact item quantities and room allocation are not published.",
+          "sourceIds": [
+            "source-ofis-events"
+          ],
+          "availability": "unknown"
+        }
+      ],
+      "policies": [],
+      "opportunity": {
+        "id": "opportunity-ofis-noida-research-lead",
+        "title": "Publicly listed Sector 62 event spaces",
+        "summary": "Research lead only. The page describes event-space enquiries; Backstage is not authorized to offer or reserve these rooms.",
+        "preferredEventTypes": [
+          "seminar",
+          "conference",
+          "workshop",
+          "screening",
+          "training"
+        ],
+        "accessModel": "unknown",
+        "fulfillmentModel": "unknown",
+        "availability": "unknown",
+        "relationshipStatus": "research-lead",
+        "sourceIds": [
+          "source-ofis-events"
+        ]
+      },
+      "relationshipStatus": "research-lead"
+    },
+    {
+      "id": "venue-paytm-office-noida",
+      "name": "Paytm Office, Noida (historical event location)",
+      "city": "Delhi NCR",
+      "locality": "Noida",
+      "hostOrganizationId": "hostorg-paytm",
+      "summary": "A GDG Cloud Noida event listing names Paytm Office, Noida as the venue for Thinkfluence on 12 September 2026. This is past-event evidence only, not an advertised venue opportunity.",
+      "sourceIds": [
+        "source-gdg-thinkfluence-paytm"
+      ],
+      "claims": [
+        {
+          "id": "claim-paytm-historical-event",
+          "subjectId": "venue-paytm-office-noida",
+          "claimType": "historical-event",
+          "claim": "The listing names Paytm Office, Noida as the venue for Thinkfluence 2026, organized by GDG Cloud Noida.",
+          "value": "Past event listed for 12 September 2026. It does not establish current access, room details, host ownership, or booking permission.",
+          "evidenceType": "historical-event",
+          "sourceIds": [
+            "source-gdg-thinkfluence-paytm"
+          ],
+          "checkedAt": "2026-10-02",
+          "historicalDate": "2026-09-12"
+        },
+        {
+          "id": "claim-paytm-current-opportunity-unknown",
+          "subjectId": "venue-paytm-office-noida",
+          "claimType": "hosting-conditions",
+          "claim": "Whether the office is currently open to external events.",
+          "value": "Unknown — one past event listing does not establish a current public hosting opportunity.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-gdg-thinkfluence-paytm"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-paytm-capacity-unknown",
+          "subjectId": "venue-paytm-office-noida",
+          "claimType": "capacity",
+          "claim": "Room and layout-specific capacity.",
+          "value": "Unknown — no rooms, layouts, or capacities are provided in the event listing.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-gdg-thinkfluence-paytm"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-paytm-availability-unknown",
+          "subjectId": "venue-paytm-office-noida",
+          "claimType": "availability",
+          "claim": "Current availability.",
+          "value": "Unknown — historical event presence is not live availability.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-gdg-thinkfluence-paytm"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-venue-paytm-office-noida-price-unknown",
+          "subjectId": "venue-paytm-office-noida",
+          "claimType": "price",
+          "claim": "Price or sponsorship terms.",
+          "value": "Unknown — reviewed public information does not establish price or sponsorship terms.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-gdg-thinkfluence-paytm"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-venue-paytm-office-noida-booking-authority-unknown",
+          "subjectId": "venue-paytm-office-noida",
+          "claimType": "booking-authority",
+          "claim": "Whether Backstage may submit requests and what host approval is required.",
+          "value": "Unknown — reviewed public information does not establish whether backstage may submit requests and what host approval is required.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-gdg-thinkfluence-paytm"
+          ],
+          "checkedAt": "2026-10-02"
+        }
+      ],
+      "spaces": [],
+      "resources": [],
+      "policies": [],
+      "opportunity": {
+        "id": "opportunity-paytm-noida-research-only",
+        "title": "Historical venue evidence only",
+        "summary": "This record is not an invitation to host. The only reviewed evidence is a past event listing.",
+        "preferredEventTypes": [],
+        "accessModel": "unknown",
+        "fulfillmentModel": "unknown",
+        "availability": "unknown",
+        "relationshipStatus": "research-lead",
+        "sourceIds": [
+          "source-gdg-thinkfluence-paytm"
+        ]
+      },
+      "relationshipStatus": "research-lead"
+    },
+    {
+      "id": "venue-shifu-den-bengaluru",
+      "name": "Shifu Den",
+      "city": "Bengaluru",
+      "locality": "Bengaluru (neighborhood not stated)",
+      "hostOrganizationId": "hostorg-shifu-ventures",
+      "summary": "Shifu Ventures describes Shifu Den as a Bengaluru space for founders and says it hosts free events for founders, operators, and builders. The public site presents pro bono access, but Backstage is not onboarded.",
+      "sourceIds": [
+        "source-shifu-den"
+      ],
+      "claims": [
+        {
+          "id": "claim-shifu-audience",
+          "subjectId": "venue-shifu-den-bengaluru",
+          "claimType": "eligibility",
+          "claim": "The public description addresses founders, operators, and builders; the main introduction describes the space as open to founders.",
+          "value": "Publicly described community audience. Detailed eligibility and application criteria are unknown.",
+          "evidenceType": "public-documentation",
+          "sourceIds": [
+            "source-shifu-den"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-shifu-access",
+          "subjectId": "venue-shifu-den-bengaluru",
+          "claimType": "access-model",
+          "claim": "The source describes the Den as completely pro bono for founders and says events at the Den are free.",
+          "value": "Publicly described as pro bono/free for its founder community; this does not confirm Backstage access or other organizer eligibility.",
+          "evidenceType": "public-documentation",
+          "sourceIds": [
+            "source-shifu-den"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-shifu-capacity-unknown",
+          "subjectId": "venue-shifu-den-bengaluru",
+          "claimType": "capacity",
+          "claim": "Room and layout-specific capacity.",
+          "value": "Unknown — the reviewed page gives no room capacities or layout details.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-shifu-den"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-shifu-availability-unknown",
+          "subjectId": "venue-shifu-den-bengaluru",
+          "claimType": "availability",
+          "claim": "Current event dates and resource availability.",
+          "value": "Unknown — no current calendar was present in the reviewed source.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-shifu-den"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-shifu-booking-unknown",
+          "subjectId": "venue-shifu-den-bengaluru",
+          "claimType": "booking-authority",
+          "claim": "Whether Backstage may submit requests and whether events require host approval.",
+          "value": "Unknown — the public Host an Event invitation does not specify a Backstage workflow.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-shifu-den"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-venue-shifu-den-bengaluru-price-unknown",
+          "subjectId": "venue-shifu-den-bengaluru",
+          "claimType": "price",
+          "claim": "Price or sponsorship terms.",
+          "value": "Unknown — reviewed public information does not establish price or sponsorship terms.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-shifu-den"
+          ],
+          "checkedAt": "2026-10-02"
+        }
+      ],
+      "spaces": [],
+      "resources": [],
+      "policies": [],
+      "opportunity": {
+        "id": "opportunity-shifu-research-lead",
+        "title": "Publicly described founder-community events",
+        "summary": "The public site invites community events and describes free/pro bono access for founders. Backstage has not been onboarded; host availability, eligibility decisions, and approval steps remain unknown.",
+        "preferredEventTypes": [
+          "founder gathering",
+          "fireside",
+          "hackathon"
+        ],
+        "accessModel": "pro-bono",
+        "fulfillmentModel": "unknown",
+        "availability": "unknown",
+        "relationshipStatus": "research-lead",
+        "sourceIds": [
+          "source-shifu-den"
+        ]
+      },
+      "relationshipStatus": "research-lead"
+    },
+    {
+      "id": "venue-saiacs-ceo-centre-bengaluru",
+      "name": "SAIACS CEO Centre",
+      "city": "Bengaluru",
+      "locality": "North Bengaluru",
+      "hostOrganizationId": "hostorg-saiacs-ceo-centre",
+      "summary": "The Centre publicly describes corporate, academic, NGO, church, conference, workshop, retreat, and residential gatherings at its North Bengaluru campus, with an auditorium, halls, dining spaces, lawns, Wi-Fi, and parking.",
+      "sourceIds": [
+        "source-saiacs-ceo-centre"
+      ],
+      "claims": [
+        {
+          "id": "claim-saiacs-events",
+          "subjectId": "venue-saiacs-ceo-centre-bengaluru",
+          "claimType": "hosting-conditions",
+          "claim": "The public site describes events and retreats for corporate, academic, NGO, and church groups, and lists an auditorium, halls, dining spaces, lawns, Wi-Fi, and parking.",
+          "value": "Publicly described venue facilities and event audiences; detailed access conditions and resource availability remain unknown.",
+          "evidenceType": "public-documentation",
+          "sourceIds": [
+            "source-saiacs-ceo-centre"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-saiacs-capacity-unknown",
+          "subjectId": "venue-saiacs-ceo-centre-bengaluru",
+          "claimType": "capacity",
+          "claim": "Room and layout-specific attendee capacity.",
+          "value": "Unknown for a specified layout — the page mentions approximate capacities but does not document the seat layout or a capacity/layout pair for each room. Do not use those figures as a room match.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-saiacs-ceo-centre"
+          ],
+          "checkedAt": "2026-10-02",
+          "qualification": "The source describes the Caleb Auditorium as approximately 350 seats, four flexible halls at approximately 40–100 guests each, and lawns up to approximately 500 guests. Layouts and per-room assignments are not specified."
+        },
+        {
+          "id": "claim-saiacs-access-unknown",
+          "subjectId": "venue-saiacs-ceo-centre-bengaluru",
+          "claimType": "access-model",
+          "claim": "Whether a suitable opportunity is paid, sponsored, or pro bono.",
+          "value": "Unknown — booking links do not disclose the applicable price or sponsorship policy.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-saiacs-ceo-centre"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-saiacs-booking-unknown",
+          "subjectId": "venue-saiacs-ceo-centre-bengaluru",
+          "claimType": "booking-authority",
+          "claim": "Backstage booking authority and approval steps.",
+          "value": "Unknown — the public site’s direct booking/enquiry links do not authorize Backstage to reserve the venue.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-saiacs-ceo-centre"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-saiacs-availability-unknown",
+          "subjectId": "venue-saiacs-ceo-centre-bengaluru",
+          "claimType": "availability",
+          "claim": "Current date, room, and equipment availability.",
+          "value": "Unknown — no live operational calendar was available in the reviewed page.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-saiacs-ceo-centre"
+          ],
+          "checkedAt": "2026-10-02"
+        },
+        {
+          "id": "claim-venue-saiacs-ceo-centre-bengaluru-price-unknown",
+          "subjectId": "venue-saiacs-ceo-centre-bengaluru",
+          "claimType": "price",
+          "claim": "Price or sponsorship terms.",
+          "value": "Unknown — reviewed public information does not establish price or sponsorship terms.",
+          "evidenceType": "unknown",
+          "sourceIds": [
+            "source-saiacs-ceo-centre"
+          ],
+          "checkedAt": "2026-10-02"
+        }
+      ],
+      "spaces": [
+        {
+          "id": "space-saiacs-caleb-auditorium",
+          "name": "Caleb Auditorium",
+          "spaceType": "auditorium",
+          "summary": "The public page describes an acoustically engineered auditorium with stage, green room, and AV facilities. It gives an approximate guest count without a seating layout, so no layout-specific capacity is recorded.",
+          "sourceIds": [
+            "source-saiacs-ceo-centre"
+          ],
+          "capacity": null,
+          "layout": "Unknown — the source does not state the seating configuration."
+        },
+        {
+          "id": "space-saiacs-seminar-halls",
+          "name": "Seminar and conference halls",
+          "spaceType": "meeting-space",
+          "summary": "The site describes four flexible seminar and conference halls. It does not name the individual rooms or connect a capacity to each room and layout.",
+          "sourceIds": [
+            "source-saiacs-ceo-centre"
+          ],
+          "capacity": null,
+          "layout": "Unknown — per-room configurations are not stated."
+        },
+        {
+          "id": "space-saiacs-banquet-dining",
+          "name": "Banquet and dining spaces",
+          "spaceType": "dining-space",
+          "summary": "The site lists banquet and dining spaces with Indian, Chinese, and Continental dining options; event-specific food terms are not specified.",
+          "sourceIds": [
+            "source-saiacs-ceo-centre"
+          ],
+          "capacity": null,
+          "layout": "Unknown — the source does not state an event seating layout."
+        },
+        {
+          "id": "space-saiacs-lawns",
+          "name": "Outdoor lawns",
+          "spaceType": "outdoor-event-space",
+          "summary": "The Centre lists landscaped lawns and outdoor event spaces. The source does not name a particular lawn or publish a layout-specific capacity.",
+          "sourceIds": [
+            "source-saiacs-ceo-centre"
+          ],
+          "capacity": null,
+          "layout": "Unknown — the source does not identify a lawn layout."
+        }
+      ],
+      "resources": [
+        {
+          "id": "resource-saiacs-wifi",
+          "name": "Wi-Fi",
+          "resourceType": "connectivity",
+          "summary": "The public page advertises free Wi-Fi on the campus; event-specific access or performance is not stated.",
+          "sourceIds": [
+            "source-saiacs-ceo-centre"
+          ],
+          "availability": "unknown"
+        },
+        {
+          "id": "resource-saiacs-parking",
+          "name": "Parking",
+          "resourceType": "service",
+          "summary": "The public page advertises free parking; event-date availability and capacity are not stated.",
+          "sourceIds": [
+            "source-saiacs-ceo-centre"
+          ],
+          "availability": "unknown"
+        },
+        {
+          "id": "resource-saiacs-av",
+          "name": "Audio-visual facilities (item details unknown)",
+          "resourceType": "equipment",
+          "summary": "The page mentions AV facilities for the auditorium but does not list the equipment inventory or availability.",
+          "sourceIds": [
+            "source-saiacs-ceo-centre"
+          ],
+          "availability": "unknown"
+        }
+      ],
+      "policies": [],
+      "opportunity": {
+        "id": "opportunity-saiacs-research-lead",
+        "title": "Publicly described conference and retreat facilities",
+        "summary": "Research lead only. Direct booking and enquiry links are published by the venue; Backstage has no booking authority or live availability.",
+        "preferredEventTypes": [
+          "conference",
+          "workshop",
+          "retreat",
+          "residential programme"
+        ],
+        "accessModel": "unknown",
+        "fulfillmentModel": "unknown",
+        "availability": "unknown",
+        "relationshipStatus": "research-lead",
+        "sourceIds": [
+          "source-saiacs-ceo-centre"
+        ]
+      },
+      "relationshipStatus": "research-lead"
+    }
+  ],
+  "demonstrationInventory": []
+}

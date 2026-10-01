@@ -7,20 +7,31 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "sanity:validate": "node scripts/validate-catalog.mjs",
+    "sanity:seed": "node scripts/seed-sanity.mjs",
+    "sanity:seed:dry-run": "node scripts/seed-sanity.mjs --dry-run",
+    "sanity:context-check": "node scripts/sanity-context-check.mjs",
+    "sanity:schema:validate": "sanity schemas validate --level error",
+    "sanity:schema:deploy": "sanity schemas deploy"
   },
   "dependencies": {
+    "@ai-sdk/mcp": "^2.0.66",
+    "@sanity/client": "^8.9.0",
     "next": "16.3.8",
+    "next-sanity": "^13.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@sanity/cli": "^8.13.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
+    "sanity": "^6.17.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

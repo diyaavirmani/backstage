@@ -39,6 +39,7 @@ yarn-error.log*
 /session-exports/
 /.codex-session/
 *.jsonl
+/raw-session-exports/
 
 # vercel
 .vercel
