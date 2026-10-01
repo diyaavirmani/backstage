@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Backstage
 
-## Getting Started
+Backstage is a venue coordination agent for Delhi NCR and Bengaluru. Its promise is simple: tell Backstage what you’re hosting, and it will find a place where that event can actually work.
 
-First, run the development server:
+The product is designed to help organizers explain their full event setup and help hosts coordinate policies, spaces, equipment, requests, and availability. Venue knowledge will be retrieved from a Sanity Knowledge Base through Sanity Context MCP. Booking actions and operational availability will live in an application backend.
+
+## Milestone 1 status
+
+The responsive product shell, organizer and host navigation, and event brief form are implemented. The brief validates required fields, checks that the end time follows the start time, and saves and restores the draft in browser local storage. The host page clearly shows that requests and availability are not connected yet.
+
+Venue recommendations, Sanity Context retrieval, account profiles, host applications, booking requests, and live calendars are not connected in this milestone. No venue or booking claims are made by this demo.
+
+## Run locally
+
+Requires Node.js 20.9 or newer and npm.
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Copy `.env.example` to `.env.local` only when beginning a later integration; credentials are not required to run milestone 1.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run dev       # start the local development server
+npm run lint      # run ESLint
+npm run typecheck # run the TypeScript compiler without emitting files
+npm run build     # create a production build
+npm start         # serve a production build
+```
 
-## Learn More
+## Next milestones
 
-To learn more about Next.js, take a look at the following resources:
+1. Model venue knowledge and source references in Sanity, connect a Sanity Context MCP endpoint, and make real retrieval calls from an agent workflow.
+2. Match full event setups against source-backed venue policies and explain evidence, unknowns, and permitted alternatives.
+3. Add organizer profiles, host applications, operational availability, conflict-safe reservations, host review, and shared preparation checklists.
+4. Consider recurring events, attendance conditions, and cancellation recovery after the core flow is reliable.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [the product brief](docs/product-brief.md), [architecture](docs/architecture.md), [build log](docs/build-log.md), and [session capture guide](docs/session-capture.md).
