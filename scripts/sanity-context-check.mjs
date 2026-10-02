@@ -2,6 +2,7 @@ import "./load-env.mjs";
 import {createMCPClient} from "@ai-sdk/mcp";
 import {catalog} from "./catalog-lib.mjs";
 import {parseContextOutline} from "./context-outline.mjs";
+import {inspectVenueCitations} from "./context-citations.mjs";
 
 const url = process.env.SANITY_CONTEXT_MCP_URL;
 const token = process.env.SANITY_ORGANIZATION_TOKEN;
@@ -26,6 +27,7 @@ const withDeadline = async (promise, label, timeoutMs = timeout) => {
   }
 };
 const textContent = (result) => (result?.content || []).filter((part) => part.type === "text").map((part) => part.text).join("\n");
+const checkStartedAt = new Date().toISOString();
 try {
   client = await withDeadline(createMCPClient({
     transport: {type: "http", url: endpoint.toString(), headers: {Authorization: `Bearer ${token}`}},
@@ -34,7 +36,7 @@ try {
   }), "MCP initialization");
   const listed = await withDeadline(client.listTools({options: {timeout, maxTotalTimeout: timeout}}), "MCP tool listing");
   const toolNames = listed.tools.map((tool) => tool.name);
-  console.log(`Available Context tools: ${toolNames.join(", ") || "(none)"}`);
+  console.log(`Context check started at: ${checkStartedAt}\nAvailable Context tools: ${toolNames.join(", ") || "(none)"}`);
   for (const required of ["initial_context", "knowledge_base_read"]) if (!toolNames.includes(required)) {
     throw new Error(`Required tool ${required} is missing. This endpoint may be GROQ-only: remove any dataset attached directly to the MCP and attach the Knowledge Base as its source.`);
   }
@@ -45,15 +47,6 @@ try {
   if (!outlineEntries.length) throw new Error("initial_context returned no Knowledge Base entry paths. Review the documented outline format and confirm the build completed.");
   const knowledgeBases = [...new Set(outlineEntries.map(({knowledgeBase}) => knowledgeBase))];
   if (outlineEntries.length > 100) throw new Error(`The outline contains ${outlineEntries.length} paths across ${knowledgeBases.length} Knowledge Bases; refusing an unbounded catalog-wide read. Narrow the Knowledge Base to the reviewed venue dataset.`);
-  const normalize = (value) => value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-  const canonicalUrl = (value) => {
-    try {
-      const parsed = new URL(value.replace(/[.,;]+$/, ""));
-      parsed.hash = "";
-      return parsed.href;
-    } catch { return null; }
-  };
-  const sourceById = new Map(catalog.sources.map((source) => [source.id, source]));
   const retrieved = new Map();
   const attemptedPaths = [];
   const readOutlineEntries = async () => {
@@ -65,43 +58,39 @@ try {
         const entry = textContent(readResult);
         if (readResult.isError) throw new Error(`knowledge_base_read returned a tool error for ${knowledgeBase}:${path}: ${entry || "no error detail"}`);
         if (!entry.trim()) throw new Error(`Knowledge Base read returned no content for ${knowledgeBase}:${path}. Inspect Knowledge Base issues and rebuild.`);
-        const urls = [...new Set(entry.match(/https?:\/\/[^\s)\]>"']+/g) || [])].map((url) => ({url, canonical: canonicalUrl(url)})).filter(({canonical}) => canonical);
-        const normalizedEntry = normalize(entry);
-        const venues = catalog.venues.filter((venue) => normalizedEntry.includes(normalize(venue.name)));
-        const citedVenues = [];
-        for (const venue of venues) {
-          const venueClaims = venue.claims || [];
-          const sourceIds = new Set([
-            ...(venue.sourceIds || []),
-            ...venueClaims.flatMap((claim) => claim.sourceIds || []),
-          ]);
-          const citations = urls.filter(({canonical}) => [...sourceIds].some((sourceId) => canonicalUrl(sourceById.get(sourceId)?.url || "") === canonical));
-          if (citations.length) citedVenues.push({venue, citations});
-        }
-        return {knowledgeBase, path, tag, entry, citedVenues};
+        return {knowledgeBase, path, tag, venueCitations: inspectVenueCitations(entry, catalog.venues, catalog.sources)};
       }));
       for (const result of results) {
-        for (const {venue, citations} of result.citedVenues) {
-          const previous = retrieved.get(venue.name) || {city: venue.city, paths: [], citations: new Map()};
+        for (const evidence of result.venueCitations) {
+          const previous = retrieved.get(evidence.venue.id) || {venue: evidence.venue, paths: [], associations: [], matchedSourceUrls: []};
           previous.paths.push(`${result.knowledgeBase}:${result.path}`);
-          for (const {url, canonical} of citations) {
-            const source = catalog.sources.find((item) => canonicalUrl(item.url) === canonical);
-            const supportedClaims = (venue.claims || []).filter((claim) => (claim.sourceIds || []).includes(source?.id));
-            previous.citations.set(canonical, {url, claimDescriptions: supportedClaims.map((claim) => claim.claim)});
-          }
-          retrieved.set(venue.name, previous);
+          previous.associations.push(...evidence.associations);
+          previous.matchedSourceUrls.push(...evidence.matchedSourceUrls);
+          retrieved.set(evidence.venue.id, previous);
         }
       }
-      if (["Delhi NCR", "Bengaluru"].every((city) => [...retrieved.values()].some((item) => item.city === city && item.citations.size))) break;
+      if (["Delhi NCR", "Bengaluru"].every((city) => [...retrieved.values()].some((item) => item.venue.city === city && item.associations.length))) break;
     }
   };
   await withDeadline(readOutlineEntries(), "Knowledge Base entry reads", 120_000);
   const retrievedVenues = [...retrieved.entries()];
-  const missingCities = ["Delhi NCR", "Bengaluru"].filter((city) => !retrievedVenues.some(([, value]) => value.city === city && value.citations.size));
-  if (missingCities.length) {
-    throw new Error(`Live entries did not return source-cited venue information for both cities; missing: ${missingCities.join(", ")}. Read ${attemptedPaths.length} outline entries; cited ${retrievedVenues.length} catalog venue records. Review the Knowledge Base query, source URLs, and build.`);
+  const missingCities = ["Delhi NCR", "Bengaluru"].filter((city) => !retrievedVenues.some(([, value]) => value.venue.city === city && value.associations.length));
+  const mismatches = retrievedVenues.flatMap(([, value]) => value.associations.filter(({matchesVenue}) => !matchesVenue).map(({number, label}) => `${value.venue.name} cites [${number}] → ${label || "missing source label"}`));
+  const missingSourceLinks = retrievedVenues.filter(([, value]) => value.associations.length && !value.matchedSourceUrls.length).map(([, value]) => value.venue.name);
+  const venuesWithoutCitations = retrievedVenues.filter(([, value]) => !value.associations.length).map(([, value]) => value.venue.name);
+  if (missingCities.length || mismatches.length || missingSourceLinks.length || venuesWithoutCitations.length) {
+    const details = [
+      missingCities.length ? `missing city evidence: ${missingCities.join(", ")}` : null,
+      venuesWithoutCitations.length ? `venue sections without numbered citations: ${venuesWithoutCitations.join(", ")}` : null,
+      mismatches.length ? `citation/source mismatches: ${mismatches.join("; ")}` : null,
+      missingSourceLinks.length ? `venue sections without an original source URL: ${missingSourceLinks.join(", ")}` : null,
+    ].filter(Boolean).join(". ");
+    throw new Error(`Live Knowledge Base entries were read, but source citations did not verify for both cities. ${details}. Read paths: ${attemptedPaths.join(", ")}. Review generated Knowledge Base citations and rebuild before relying on them.`);
   }
-  console.log(`Live Knowledge Base retrieval succeeded\nRetrieved at: ${new Date().toISOString()}\nKnowledge Bases: ${knowledgeBases.join(", ")}\nRetrieved venue evidence:\n${retrievedVenues.map(([name, value]) => `${name} (${value.city})\n  Paths: ${[...new Set(value.paths)].join(", ")}\n  Citations: ${[...value.citations.values()].map(({url, claimDescriptions}) => `${url}${claimDescriptions.length ? ` — ${[...new Set(claimDescriptions)].join("; ")}` : ""}`).join("; ")}`).join("\n")}`);
+  console.log(`Live Knowledge Base retrieval and venue citation associations verified\nRetrieved at: ${new Date().toISOString()}\nKnowledge Bases: ${knowledgeBases.join(", ")}\nRetrieved venue evidence:\n${retrievedVenues.map(([, value]) => {
+    const sources = new Map((value.venue.sourceIds || []).map((id) => [id, catalog.sources.find((source) => source.id === id)]).filter(([, source]) => source));
+    return `${value.venue.name} (${value.venue.city})\n  Paths: ${[...new Set(value.paths)].join(", ")}\n  Context citation labels: ${[...new Set(value.associations.map(({number, label}) => `[${number}] ${label}`))].join("; ")}\n  Original source references: ${[...sources.values()].map(({title, url}) => `${title} — ${url}`).join("; ")}`;
+  }).join("\n")}`);
 } catch (error) {
   console.error(`Live Context check failed: ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;

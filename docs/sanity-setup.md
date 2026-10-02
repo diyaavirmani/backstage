@@ -30,14 +30,14 @@ npx sanity projects create backstage --organization <ORGANIZATION_ID> --dataset 
 
 The CLI prompts for confirmation/required account setup as applicable. Verify the resulting project and dataset with `npx sanity projects list` and the Sanity dashboard before setting the values below. This uses the documented Sanity CLI; it does not create resources through an undocumented API.
 
-The ignored repository-root `.env.local` already has the actual non-secret project ID and dataset. Keep these values and fill in the three remaining settings after creating tokens and the Context MCP endpoint:
+The ignored repository-root `.env.local` contains the actual project ID, dataset, import token, Context MCP URL, and organization Context Viewer token. Never print its contents or stage it. The non-secret identifiers are:
 
 ```dotenv
 NEXT_PUBLIC_SANITY_PROJECT_ID=1428jmxu
 NEXT_PUBLIC_SANITY_DATASET=production
-SANITY_PROJECT_IMPORT_TOKEN=your-project-scoped-write-token
-SANITY_CONTEXT_MCP_URL=https://the-context-mcp-endpoint-you-created
-SANITY_ORGANIZATION_TOKEN=your-organization-context-viewer-token
+SANITY_PROJECT_IMPORT_TOKEN=<configured locally>
+SANITY_CONTEXT_MCP_URL=<configured locally>
+SANITY_ORGANIZATION_TOKEN=<configured locally>
 ```
 
 Keep the two tokens server-side. The project import token should have only the write access needed for the selected dataset. The organization token must have Context Viewer access. Never use either token as a `NEXT_PUBLIC_` variable.
@@ -184,7 +184,7 @@ For this project, in the Sanity Dashboard open the **Context app → Create MCP*
 4. Do not attach a project or dataset source. A directly attached dataset selects GROQ mode and takes precedence over Knowledge Base sources.
 5. Save the endpoint. Copy the endpoint URL shown by the Dashboard directly into `.env.local` as `SANITY_CONTEXT_MCP_URL`.
 
-The endpoint should expose `initial_context` and `knowledge_base_read`. See [Configure an MCP endpoint](https://www.sanity.io/docs/ai/sanity-context-configure-mcp) and [Context MCP tools](https://www.sanity.io/docs/ai/sanity-context-mcp-tools).
+The endpoint is configured and currently exposes `initial_context`, `knowledge_base_read`, and `knowledge_base_search`. See [Configure an MCP endpoint](https://www.sanity.io/docs/ai/sanity-context-configure-mcp) and [Context MCP tools](https://www.sanity.io/docs/ai/sanity-context-mcp-tools).
 
 Create an organization token with the **Context Viewer** role from organization API/token settings. Copy the endpoint URL shown for the endpoint into `SANITY_CONTEXT_MCP_URL`, and the organization token into `SANITY_ORGANIZATION_TOKEN` in `.env.local`. Keep both private.
 
@@ -194,7 +194,17 @@ Run the live check:
 npm run sanity:context-check
 ```
 
-It connects over HTTPS using the supported `@ai-sdk/mcp` client, lists endpoint tools, requires `initial_context` and `knowledge_base_read`, parses every Knowledge Base ID and entry path from the documented outline rows (including extensionless paths and `[core]`/`[peripheral]` tags), and reads paths verbatim with their associated Knowledge Base IDs. It reads each path separately and associates a citation with a venue only when its URL matches that venue’s source references; claim-level sources are printed with their claim descriptions. It requires source-cited venue information for both cities. It fails for absent credentials, auth/tool errors, GROQ-only endpoints, empty content, or missing citations. The check is a live read and makes no writes. Focused parser tests run with `npm run test:context-outline`.
+It connects over HTTPS using the supported `@ai-sdk/mcp` client, lists endpoint tools, requires `initial_context` and `knowledge_base_read`, parses every Knowledge Base ID and entry path from the documented outline rows (including extensionless paths and `[core]`/`[peripheral]` tags), and reads paths verbatim with their associated Knowledge Base IDs. For every venue heading, it checks numbered footnotes against the source labels under `## Sources` and requires an original source URL inside that venue section. It fails on missing credentials, auth/tool errors, GROQ-only endpoints, empty content, misattributed labels, or missing source URLs. The check is a live read and makes no writes. Focused outline and citation tests run with `npm run test:context-outline`.
+
+### Current live retrieval status (2 October 2026)
+
+The real `backstage-venues` endpoint connects and lists `initial_context`, `knowledge_base_read`, and `knowledge_base_search`. `initial_context` returned Knowledge Base `kbPFAVeDOOjD` with two `[core]` entries: `venues/bengaluru` and `venues/delhi_ncr`. Both exact paths were read successfully. The generated content preserves unknown pricing, availability, and Backstage booking authority; it also labels the Paytm listing as historical evidence.
+
+The citation check **failed**. Several generated numbered footnotes point to a different venue's source label: Shifu Den `[1]` → SAIACS CEO Centre; SAIACS `[2]` → Shifu Den; Masters’ Union `[4]` → Ofis Square Sohna Road; Ofis Square Sohna Road `[1]` → Ofis Square Sector 62; Ofis Square Sector 62 `[3]` → Paytm; and Paytm `[2]` → Masters’ Union. Five sections (Shifu Den, Masters’ Union, both Ofis Square profiles, and Paytm) omit their original source URL as an inline link; SAIACS includes its URL but its numbered footnote points to Shifu Den. The source projection in the published dataset was separately queried and its underlying venue/source references resolve correctly, so the observed mismatch is in the generated Knowledge Base entries, not a verified dataset-reference problem. A successful MCP connection and entry read alone are not successful source-grounded retrieval.
+
+In Sanity Manage, open **Context → Backstage Venue Knowledge → Instructions** and add a source-scoped instruction requiring each venue section to keep its factual statements, original source title/URL, and numbered citations together under the matching venue, without borrowing citations from another section. Rebuild, inspect both entries and their Sources lists, then rerun `npm run sanity:context-check`. If the build still cross-associates citations, adjust the dataset source/query or split the source material into narrower venue records in the Knowledge Base workflow and rebuild. Do not treat zero build issues as proof that citation associations are correct. Until the live checker passes, do not rely on generated venue citations.
+
+The `/venues` page still reads local JSON and is explicitly a local research preview; these MCP reads are not yet a website integration. Unknown prices, live availability, capacity where no room/layout evidence exists, and Backstage booking authority remain unknown.
 
 ## Official references
 

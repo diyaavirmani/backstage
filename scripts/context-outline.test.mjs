@@ -38,12 +38,12 @@ venues/paytm-office`;
 });
 
 test("associates each path with its own Knowledge Base across multiple outlines", () => {
-  const outline = `Knowledge base id: kbDelhi
+  const outline = `Knowledge base id: \`kbDelhi\`
 ## Delhi — organizer venue information
 1 entry.
 venues/delhi/index [core]
   Venue summary
-Knowledge base id: kbBengaluru
+Knowledge base id: \`kbBengaluru\`
 ## Bengaluru — organizer venue information
 1 entry.
 venues/bengaluru/index [core]

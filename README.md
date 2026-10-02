@@ -8,9 +8,9 @@ The product is designed to help organizers explain their full event setup and he
 
 The responsive product shell, organizer and host navigation, and event brief form are implemented. The brief validates required fields, checks that the end time follows the start time, and saves and restores the draft in browser local storage. The host page clearly shows that requests and availability are not connected yet. A source-linked six-profile venue research preview, Sanity schemas and Studio route, validated seed/import tools, and live Sanity Context MCP retrieval check are also included.
 
-The venue page is a local research preview and does not claim a live Sanity connection. Sanity Context retrieval is implemented as a command but remains unverified until a Knowledge Base, MCP endpoint, and organization token are configured. Conversational recommendations, account profiles, host applications, booking requests, and live calendars are not implemented. Catalog entries are research leads, not partners or bookable inventory.
+The venue page is a local research preview and does not claim a live Sanity connection. A real Knowledge Base-only Context MCP endpoint is configured and the live check reaches its tools, outline, and venue entries. The retrieved entries currently have mismatched source footnote labels, and five of six venue sections omit their original source URLs, so citation verification fails; do not rely on those generated citations until the Knowledge Base is corrected and rebuilt. Conversational recommendations, account profiles, host applications, booking requests, and live calendars are not implemented. Catalog entries are research leads, not partners or bookable inventory.
 
-Sanity project `1428jmxu` in organization `o8mue7lt8` has a private `production` dataset with 37 published research documents and a verified Knowledge Base build (`kbPFAVeDOOjD`). The schema is deployed. Live Context MCP entry retrieval is pending creation of the Knowledge Base-only `backstage-venues` endpoint; `/venues` remains a local JSON preview.
+Sanity project `1428jmxu` in organization `o8mue7lt8` has a private `production` dataset with 37 published research documents and Knowledge Base `kbPFAVeDOOjD`. The schema is deployed, and `backstage-venues` exposes `initial_context`, `knowledge_base_read`, and `knowledge_base_search`. Live entry reads work for Delhi NCR and Bengaluru, but generated citation associations failed verification on 2 October 2026. `/venues` remains a local JSON preview.
 
 ## Run locally
 
@@ -38,12 +38,12 @@ npm run sanity:verify-seed    # verify published records and reference integrity
 npm run sanity:schema:validate # validate Sanity Studio schema locally
 npm run sanity:schema:deploy   # deploy schema with an authenticated Sanity CLI
 npm run sanity:context-check  # verify real Knowledge Base MCP retrieval
-npm run test:context-outline  # test Context outline parsing
+npm run test:context-outline  # test Context outline and citation parsing
 ```
 
 ## Next milestones
 
-1. Connect/configure the Sanity Knowledge Base and Context MCP, run the live retrieval check, and serve reviewed catalogue data from Sanity.
+1. Correct Knowledge Base citation attribution, rerun the live check, and serve reviewed catalogue data from Sanity.
 2. Build a grounded organizer agent that matches full room, equipment, timing, access, eligibility, and policy constraints with citations and unknowns.
 3. Add host onboarding, organizer profiles, operational availability, conflict-safe reservations, host review, and shared preparation checklists.
 4. Consider recurring events, attendance conditions, and cancellation recovery after the core flow is reliable.

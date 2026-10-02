@@ -1,4 +1,4 @@
-const KNOWLEDGE_BASE_LINE = /^Knowledge base id:\s*(kb[\w-]+)\s*$/i;
+const KNOWLEDGE_BASE_LINE = /^Knowledge base id:\s*`?(kb[\w-]+)`?\s*$/i;
 const ENTRY_COUNT_LINE = /^\s*\d+\s+entr(?:y|ies)\.\s*$/i;
 const ENTRY_PATH_LINE = /^([^\s/:][^\s/:]*(?:\/[^\s/:][^\s/:]*)*)(?: \[(core|peripheral)\])?\s*$/i;
 
