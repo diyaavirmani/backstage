@@ -1,6 +1,7 @@
 import "./load-env.mjs";
 import {createMCPClient} from "@ai-sdk/mcp";
 import {catalog} from "./catalog-lib.mjs";
+import {parseContextOutline} from "./context-outline.mjs";
 
 const url = process.env.SANITY_CONTEXT_MCP_URL;
 const token = process.env.SANITY_ORGANIZATION_TOKEN;
@@ -13,12 +14,12 @@ if (endpoint.protocol !== "https:") throw new Error("SANITY_CONTEXT_MCP_URL must
 
 let client;
 const timeout = 20_000;
-const withDeadline = async (promise, label) => {
+const withDeadline = async (promise, label, timeoutMs = timeout) => {
   let timer;
   try {
     return await Promise.race([
       promise,
-      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`${label} timed out after ${timeout / 1000}s`)), timeout); }),
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs / 1000}s`)), timeoutMs); }),
     ]);
   } finally {
     clearTimeout(timer);
@@ -39,40 +40,68 @@ try {
   }
   const outlineResult = await withDeadline(client.callTool({name: "initial_context", arguments: {}, options: {timeout, maxTotalTimeout: timeout}}), "initial_context");
   const outline = textContent(outlineResult);
-  const idMatch = outline.match(/Knowledge Base id\s*:\s*([\w-]+)/i) || outline.match(/knowledgeBase\s*[=:]\s*["']?([\w-]+)/i);
   if (outlineResult.isError) throw new Error(`initial_context returned a tool error: ${outline || "no error detail"}`);
-  if (!idMatch) throw new Error("initial_context returned no Knowledge Base ID. Check that a Knowledge Base is attached and its build completed.");
-  const knowledgeBase = idMatch[1];
-  const paths = [...new Set([...outline.matchAll(/(?:^|[\s`(])([\w./-]+\.md)(?=[)`\s,]|$)/gim)].map((match) => match[1]))];
-  if (!paths.length) throw new Error("initial_context returned no entry paths. Review the Knowledge Base outline and confirm its build completed.");
-  if (paths.length > 100) throw new Error(`The outline contains ${paths.length} paths; refusing an unbounded catalog-wide read. Narrow the Knowledge Base to the reviewed venue dataset.`);
+  const outlineEntries = parseContextOutline(outline);
+  if (!outlineEntries.length) throw new Error("initial_context returned no Knowledge Base entry paths. Review the documented outline format and confirm the build completed.");
+  const knowledgeBases = [...new Set(outlineEntries.map(({knowledgeBase}) => knowledgeBase))];
+  if (outlineEntries.length > 100) throw new Error(`The outline contains ${outlineEntries.length} paths across ${knowledgeBases.length} Knowledge Bases; refusing an unbounded catalog-wide read. Narrow the Knowledge Base to the reviewed venue dataset.`);
   const normalize = (value) => value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-  const retrievedPaths = [];
-  const retrievedVenues = new Set();
-  const citationsByCity = new Map();
-  for (let offset = 0; offset < paths.length; offset += 20) {
-    const batch = paths.slice(offset, offset + 20);
-    const readResult = await withDeadline(client.callTool({name: "knowledge_base_read", arguments: {knowledgeBase, paths: batch}, options: {timeout, maxTotalTimeout: timeout}}), "knowledge_base_read");
-    const entry = textContent(readResult);
-    if (readResult.isError) throw new Error(`knowledge_base_read returned a tool error for outline paths ${batch.join(", ")}: ${entry || "no error detail"}`);
-    if (!entry.trim()) throw new Error(`Knowledge Base read returned no content for outline paths ${batch.join(", ")}. Inspect Knowledge Base issues and rebuild.`);
-    const urls = [...new Set(entry.match(/https?:\/\/[^\s)\]>"']+/g) || [])];
-    const normalizedEntry = normalize(entry);
-    const matched = catalog.venues.filter((venue) => normalizedEntry.includes(normalize(venue.name)));
-    if (matched.length && !urls.length) throw new Error(`Retrieved venue information for ${matched.map((venue) => venue.name).join(", ")}, but found no source URL citations. Check source projections and rebuild.`);
-    for (const venue of matched) {
-      retrievedVenues.add(venue.name);
-      const cityUrls = citationsByCity.get(venue.city) || new Set();
-      for (const source of urls) cityUrls.add(source);
-      citationsByCity.set(venue.city, cityUrls);
+  const canonicalUrl = (value) => {
+    try {
+      const parsed = new URL(value.replace(/[.,;]+$/, ""));
+      parsed.hash = "";
+      return parsed.href;
+    } catch { return null; }
+  };
+  const sourceById = new Map(catalog.sources.map((source) => [source.id, source]));
+  const retrieved = new Map();
+  const attemptedPaths = [];
+  const readOutlineEntries = async () => {
+    for (let offset = 0; offset < outlineEntries.length; offset += 4) {
+      const batch = outlineEntries.slice(offset, offset + 4);
+      attemptedPaths.push(...batch.map(({knowledgeBase, path}) => `${knowledgeBase}:${path}`));
+      const results = await Promise.all(batch.map(async ({knowledgeBase, path, tag}) => {
+        const readResult = await withDeadline(client.callTool({name: "knowledge_base_read", arguments: {knowledgeBase, paths: [path]}, options: {timeout, maxTotalTimeout: timeout}}), `knowledge_base_read (${knowledgeBase}: ${path})`);
+        const entry = textContent(readResult);
+        if (readResult.isError) throw new Error(`knowledge_base_read returned a tool error for ${knowledgeBase}:${path}: ${entry || "no error detail"}`);
+        if (!entry.trim()) throw new Error(`Knowledge Base read returned no content for ${knowledgeBase}:${path}. Inspect Knowledge Base issues and rebuild.`);
+        const urls = [...new Set(entry.match(/https?:\/\/[^\s)\]>"']+/g) || [])].map((url) => ({url, canonical: canonicalUrl(url)})).filter(({canonical}) => canonical);
+        const normalizedEntry = normalize(entry);
+        const venues = catalog.venues.filter((venue) => normalizedEntry.includes(normalize(venue.name)));
+        const citedVenues = [];
+        for (const venue of venues) {
+          const venueClaims = venue.claims || [];
+          const sourceIds = new Set([
+            ...(venue.sourceIds || []),
+            ...venueClaims.flatMap((claim) => claim.sourceIds || []),
+          ]);
+          const citations = urls.filter(({canonical}) => [...sourceIds].some((sourceId) => canonicalUrl(sourceById.get(sourceId)?.url || "") === canonical));
+          if (citations.length) citedVenues.push({venue, citations});
+        }
+        return {knowledgeBase, path, tag, entry, citedVenues};
+      }));
+      for (const result of results) {
+        for (const {venue, citations} of result.citedVenues) {
+          const previous = retrieved.get(venue.name) || {city: venue.city, paths: [], citations: new Map()};
+          previous.paths.push(`${result.knowledgeBase}:${result.path}`);
+          for (const {url, canonical} of citations) {
+            const source = catalog.sources.find((item) => canonicalUrl(item.url) === canonical);
+            const supportedClaims = (venue.claims || []).filter((claim) => (claim.sourceIds || []).includes(source?.id));
+            previous.citations.set(canonical, {url, claimDescriptions: supportedClaims.map((claim) => claim.claim)});
+          }
+          retrieved.set(venue.name, previous);
+        }
+      }
+      if (["Delhi NCR", "Bengaluru"].every((city) => [...retrieved.values()].some((item) => item.city === city && item.citations.size))) break;
     }
-    retrievedPaths.push(...batch);
-    if (["Delhi NCR", "Bengaluru"].every((city) => citationsByCity.get(city)?.size)) break;
+  };
+  await withDeadline(readOutlineEntries(), "Knowledge Base entry reads", 120_000);
+  const retrievedVenues = [...retrieved.entries()];
+  const missingCities = ["Delhi NCR", "Bengaluru"].filter((city) => !retrievedVenues.some(([, value]) => value.city === city && value.citations.size));
+  if (missingCities.length) {
+    throw new Error(`Live entries did not return source-cited venue information for both cities; missing: ${missingCities.join(", ")}. Read ${attemptedPaths.length} outline entries; cited ${retrievedVenues.length} catalog venue records. Review the Knowledge Base query, source URLs, and build.`);
   }
-  const missingCities = ["Delhi NCR", "Bengaluru"].filter((city) => !citationsByCity.get(city)?.size);
-  if (missingCities.length) throw new Error(`Live entries did not identify source-cited venues in both cities; missing: ${missingCities.join(", ")}. Retrieved ${retrievedVenues.size} catalog venue names from the discovered outline paths. Review the Knowledge Base query and build.`);
-  const totalUrls = [...new Set([...citationsByCity.values()].flatMap((set) => [...set]))];
-  console.log(`Live Knowledge Base retrieval succeeded\nRetrieved at: ${new Date().toISOString()}\nKnowledge Base: ${knowledgeBase}\nEntry paths read: ${retrievedPaths.join(", ")}\nVenue information: ${[...retrievedVenues].join("; ")}\nCitations (Delhi NCR):\n${[...citationsByCity.get("Delhi NCR")].slice(0, 5).map((source) => `- ${source}`).join("\n")}\nCitations (Bengaluru):\n${[...citationsByCity.get("Bengaluru")].slice(0, 5).map((source) => `- ${source}`).join("\n")}\nTotal distinct citations: ${totalUrls.length}`);
+  console.log(`Live Knowledge Base retrieval succeeded\nRetrieved at: ${new Date().toISOString()}\nKnowledge Bases: ${knowledgeBases.join(", ")}\nRetrieved venue evidence:\n${retrievedVenues.map(([name, value]) => `${name} (${value.city})\n  Paths: ${[...new Set(value.paths)].join(", ")}\n  Citations: ${[...value.citations.values()].map(({url, claimDescriptions}) => `${url}${claimDescriptions.length ? ` — ${[...new Set(claimDescriptions)].join("; ")}` : ""}`).join("; ")}`).join("\n")}`);
 } catch (error) {
   console.error(`Live Context check failed: ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;

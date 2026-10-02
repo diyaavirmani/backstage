@@ -12,6 +12,7 @@
     "sanity:seed": "node scripts/seed-sanity.mjs",
     "sanity:seed:dry-run": "node scripts/seed-sanity.mjs --dry-run",
     "sanity:context-check": "node scripts/sanity-context-check.mjs",
+    "test:context-outline": "node --test scripts/context-outline.test.mjs",
     "sanity:schema:validate": "sanity schemas validate --level error",
     "sanity:schema:deploy": "sanity schemas deploy"
   },

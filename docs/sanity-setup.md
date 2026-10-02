@@ -1,10 +1,16 @@
 # Sanity Studio, research import, and Context Knowledge Base
 
-Milestone 2 prepares the project schema, a validated source catalogue, an idempotent importer, and a live MCP check. It does not imply that a Sanity project or Knowledge Base is connected. The local `/venues` page remains a clearly labelled research preview until a server read path is added.
+The `/venues` page still reads local research JSON and remains labelled as a local preview. Sanity project content and live Context MCP retrieval are being connected separately; do not describe the website catalog as live until a server read path is added.
 
 ## 1. Enable Sanity Context
 
-Sign in to the intended Sanity account with the installed CLI, then inspect its memberships and projects:
+The authenticated CLI account had no organizations or projects, so this new Backstage organization and project were created in that account on 2 October 2026. Current non-secret resource identifiers:
+
+- Organization: `Backstage` (`o8mue7lt8`)
+- Project: `Backstage` (`1428jmxu`)
+- Dataset: private `production`
+
+If browser authentication is needed, run `npx sanity login` and sign into the intended personal Sanity account. Inspect current resources before creating anything:
 
 ```bash
 npx sanity login
@@ -12,11 +18,11 @@ npx sanity organizations list
 npx sanity projects list
 ```
 
-Select the Backstage organization by its non-secret ID. If no organization is listed, ask its owner to invite this Sanity account or create the intended organization; do not guess or create a second organization. In the organization’s management interface, an organization administrator opens **Labs** and enables **Sanity Context** and **Knowledge Bases** where required. Review the current [Sanity Context overview](https://www.sanity.io/docs/ai/sanity-context) and [Knowledge Base guide](https://www.sanity.io/docs/ai/sanity-context-knowledge-bases).
+If resources need to be created in a fresh personal account, the documented commands are `npx sanity organizations create --name "Backstage"`, followed by `npx sanity projects create "Backstage" --organization <ORGANIZATION_ID> --dataset production --dataset-visibility private`. Do not create duplicates when the matching resources above are already present. In Sanity Manage, open organization **Backstage → Labs** and enable **Sanity Context** and **Knowledge Bases** where required. This Labs action requires an organization admin. Review the current [Sanity Context overview](https://www.sanity.io/docs/ai/sanity-context) and [Knowledge Base guide](https://www.sanity.io/docs/ai/sanity-context-knowledge-bases).
 
 ## 2. Select a project and dataset
 
-Reuse the Backstage project and dataset if they exist. If the project is absent, create it in the selected organization using the documented CLI, selecting a private dataset for reviewed venue content:
+Reuse the Backstage project and dataset above. If they are absent in a different account, create them with the documented CLI, selecting a private dataset for reviewed venue content:
 
 ```bash
 npx sanity projects create backstage --organization <ORGANIZATION_ID> --dataset production --dataset-visibility private
@@ -24,11 +30,11 @@ npx sanity projects create backstage --organization <ORGANIZATION_ID> --dataset 
 
 The CLI prompts for confirmation/required account setup as applicable. Verify the resulting project and dataset with `npx sanity projects list` and the Sanity dashboard before setting the values below. This uses the documented Sanity CLI; it does not create resources through an undocumented API.
 
-Copy `.env.example` to `.env.local` and set:
+The ignored repository-root `.env.local` already has the actual non-secret project ID and dataset. Keep these values and fill in the three remaining settings after creating tokens and the Context MCP endpoint:
 
 ```dotenv
-NEXT_PUBLIC_SANITY_PROJECT_ID=your-real-project-id
-NEXT_PUBLIC_SANITY_DATASET=your-real-dataset-name
+NEXT_PUBLIC_SANITY_PROJECT_ID=1428jmxu
+NEXT_PUBLIC_SANITY_DATASET=production
 SANITY_PROJECT_IMPORT_TOKEN=your-project-scoped-write-token
 SANITY_CONTEXT_MCP_URL=https://the-context-mcp-endpoint-you-created
 SANITY_ORGANIZATION_TOKEN=your-organization-context-viewer-token
@@ -40,7 +46,7 @@ Keep the two tokens server-side. The project import token should have only the w
 
 - **Project import token:** in Sanity Manage, open the Backstage project, then **API → Tokens → Add API token**. Choose a project-scoped role that can read the target dataset’s documents and create documents; do not use this token as an organization token. Save the returned value directly in the ignored repository-root `.env.local` as `SANITY_PROJECT_IMPORT_TOKEN`.
 - **Context token:** in Sanity Manage, open the intended organization, then **API → Tokens → Add API token**. Choose **Context Viewer** (Sanity documents Viewer as the least privilege that works for Context). Save the returned value directly in `.env.local` as `SANITY_ORGANIZATION_TOKEN`.
-- The organization administrator must also enable Context from that organization’s **Labs** page. Creating tokens and enabling Labs are dashboard actions; keep each token out of chat, terminal output, public variables, and Git.
+- The organization administrator must also enable Context and Knowledge Bases from that organization’s **Labs** page. Creating tokens and enabling Labs are dashboard actions; keep each token out of chat, terminal output, public variables, and Git.
 
 If a required button is unavailable, ask an organization administrator or project owner for the corresponding membership/permission. The project importer needs project content write permission; Context setup needs organization Context Viewer access. The Sanity CLI’s account authentication is separate from both `.env.local` tokens.
 
@@ -167,7 +173,7 @@ The installed CLI documents `--watch` as waiting and exiting non-zero for build 
 
 ## 5. Create a Knowledge Base-backed Context MCP
 
-In the Sanity Context application, create a Context MCP endpoint and choose the Knowledge Base as its source. Do **not** attach a dataset directly to the MCP endpoint: Sanity documents that a dataset attached directly selects GROQ mode and takes precedence over Knowledge Base sources. The endpoint must expose Knowledge Base mode and its `initial_context` and `knowledge_base_read` tools. See [Configure an MCP endpoint](https://www.sanity.io/docs/ai/sanity-context-configure-mcp) and [Context MCP tools](https://www.sanity.io/docs/ai/sanity-context-mcp-tools).
+In the Sanity Dashboard, open the **Context app → Create MCP** and choose the Backstage Knowledge Base as the endpoint source. Save the endpoint to reveal its URL. Do **not** attach a dataset directly to the MCP endpoint: Sanity documents that a dataset attached directly selects GROQ mode and takes precedence over Knowledge Base sources. The endpoint must expose Knowledge Base mode and its `initial_context` and `knowledge_base_read` tools. See [Configure an MCP endpoint](https://www.sanity.io/docs/ai/sanity-context-configure-mcp) and [Context MCP tools](https://www.sanity.io/docs/ai/sanity-context-mcp-tools).
 
 Create an organization token with the **Context Viewer** role from organization API/token settings. Copy the endpoint URL shown for the endpoint into `SANITY_CONTEXT_MCP_URL`, and the organization token into `SANITY_ORGANIZATION_TOKEN` in `.env.local`. Keep both private.
 
@@ -177,7 +183,7 @@ Run the live check:
 npm run sanity:context-check
 ```
 
-It connects over HTTPS using the supported `@ai-sdk/mcp` client, lists endpoint tools, requires `initial_context` and `knowledge_base_read`, discovers the Knowledge Base ID and a venue entry path from the returned outline, reads the entry, and prints retrieved source URLs. It fails for absent credentials, auth errors, GROQ-only endpoints, empty content, or missing citations. The check is a live read and makes no writes.
+It connects over HTTPS using the supported `@ai-sdk/mcp` client, lists endpoint tools, requires `initial_context` and `knowledge_base_read`, parses every Knowledge Base ID and entry path from the documented outline rows (including extensionless paths and `[core]`/`[peripheral]` tags), and reads paths verbatim with their associated Knowledge Base IDs. It reads each path separately and associates a citation with a venue only when its URL matches that venue’s source references; claim-level sources are printed with their claim descriptions. It requires source-cited venue information for both cities. It fails for absent credentials, auth/tool errors, GROQ-only endpoints, empty content, or missing citations. The check is a live read and makes no writes. Focused parser tests run with `npm run test:context-outline`.
 
 ## Official references
 

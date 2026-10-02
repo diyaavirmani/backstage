@@ -95,3 +95,29 @@
 - `npm run sanity:seed` and `npm run sanity:context-check` were invoked after the env-loader fix; each stopped before network access with its clear missing-configuration message. No remote writes or MCP calls occurred.
 - The Next.js catalog remains explicitly labeled a local research preview. No live retrieval success is claimed.
 - Required account action: the local Sanity CLI is authenticated but lists zero organizations and zero projects. Confirm this is the intended account; if so, an owner must invite it to the intended organization (or the user must create/join the intended organization). If it is the wrong account, sign in to the intended account with `npx sanity login`. Then select/create the Backstage project and private `production` dataset, enable Context in organization **Labs**, create the project content-write token under project **API → Tokens**, and create the organization Context Viewer token under organization **API → Tokens**. Store the two tokens only in ignored `.env.local`. The exact non-secret project ID and organization ID are not available yet.
+
+## Milestone 2C — Personal Sanity resources and outline parser
+
+### Account and resources
+
+- The existing local Sanity CLI authentication was used. It was signed in and had no organizations or projects; the authorized new-account path was followed without requesting an invitation. Organization `Backstage` was created and verified as `o8mue7lt8`.
+- After the project ID was configured, `npx sanity debug` confirmed the Sanity account name and email match the existing local Git author identity (Google provider); the CLI redacted its token. This confirmed the intended personal account context before continuing.
+- Project `Backstage` was created in that organization as `1428jmxu`, with a private `production` dataset. `npx sanity projects list` and `npx sanity datasets list` confirmed both resources. The ignored `.env.local` now contains the actual non-secret project ID and dataset and has empty slots for the project import token, Context MCP URL, and organization token. Secret values remain missing.
+- `npx sanity context list --organization o8mue7lt8 --json` returned `[]`: no existing Backstage Knowledge Base was present. Labs still needs an organization-admin action before creating/importing/building a Knowledge Base. No Knowledge Base or MCP endpoint is claimed as created.
+- `npm run sanity:schema:deploy` succeeded: Sanity CLI reported `Deployed 1/1 schemas`.
+- Project import token is not yet configured, so no seed write or dataset document query has been made. The last dry run validated 37 stable-ID documents. Imported count is 0; published document/reference verification is pending.
+
+### Context outline and citation handling
+
+- Replaced the `.md`-only path regular expression with `scripts/context-outline.mjs`, which follows the documented `Knowledge base id:` / outline heading / entry-count / flush-left path rows, recognizes optional `[core]` and `[peripheral]` tags, preserves extensionless and `.md` paths, ignores indented summaries, related annotations, and source URLs, and returns every path with its Knowledge Base ID.
+- Added `npm run test:context-outline` with focused cases for extensionless and `.md` paths, tags, unrelated summary/related/source rows, and multiple Knowledge Bases.
+- Changed the live checker to read each discovered path separately using its associated Knowledge Base ID. It matches retrieved citation URLs against source URLs attached to each locally researched venue and reports supported claim descriptions, avoiding the previous behavior of assigning every URL in a multi-entry batch to every matched city. It still fails unless venue sources cover both Delhi NCR and Bengaluru.
+- Updated the setup guide with actual resource IDs, Labs/token actions, the local preview distinction, and parser behavior. The app still reads local research JSON.
+
+### Checks and remaining account actions
+
+- Passed: parser tests (3/3), catalog validation (six venues/six sources), seed dry run (37 documents), schema validation (zero errors), lint, and TypeScript check.
+- Schema deployment passed as above. Production build passed and prerendered `/`, `/host`, `/organizer`, `/venues`, `/studio/[[...tool]]`, and `/icon.svg`. Full and production-only `npm audit` both report zero vulnerabilities.
+- `npm run sanity:seed` exited before network access because `SANITY_PROJECT_IMPORT_TOKEN` is empty. `npm run sanity:context-check` exited before connecting because `SANITY_CONTEXT_MCP_URL` and `SANITY_ORGANIZATION_TOKEN` are empty. These are blocked setup checks, not successful imports or retrievals.
+- Live import/retrieval remain blocked until an organization admin enables Context and Knowledge Bases under Sanity Manage → organization **Backstage** → **Labs**, and the user creates/saves a project-scoped content-write token under project **API → Tokens** plus an organization **Context Viewer** token under organization **API → Tokens**. The Context MCP URL must then be saved in `.env.local` after configuring an endpoint with Knowledge Base sources only.
+- No Sanity documents have been imported; no Knowledge Base build, MCP tools listing, entry read, or citation evidence exists yet. The site catalog stays labelled a local preview.
