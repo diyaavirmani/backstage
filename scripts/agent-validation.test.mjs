@@ -96,7 +96,7 @@ test("keeps Backstage booking permission unknown when a public page says it does
   assert.match(coverage.evidence[0].value, /do not authorize/);
 });
 
-test("marks a requirement contradicted only when a source-linked claim is explicitly conflicting", () => {
+test("keeps a requirement unknown when its source claims conflict", () => {
   const conflictedVenue = {...venue, claims: [...venue.claims, {
     _key: "claim-food-conflict", subject: "hosting-conditions", claim: "Outside food permission", value: "Sources conflict on outside food permission", evidenceType: "conflicting", sources: [source],
   }]};
@@ -104,6 +104,70 @@ test("marks a requirement contradicted only when a source-linked claim is explic
     output: outputFor(), venues: [conflictedVenue], brief: {...brief, essentialRequirements: ["food allowed"]}, evidence: {checks: [validCheck]},
   });
   const coverage = result.recommendations[0].requirementCoverage.find((item) => item.requirement === "food allowed");
+  assert.equal(coverage.status, "unknown");
+  assert.equal(coverage.evidence.some((item) => item.evidenceType === "conflicting"), true);
+});
+
+test("does not infer founder-community eligibility for a general student gathering", () => {
+  const shifu = {...venue, _id: "venue-shifu-den-bengaluru", name: "Shifu Den", city: "Bengaluru", locality: "Bengaluru", claims: [
+    {_key: "shifu-audience", subject: "eligibility", claim: "The public description addresses founders, operators, and builders; the space is open to founders.", value: "Detailed eligibility criteria are unknown.", evidenceType: "public-documentation", sources: [source]},
+    {_key: "shifu-access", subject: "access-model", claim: "The Den is pro bono for founders and events are free for the founder community.", value: "This does not confirm eligibility for other organizers.", evidenceType: "public-documentation", sources: [source]},
+  ]};
+  const result = validateAgentRecommendations({
+    output: {recommendations: [{venueId: shifu._id, locality: shifu.locality, entryPaths: [entry.path]}]},
+    venues: [shifu], brief: {...brief, city: "Bengaluru", audience: "general university students", essentialRequirements: ["pro bono access"]}, evidence: {checks: [{...validCheck, venue: shifu}]},
+  });
+  const audience = result.recommendations[0].requirementCoverage.find((item) => item.requirement === "Audience: general university students");
+  const access = result.recommendations[0].requirementCoverage.find((item) => item.requirement === "pro bono access");
+  assert.equal(audience.status, "unknown");
+  assert.equal(access.status, "unknown");
+  assert.match(access.evidence[0].claim, /pro bono for founders/);
+});
+
+test("does not treat one described room as proof of two requested breakout rooms", () => {
+  const venueWithRooms = {...venue, claims: [...venue.claims, {
+    _key: "room-evidence", subject: "hosting-conditions", claim: "The source describes two microphones and one breakout room.", value: "Room count and allocation are not specified.", evidenceType: "public-documentation", sources: [source],
+  }]};
+  const result = validateAgentRecommendations({
+    output: outputFor(), venues: [venueWithRooms], brief: {...brief, roomRequirements: ["two breakout rooms"]}, evidence: {checks: [validCheck]},
+  });
+  const coverage = result.recommendations[0].requirementCoverage.find((item) => item.requirement === "two breakout rooms");
+  assert.equal(coverage.status, "unknown");
+  assert.match(coverage.evidence[0].value, /not specified/);
+});
+
+test("supports a room quantity only when the count is attached to the requested room type", () => {
+  const venueWithRooms = {...venue, claims: [...venue.claims, {
+    _key: "room-evidence", subject: "hosting-conditions", claim: "Two breakout rooms are described for workshops.", value: "Two breakout rooms are publicly documented.", evidenceType: "public-documentation", sources: [source],
+  }]};
+  const result = validateAgentRecommendations({
+    output: outputFor(), venues: [venueWithRooms], brief: {...brief, roomRequirements: ["two breakout rooms"]}, evidence: {checks: [validCheck]},
+  });
+  const coverage = result.recommendations[0].requirementCoverage.find((item) => item.requirement === "two breakout rooms");
+  assert.equal(coverage.status, "supported");
+});
+
+test("does not support an activity from an explicit negative permission statement", () => {
+  const restrictedVenue = {...venue, claims: [...venue.claims, {
+    _key: "food-prohibited", subject: "hosting-conditions", claim: "Outside food permission", value: "Outside food is not permitted.", evidenceType: "public-documentation", sources: [source],
+  }]};
+  const result = validateAgentRecommendations({
+    output: outputFor(), venues: [restrictedVenue], brief: {...brief, essentialRequirements: ["outside food allowed"]}, evidence: {checks: [validCheck]},
+  });
+  const coverage = result.recommendations[0].requirementCoverage.find((item) => item.requirement === "outside food allowed");
   assert.equal(coverage.status, "contradicted");
-  assert.equal(coverage.evidence[0].evidenceType, "conflicting");
+  assert.match(coverage.evidence[0].value, /not permitted/);
+});
+
+test("supports pro-bono eligibility only when the organizer audience matches the documented condition", () => {
+  const shifu = {...venue, _id: "venue-shifu-den-bengaluru", name: "Shifu Den", city: "Bengaluru", locality: "Bengaluru", claims: [
+    {_key: "shifu-access", subject: "access-model", claim: "The Den is pro bono for founders and events are free for the founder community.", value: "Pro bono access for founders.", evidenceType: "public-documentation", sources: [source]},
+  ]};
+  const result = validateAgentRecommendations({
+    output: {recommendations: [{venueId: shifu._id, locality: shifu.locality, entryPaths: [entry.path]}]},
+    venues: [shifu], brief: {...brief, city: "Bengaluru", audience: "startup founders", essentialRequirements: ["pro bono access"]}, evidence: {checks: [{...validCheck, venue: shifu}]},
+  });
+  const access = result.recommendations[0].requirementCoverage.find((item) => item.requirement === "pro bono access");
+  assert.equal(access.status, "supported");
+  assert.match(access.evidence[0].qualification || access.evidence[0].claim, /founder/i);
 });

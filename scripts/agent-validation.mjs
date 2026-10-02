@@ -30,12 +30,69 @@ function claimIsRelevant(claim, requirement, kind) {
   if (claim.subject !== kind) return false;
   const claimText = normalize(`${claim.claim || ""} ${claim.value || ""} ${claim.qualification || ""}`);
   const requestedWords = normalize(requirement).split(" ").filter((word) => word.length > 3);
-  if (["capacity", "availability", "price", "booking-authority", "eligibility"].includes(kind)) return true;
+  if (["capacity", "availability", "price", "booking-authority", "eligibility", "access-model"].includes(kind)) return true;
   return requestedWords.some((word) => claimText.includes(word));
 }
 
 function claimStatesUnknown(claim) {
-  return /\bunknown\b|not (?:stated|specified|established|published|documented|confirmed|authorized)|do(?:es)? not (?:establish|authorize)|must be checked/i.test(`${claim.claim || ""} ${claim.value || ""} ${claim.qualification || ""}`);
+  return claim.evidenceType === "unknown" || claim.evidenceType === "conflicting" || /\bunknown\b|not (?:stated|specified|established|published|documented|confirmed|authorized)|do(?:es)? not (?:establish|authorize)|must be checked|sources? conflict/i.test(`${claim.claim || ""} ${claim.value || ""} ${claim.qualification || ""}`);
+}
+
+function claimText(claim) {
+  return normalize(`${claim.claim || ""} ${claim.value || ""} ${claim.qualification || ""}`);
+}
+
+function explicitlyProhibits(claim) {
+  const text = claimText(claim);
+  if (claimStatesUnknown(claim)) return false;
+  return /\b(?:not permitted|prohibited|forbidden|disallowed|not allowed|not permit(?:ted)?|does not permit|does not allow|do not allow|cannot be used|may not|not open to|not eligible for|not available to|not permitted for|not for)\b/.test(text)
+    || /\bno (?:outside )?(?:food|catering|alcohol|workshops|screenings|events?) (?:is )?allowed\b/.test(text);
+}
+
+function requestedQuantity(requirement) {
+  const words = {one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10};
+  const match = normalize(requirement).match(/\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\b/);
+  if (!match) return null;
+  return Number(match[1]) || words[match[1]] || null;
+}
+
+function claimQuantityFor(requirement, claim) {
+  const numberWords = {one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10};
+  const requiredWords = normalize(requirement).split(" ").filter((word) => !/^\d+$/.test(word) && !Object.hasOwn(numberWords, word) && !["for", "with", "need", "have", "at", "least", "more", "than", "room", "rooms", "space", "spaces", "equipment"].includes(word));
+  const terms = requiredWords.length ? requiredWords : normalize(requirement).split(" ").filter((word) => ["room", "rooms", "space", "spaces"].includes(word));
+  const words = claimText(claim).split(" ");
+  const matches = [];
+  words.forEach((word, index) => {
+    if (!/^\d+$/.test(word) && !Object.hasOwn(numberWords, word)) return;
+    const count = Number(word) || numberWords[word];
+    const nearby = words.slice(Math.max(0, index - 3), index + 4);
+    if (!terms.length || terms.some((term) => nearby.includes(term))) matches.push(count);
+  });
+  return matches.length ? Math.max(...matches) : null;
+}
+
+function claimMeetsAudienceCondition(claim, audience) {
+  const text = claimText(claim);
+  const condition = text.match(/\b(?:for|among|open to|serving) ([a-z0-9 ]{3,80})/);
+  if (!condition) return false;
+  const conditionWords = new Set(condition[1].split(" ").filter((word) => word.length > 3 && !["community", "people", "groups", "events", "event"].includes(word)));
+  if (!conditionWords.size) return true;
+  const audienceWords = new Set(normalize(audience).split(" ").filter((word) => word.length > 3 && !["general", "community", "people", "group", "groups", "event", "events"].includes(word)));
+  return [...conditionWords].some((word) => audienceWords.has(word) || (word.endsWith("s") && audienceWords.has(word.slice(0, -1))) || (audienceWords.has(`${word}s`)));
+}
+
+function claimSupportsRequirement(claim, requirement, kind, brief) {
+  if (kind === "eligibility" || kind === "access-model") {
+    if (["unknown", "conflicting", "demonstration"].includes(claim.evidenceType) || explicitlyProhibits(claim)) return false;
+    return claimMeetsAudienceCondition(claim, brief.audience);
+  }
+  if (claimStatesUnknown(claim) || explicitlyProhibits(claim)) return false;
+  const quantity = requestedQuantity(requirement);
+  if (quantity !== null && ["equipment", "hosting-conditions"].includes(kind)) {
+    const count = claimQuantityFor(requirement, claim);
+    if (count === null || count < quantity) return false;
+  }
+  return true;
 }
 
 function capacityIsVerified(claim, venue) {
@@ -103,23 +160,23 @@ export function validateAgentRecommendations({ output, venues, brief, evidence }
     for (const requirement of [...new Set(requested)]) {
       const kind = requirementKind(requirement);
       const relatedClaims = sourceVerifiedClaims.filter((claim) => claimIsRelevant(claim, requirement, kind));
-      const conflictingClaims = relatedClaims.filter((claim) => claim.evidenceType === "conflicting");
-      const documentedClaims = relatedClaims.filter((claim) => !["unknown", "conflicting", "demonstration"].includes(claim.evidenceType) && !claimStatesUnknown(claim));
+      const documentedClaims = relatedClaims.filter((claim) => !["unknown", "conflicting", "demonstration"].includes(claim.evidenceType) && (!claimStatesUnknown(claim) || ["eligibility", "access-model"].includes(kind)));
+      const prohibitions = documentedClaims.filter((claim) => explicitlyProhibits(claim));
       const supportedClaims = kind === "capacity"
         ? documentedClaims.filter((claim) => capacityIsVerified(claim, venue) && Number(String(claim.value).match(/\d+/)?.[0]) >= Number(brief.headcount))
-        : documentedClaims;
+        : documentedClaims.filter((claim) => claimSupportsRequirement(claim, requirement, kind, brief));
       let status = "unknown";
       let supportingClaims = [];
-      if (conflictingClaims.length) {
+      if (prohibitions.length) {
         status = "contradicted";
-        supportingClaims = conflictingClaims;
+        supportingClaims = prohibitions;
       } else if (supportedClaims.length) {
         status = "supported";
         supportingClaims = supportedClaims;
       }
 
       if (status === "unknown") {
-        supportingClaims = relatedClaims.filter((claim) => claim.evidenceType === "unknown" || claim.evidenceType === "conflicting" || claimStatesUnknown(claim));
+        supportingClaims = relatedClaims.filter((claim) => claim.evidenceType === "unknown" || claim.evidenceType === "conflicting" || claimStatesUnknown(claim) || !claimSupportsRequirement(claim, requirement, kind, brief));
       }
       classifications.push({
         requirement,

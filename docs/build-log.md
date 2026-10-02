@@ -222,3 +222,33 @@
 - Organizer follow-up history is held in component state for the current browser session; the EventBrief itself remains saved locally. No account identity, host applications, live availability, host approval, booking, or reservation transaction is implemented.
 - The discovery endpoint has bounded per-request work but no user authentication or cross-instance rate limiting. Add those before exposing paid model access publicly.
 - No Knowledge Base content or Sanity configuration was changed by this milestone. The catalog route remains a local preview by design.
+
+## Milestone 3 requirement-classification and live-agent verification — 2 October 2026
+
+### Corrections
+
+- Eligibility and access-model support now requires the event audience to match an explicitly documented audience condition. Shifu’s founder-community wording no longer qualifies a general student gathering; matching founder audiences retain the source qualification that detailed criteria and Backstage access remain unconfirmed.
+- Conflicting claims now classify as unknown, not prohibited. A single source-backed explicit prohibition can contradict a requested activity. An unrelated numeric fact cannot satisfy a requested room/equipment quantity; quantity evidence must be near the matching resource. Unknown or conflicting information remains visible with its source-derived wording.
+- The live route scopes the current outline menu by event city and, when present in the latest organizer question, a venue or locality. A directly named research lead is returned only after its corresponding live entry read. Model candidates with an invalid venue identity, locality, or entry/path citation are discarded before publishing.
+- Added sanitized server log records for each completed turn: Knowledge Base ID, successful entry paths, successful read-call count, accepted venue IDs/path/source IDs, counts by requirement status, and rejected candidate count. The logs do not include the EventBrief, organizer requirement text, conversation content, tool response text, or credentials.
+
+### Live route scenarios
+
+The OpenAI key and Sanity server configuration were present locally (only configured/missing booleans were inspected). The app was stopped and freshly restarted with `npm run dev -- --hostname 127.0.0.1`. Seven actual POST requests to `/api/venue-discovery` completed through the OpenAI provider and live Context MCP on 2 October 2026. Each returned HTTP 200 after at least one successful `knowledge_base_read` call; no fixture was used.
+
+- **80-person Delhi NCR hackathon:** read `venues/delhi_ncr/ofis_square_noida`, `venues/delhi_ncr/paytm_office_noida`, `venues/delhi_ncr/masters_union`, and `venues/delhi_ncr/ofis_square_gurugram` in `kbPFAVeDOOjD`. Returned the two Ofis Square locations with their shared official source URL `https://ofissquare.com/events-spaces/`; the Noida and Gurugram entry paths and localities remained separate. Room count, equipment, food permission, 80-person room/layout capacity, event-date availability, setup/clear-up access, and budget fit all remained unknown. One model candidate failed the exact evidence/scope gate and was discarded.
+- **Bengaluru founder gathering exploring pro-bono access:** read `venues/bengaluru/shifu_den` and `venues/bengaluru/saiacs_ceo_centre`. Returned Shifu Den with `https://den.shifuventures.com/`. The described pro-bono condition and founder audience were supported with the published qualification; capacity, exact price/sponsorship terms, dates, and booking authority remained unknown.
+- **General student gathering asking about Shifu:** read `venues/bengaluru/shifu_den`; returned Shifu Den so the direct question could be answered. Audience eligibility and pro-bono access classified unknown for general university students, with the founder-community source wording and qualification preserved. No eligibility was inferred.
+- **Immediate Paytm booking request:** read `venues/delhi_ncr/paytm_office_noida`; returned the record as historical evidence with the original GDG event URL `https://gdg.community.dev/events/details/google-gdg-cloud-noida-presents-thinkfluence/`. Backstage booking authority was unknown. No booking was represented as submitted or confirmed.
+- **Delhi NCR locality follow-ups:** the initial brief returned the Gurugram Ofis lead and Noida Ofis lead. The Noida follow-up, carrying the same brief and conversation, returned Sector 62, Noida and the separate historical Paytm Noida record, with their respective Ofis and GDG citations. The next follow-up switched locality and returned only Ofis Square — Sohna Road, Gurugram. The same 35-person brief remained in each API request; capacity, availability, and budget terms remained unknown.
+
+### Checks and remaining verification
+
+- `npm run test:agent` — final run passed, 29 tests, including positive count-specific room evidence.
+- `npm run lint` — passed with no warnings.
+- `npm run typecheck` — passed.
+- `npm run build` — passed after the final route, logging, and classification changes.
+- `npm audit --audit-level=moderate` — passed, zero vulnerabilities.
+- `npm run sanity:validate` and `npm run sanity:seed:dry-run` — passed; six source-backed profiles and 37 published research documents remain valid. No seed writes were run.
+- Browser automation tooling is not available in this workspace. Browser verification remains pending. Manual browser checklist: (1) leave a required organizer field blank and confirm discovery is blocked; (2) save a completed brief, reload, and confirm fields restore; (3) run discovery and open an original source; (4) ask for Noida and then Gurugram and confirm the same event details remain; (5) repeat at a narrow mobile viewport.
+- Remaining product limitations: requests are not authenticated or rate-limited across instances; the venue catalog page still reads local JSON; no host application, live availability, approval, reservation, or booking operation is implemented. Organizer conversation history remains browser-session state while the EventBrief is locally saved.
