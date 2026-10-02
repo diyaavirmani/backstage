@@ -1,52 +1,74 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {inspectVenueCitations} from "./context-citations.mjs";
+import {verifyVenueEvidence} from "./context-citations.mjs";
 
+const sharedUrl = "https://ofissquare.com/events-spaces/";
 const venues = [
-  {id: "shifu", name: "Shifu Den", city: "Bengaluru", sourceIds: ["shifu-source"]},
-  {id: "saiacs", name: "SAIACS CEO Centre", city: "Bengaluru", sourceIds: ["saiacs-source"]},
-];
-const sources = [
-  {id: "shifu-source", url: "https://den.shifuventures.com/"},
-  {id: "saiacs-source", url: "https://saiacs-ceocenter.com/"},
+  {_id: "masters", name: "Masters’ Union Campus", city: "Delhi NCR", locality: "DLF Cyber Park, Udyog Vihar Phase III, Gurugram", sources: [{_id: "masters-src", title: "Masters Union public pages", url: "https://mastersunion.org/for-companies"}]},
+  {_id: "ofis-gurugram", name: "Ofis Square — Sohna Road", city: "Delhi NCR", locality: "Sohna Road, Gurugram", sources: [{_id: "ofis-src", title: "Book Corporate Event Spaces in Noida & Gurgaon", url: sharedUrl}]},
+  {_id: "ofis-noida", name: "Ofis Square — Sector 62, Noida", city: "Delhi NCR", locality: "Sector 62, Noida", sources: [{_id: "ofis-src", title: "Book Corporate Event Spaces in Noida & Gurgaon", url: sharedUrl}]},
+  {_id: "paytm", name: "Paytm Office, Noida (historical event location)", city: "Delhi NCR", locality: "Noida", sources: [{_id: "paytm-src", title: "Thinkfluence event listing", url: "https://gdg.community.dev/events/details/google-gdg-cloud-noida-presents-thinkfluence/"}]},
+  {_id: "saiacs", name: "SAIACS CEO Centre", city: "Bengaluru", locality: "North Bengaluru", sources: [{_id: "saiacs-src", title: "SAIACS CEO Centre", url: "https://saiacs-ceocenter.com/"}]},
+  {_id: "shifu", name: "Shifu Den", city: "Bengaluru", locality: "Bengaluru (neighborhood not stated)", sources: [{_id: "shifu-src", title: "Shifu Den", url: "https://den.shifuventures.com/"}]},
 ];
 
-test("associates footnotes with the source label in the same venue section", () => {
-const entry = `## Shifu Den
-The pro bono statement is documented [2] (https://den.shifuventures.com/).
-## SAIACS CEO Centre
-The campus facilities are documented [1] (https://saiacs-ceocenter.com/).
-## Sources
-1. SAIACS CEO Centre — Dataset
-2. Shifu Den — Dataset`;
-  const result = inspectVenueCitations(entry, venues, sources);
-  assert.equal(result.length, 2);
-  assert.equal(result[0].valid, true);
-  assert.equal(result[1].valid, true);
-  assert.equal(result[0].associations[0].label, "Shifu Den");
-  assert.deepEqual(result[0].matchedSourceUrls, ["https://den.shifuventures.com/"]);
+function section(venue, citation = "", url = venue.sources[0].url) {
+  return `## ${venue.name} — ${venue.locality}\nDocumented facilities and event hosting details.${citation}\nSource: [${venue.sources[0].title}](${url})\nCapacity: Unknown. Availability: Unknown. Price: Unknown. Backstage booking authority: Unknown.`;
+}
+
+function sourceList(items) {
+  return `\n## Sources\n${items.map(({number, venue, url}) => `${number}. ${venue.name} — Dataset${url ? ` (${url})` : ""}`).join("\n")}`;
+}
+
+test("detects swapped venue footnotes even when the correct shared URL is inline", () => {
+  const gurugram = venues.find(({_id}) => _id === "ofis-gurugram");
+  const noida = venues.find(({_id}) => _id === "ofis-noida");
+  const entry = {
+    path: "facilities_and_equipment",
+    text: `${section(gurugram, " [1]")}\n\n${section(noida, " [2]")}${sourceList([
+      {number: 1, venue: noida},
+      {number: 2, venue: gurugram},
+    ])}`,
+  };
+  const result = verifyVenueEvidence([entry], [gurugram, noida]);
+  assert.ok(result.issues.some((issue) => issue.includes("Ofis Square — Sohna Road") && issue.includes("footnote [1]")));
+  assert.ok(result.issues.some((issue) => issue.includes("Ofis Square — Sector 62, Noida") && issue.includes("footnote [2]")));
+  assert.equal(result.checks.every(({valid}) => !valid), true);
 });
 
-test("flags citation labels attached to the wrong venue", () => {
-const entry = `## Shifu Den
-The pro bono statement is documented [1] (https://den.shifuventures.com/).
-## SAIACS CEO Centre
-Facilities are documented [2] (https://saiacs-ceocenter.com/).
-## Sources
-1. SAIACS CEO Centre — Dataset
-2. Shifu Den — Dataset`;
-  const result = inspectVenueCitations(entry, venues, sources);
-  assert.deepEqual(result.map(({valid}) => valid), [false, false]);
-  assert.deepEqual(result.map(({associations}) => associations[0].label), ["SAIACS CEO Centre", "Shifu Den"]);
+test("requires evidence coverage for every expected venue", () => {
+  const allButShifu = venues.slice(0, -1);
+  const entries = allButShifu.map((venue) => ({
+    path: `venues/${venue._id}`,
+    text: `# ${venue.name} — ${venue.locality}\n${section(venue)}`,
+  }));
+  const result = verifyVenueEvidence(entries, venues);
+  assert.ok(result.issues.some((issue) => issue.includes("Shifu Den") && issue.includes("not found")));
+  assert.equal(result.foundVenueIds.length, 5);
 });
 
-test("does not accept a venue section that omits its original source URL", () => {
-  const entry = `## Shifu Den
-The pro bono statement is documented [1].
-## Sources
-1. Shifu Den — Dataset`;
-  const result = inspectVenueCitations(entry, venues, sources);
-  assert.equal(result[0].associations[0].matchesVenue, true);
-  assert.equal(result[0].valid, false);
-  assert.deepEqual(result[0].matchedSourceUrls, []);
+test("accepts a canonical original URL in the correctly referenced footnote", () => {
+  const venue = venues.find(({_id}) => _id === "paytm");
+  const entry = {
+    path: "venues/delhi_ncr/paytm_office_noida",
+    text: `# ${venue.name} — ${venue.locality}\nHistorical event evidence [1]. Capacity: Unknown. Availability: Unknown. Price: Unknown. Backstage booking authority: Unknown.${sourceList([
+      {number: 1, venue, url: "https://gdg.community.dev/events/details/google-gdg-cloud-noida-presents-thinkfluence"},
+    ])}`,
+  };
+  const result = verifyVenueEvidence([entry], [venue]);
+  assert.deepEqual(result.issues, []);
+  assert.equal(result.checks[0].valid, true);
+  assert.deepEqual(result.checks[0].matchedUrls, ["https://gdg.community.dev/events/details/google-gdg-cloud-noida-presents-thinkfluence"]);
+});
+
+test("keeps Ofis locations distinct when both cite the same official page", () => {
+  const locations = venues.filter(({_id}) => _id.startsWith("ofis-"));
+  const entries = locations.map((venue) => ({
+    path: `venues/${venue._id}`,
+    text: `# ${venue.name} — ${venue.locality}\nDocumented event spaces.\nSource: [${venue.sources[0].title}](${sharedUrl})\nCapacity: Unknown. Availability: Unknown. Price: Unknown. Backstage booking authority: Unknown.`,
+  }));
+  const result = verifyVenueEvidence(entries, locations);
+  assert.deepEqual(result.issues, []);
+  assert.deepEqual(result.checks.map(({venue}) => venue._id).sort(), ["ofis-gurugram", "ofis-noida"]);
+  assert.deepEqual(result.checks.map(({matchedUrls}) => matchedUrls), [["https://ofissquare.com/events-spaces"], ["https://ofissquare.com/events-spaces"]]);
 });

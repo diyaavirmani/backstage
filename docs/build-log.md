@@ -165,3 +165,30 @@
 - Updated the outline parser to accept the backticked Knowledge Base ID format returned by this live endpoint; added the matching fixture to its multiple-Knowledge-Base test.
 - Added a citation association parser. The live check now associates each footnote only with the `## Sources` label in the same venue section and requires an original source URL to appear in that section. It no longer treats unrelated host links or every URL in a combined entry as evidence for all venues. Added tests for correct and reversed footnote maps.
 - `npm run test:context-outline` — passed, 6 tests. `npm run sanity:context-check` — connected and read both entries, then exited 1 because the six citation/source associations above are mismatched and original source links are absent from five venue sections. This is an expected integrity failure, not a credential or connectivity failure.
+
+## Milestone 2B citation recovery — provenance instruction and full-catalog verification
+
+### Response diagnosis and rebuild
+
+- Inspected MCP responses directly before changing attribution checks. Both `initial_context` and `knowledge_base_read` responses contained only `{content, isError}`; each content item was text and had no `annotations`, `_meta`, or structured citation payload. The older swapped footnote numbers were literal in the raw entry text and its `## Sources` text, so they were generated-content mismatches, not response formatting or parser artifacts.
+- Rebuilt the existing `kbPFAVeDOOjD` after the user saved a source-scoped provenance instruction. The supported `npx sanity context build kbPFAVeDOOjD --watch` job `ctx-build-65e4c6c0-2470-4b40-ba3c-b90a958f5ed6-1790948631445` reached `succeeded` at `2026-10-02T13:46:48.671Z`; state is `ready`, build metadata reports 12 entries, six cited source records, and zero issues. The actual MCP outline exposes nine paths, all read by the checker: `event_hosting_history`, `facilities_and_equipment`, `unknown_and_unverified`, `venues/bengaluru/saiacs_ceo_centre`, `venues/bengaluru/shifu_den`, `venues/delhi_ncr/masters_union`, `venues/delhi_ncr/ofis_square_gurugram`, `venues/delhi_ncr/ofis_square_noida`, and `venues/delhi_ncr/paytm_office_noida`.
+- The rebuilt text contains correctly scoped source links and source labels for the six individual venue profiles. The Ofis profiles remain distinct by locality while sharing the canonical URL `https://ofissquare.com/events-spaces`.
+
+### Checker corrections and live evidence
+
+- Replaced venue-substring/URL-only matching with direct verification against the six published venue documents and their dereferenced source records. The checker now reads every path from the outline, verifies all six expected published venue IDs, compares source identities both at venue level and for each published claim, checks source titles/canonical URLs, resolves numbered citations only in that same entry’s Sources list, checks links only in the associated venue section, and requires locality tokens. A wrong footnote fails even if the correct URL also appears elsewhere in the entry. Correct URL links inside a footnote are accepted. It keeps two Ofis venue records separate despite their shared webpage.
+- Added regression tests for swapped Ofis footnotes despite correct inline URLs, omitted expected venue coverage, a correct URL in the corresponding footnote, and distinct locations sharing one URL. `npm run test:context-outline` passes all 7 tests.
+- At `2026-10-02T14:03:13Z`, `npm run sanity:context-check` connected to the real endpoint, verified six published Sanity venue/source records and each claim’s source identities, listed `initial_context`, `knowledge_base_read`, and `knowledge_base_search`, fetched all nine outline paths, and passed source-grounded verification for all six venues:
+  - Masters’ Union Campus — `venue-masters-union-gurugram`; source IDs `source-masters-union-companies`, `source-masters-union-campus-tour`; URLs `https://mastersunion.org/for-companies` and `https://mastersunion.org/book-a-campus-tour`.
+  - Ofis Square — Sohna Road, Gurugram — `venue-ofis-gurugram-sohna-road`; source ID `source-ofis-events`; URL `https://ofissquare.com/events-spaces`.
+  - Ofis Square — Sector 62, Noida — `venue-ofis-noida-sector-62`; source ID `source-ofis-events`; same source webpage, matched in its separate Noida section.
+  - Paytm Office, Noida — `venue-paytm-office-noida`; source ID `source-gdg-thinkfluence-paytm`; URL `https://gdg.community.dev/events/details/google-gdg-cloud-noida-presents-thinkfluence/`; retained as historical evidence.
+  - SAIACS CEO Centre — `venue-saiacs-ceo-centre-bengaluru`; source ID `source-saiacs-ceo-centre`; URL `https://saiacs-ceocenter.com/`.
+  - Shifu Den — `venue-shifu-den-bengaluru`; source ID `source-shifu-den`; URL `https://den.shifuventures.com/`.
+- Each venue section retains explicit unknown pricing, availability, capacity (where no room/layout pair is established), and Backstage booking authority. SAIACS approximate figures remain qualified and are not treated as room/layout matches. Shifu’s founder-community pro-bono statement remains limited to that audience and does not imply Backstage eligibility.
+- No source query change was needed after the new build passed these checks. The website’s `/venues` page remains a local JSON preview.
+
+### Local checks
+
+- Passed: lint, seven parser/citation tests, catalog validation, 37-document seed dry run, Sanity schema validation (zero errors), published seed verification (37/37; 117 references resolved; zero drafts/demos), and production build.
+- `npm run typecheck` first raced a simultaneous production build while `.next` route types were being regenerated and reported a missing generated `routes.js`; rerunning after the build completed passed. The production build itself also passed its TypeScript step.
