@@ -285,4 +285,29 @@ The OpenAI key and Sanity server configuration were present locally (only config
 - Cookie workspace scoping is not production identity, organizer/host authentication, or verified host authorization. Add account identity, per-venue role checks, rate limiting, CSRF/abuse monitoring, and production audit controls before external use.
 - This single-node SQLite demonstration needs durable writable local storage. Node currently marks `node:sqlite` as a release candidate. Do not put this file on an ephemeral serverless filesystem or shared network storage; production needs managed transactional persistence, backup/restore, and operations monitoring.
 - The two demo hosts use explicitly fictional fixed policies and rolling sample availability, not researched commercial terms or real host confirmations. The calendar only reports its operational store.
-- Browser interaction/layout verification is pending; use the documented manual checklist. Sanity Knowledge Base contents and the local `/venues` preview were not changed by this milestone.
+- At the Milestone 4 commit, browser interaction/layout verification was pending; Milestone 4B below closes that gap. Sanity Knowledge Base contents and the local `/venues` preview were not changed by Milestone 4.
+
+## Milestone 4B — Operational validation and browser journey — 3 October 2026
+
+### Corrections
+
+- Approval now checks each room and equipment requirement against resources selected on that exact application. Room counts and requested room identity/layout must match selected rooms. Equipment aliases use whole documented resource terms and selected quantities; unsupported qualifications such as HDMI remain unresolved. Essential equipment cannot be satisfied merely because the venue owns the item. General food permission does not prove dietary or allergy guarantees; exact supported policy conditions pass, explicit conflicts remain rejected, and all other essential conditions block approval for host confirmation.
+- The host queue now has a separate confirmed-events section with the accepted brief snapshot, reservations, shared checklist, and transition history. Both organizer and host can complete only their assigned tasks; the other role sees the persisted state but cannot edit it. Organizer response controls are shown only to organizers, and status-inapplicable host actions are hidden.
+- Checklist deadlines now use the accepted event schedule: preparation and information confirmation before arrival, setup by event start, and cleanup/equipment return after the event within the occupied cleanup interval. Fictional hosts publish explicit 30-minute arrival and cleanup buffers, which are included in allocation intervals. Migration 003 repairs only incomplete milestone-4 checklist deadlines and adds the demo cleanup buffer to older demo workspaces; completed timestamps and task history are preserved.
+- Calendar copy and the action now say “Withdraw availability.” Expired holds are released before host calendar mutations and do not prevent withdrawal or internal blocks; reservations and unexpired holds remain protected. The homepage now distinguishes live source-grounded leads and private research drafts from fictional host approval/calendar demonstrations.
+- Added a production-build Playwright/Chromium journey. It uses fresh contexts, an explicitly shared demo workspace cookie, and a unique SQLite database under the system temp directory; it never opens the normal `.data/backstage.sqlite`.
+
+### Verification
+
+- `npm run test:operations` — passed, 26 tests. New cases cover venue-owned but unselected equipment, HDMI and dietary qualifiers, specific selected-room identity, explicit negative policy preservation, two-role checklist ownership, UTC deadlines against the schedule and cleanup allocation, migration repair without altering completed history, and live/expired-hold protections for availability and internal blocks.
+- `npm run test:agent` — passed, 29 existing Sanity discovery/provenance unit tests. These tests are local and do not represent a live provider request.
+- `npm run test:e2e` — production build and Chromium organizer-to-host journey passed. The browser exercised required-field validation, local brief save and reload, a Masters’ Union source-linked private draft with submit disabled, fictional request submission, host information request, organizer reply, approval, confirmed-event view, host and organizer checklist updates, shared-projector conflict, an in-range proposed slot explicitly accepted by the organizer, cancellation and calendar release, resource filtering, and availability withdrawal. The suite also passed at a 390px viewport with no document-width overflow on `/host` and `/organizer`.
+- Captured and visually inspected ignored screenshots at `.playwright-artifacts/organizer-saved-brief.png`, `.playwright-artifacts/organizer-mobile.png`, `.playwright-artifacts/host-calendar-before-cancel.png`, and `.playwright-artifacts/host-calendar-mobile.png`.
+- `npm run lint`, `npm run typecheck`, `npm run sanity:validate`, `npm run sanity:seed:dry-run`, and `npm audit --audit-level=moderate` — passed. The catalog still has six source-backed research profiles; dry run still validates 37 published Sanity research documents and excludes demo inventory; audit reports zero vulnerabilities.
+- The browser journey intentionally did not invoke `/api/venue-discovery`, OpenAI, or Sanity. It tests operational UI and API behavior only. The previous live Sanity Context retrieval evidence for the six real venues remains the evidence recorded under Milestone 2B and Milestone 3 above.
+
+### Remaining limitations
+
+- Host/organizer identity and venue authorization remain a simulation. Real venues remain private draft-only research leads, and no real application, booking, or communication is sent.
+- The responsive screenshots cover Chromium at desktop and 390px mobile widths; they do not establish behavior in other browser engines or assistive technologies.
+- Production still requires authenticated accounts, enforced host permissions, abuse controls, and managed transactional persistence for multi-instance deployment.

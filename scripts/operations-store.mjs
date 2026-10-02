@@ -8,6 +8,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const migrations = [
   {version:1,sql:readFileSync(resolve(root,'db/migrations/001_operations.sql'),'utf8')},
   {version:2,sql:readFileSync(resolve(root,'db/migrations/002_operational-policy-and-checklist-history.sql'),'utf8')},
+  {version:3,sql:readFileSync(resolve(root,'db/migrations/003-checklist-deadlines.sql'),'utf8')},
 ];
 const catalog = JSON.parse(readFileSync(resolve(root, 'src/data/research-catalog.json'), 'utf8'));
 const DEFAULT_DB = resolve(root, '.data/backstage.sqlite');
@@ -17,8 +18,8 @@ const hash = (token) => createHash('sha256').update(token).digest('hex');
 const json = (value) => JSON.stringify(value);
 const parse = (value) => JSON.parse(value);
 const DEMOS = [
-  {id:'demo-delhi-host',name:'Backstage Demo House · Delhi NCR',city:'Delhi NCR',locality:'Fictional Sector 44, Gurugram',rooms:[{id:'demo-delhi-room-studio',name:'Workshop Studio',capacity:40,layout:'classroom rows'},{id:'demo-delhi-room-salon',name:'Gathering Salon',capacity:24,layout:'circle seating'}],equipment:[{id:'demo-delhi-projector',name:'Projector',quantity:1},{id:'demo-delhi-mic',name:'Wireless microphone',quantity:2},{id:'demo-delhi-chairs',name:'Movable chairs',quantity:40}],policy:{eventTypes:['Workshop','Community meetup','Talk or panel','Other'],permittedActivities:['workshops','community gatherings','talks','panel discussions'],foodAllowed:true,alcoholAllowed:false,accessHours:'09:00–18:30 Asia/Kolkata',arrivalBufferMinutes:30,cleanupRequired:true,cancellationNoticeHours:24,accessModel:'sponsored',approval:'host-approval',notes:'Fictional demonstration policies and inventory. Organizer identity and event safety plan are reviewed by the host.'}},
-  {id:'demo-bengaluru-host',name:'Backstage Demo Commons · Bengaluru',city:'Bengaluru',locality:'Fictional Indiranagar, Bengaluru',rooms:[{id:'demo-bengaluru-room-forum',name:'Forum Room',capacity:36,layout:'theatre seating'},{id:'demo-bengaluru-room-lab',name:'Maker Lab',capacity:18,layout:'workbench layout'}],equipment:[{id:'demo-bengaluru-projector',name:'Projector',quantity:1},{id:'demo-bengaluru-mic',name:'Wireless microphone',quantity:2},{id:'demo-bengaluru-whiteboard',name:'Whiteboard',quantity:2}],policy:{eventTypes:['Workshop','Community meetup','Talk or panel','Other'],permittedActivities:['workshops','community gatherings','talks','panel discussions','maker activities'],foodAllowed:true,alcoholAllowed:false,accessHours:'09:00–18:30 Asia/Kolkata',arrivalBufferMinutes:30,cleanupRequired:true,cancellationNoticeHours:24,accessModel:'pro-bono',approval:'host-approval',notes:'Fictional demonstration policies and inventory. Pro-bono is a demo access model and remains subject to host approval.'}},
+  {id:'demo-delhi-host',name:'Backstage Demo House · Delhi NCR',city:'Delhi NCR',locality:'Fictional Sector 44, Gurugram',rooms:[{id:'demo-delhi-room-studio',name:'Workshop Studio',capacity:40,layout:'classroom rows'},{id:'demo-delhi-room-salon',name:'Gathering Salon',capacity:24,layout:'circle seating'}],equipment:[{id:'demo-delhi-projector',name:'Projector',quantity:1},{id:'demo-delhi-mic',name:'Wireless microphone',quantity:2},{id:'demo-delhi-chairs',name:'Movable chairs',quantity:40}],policy:{eventTypes:['Workshop','Community meetup','Talk or panel','Other'],permittedActivities:['workshops','community gatherings','talks','panel discussions'],foodAllowed:true,alcoholAllowed:false,accessHours:'09:00–18:30 Asia/Kolkata',arrivalBufferMinutes:30,cleanupBufferMinutes:30,cleanupRequired:true,cancellationNoticeHours:24,accessModel:'sponsored',approval:'host-approval',notes:'Fictional demonstration policies and inventory. Organizer identity and event safety plan are reviewed by the host.'}},
+  {id:'demo-bengaluru-host',name:'Backstage Demo Commons · Bengaluru',city:'Bengaluru',locality:'Fictional Indiranagar, Bengaluru',rooms:[{id:'demo-bengaluru-room-forum',name:'Forum Room',capacity:36,layout:'theatre seating'},{id:'demo-bengaluru-room-lab',name:'Maker Lab',capacity:18,layout:'workbench layout'}],equipment:[{id:'demo-bengaluru-projector',name:'Projector',quantity:1},{id:'demo-bengaluru-mic',name:'Wireless microphone',quantity:2},{id:'demo-bengaluru-whiteboard',name:'Whiteboard',quantity:2}],policy:{eventTypes:['Workshop','Community meetup','Talk or panel','Other'],permittedActivities:['workshops','community gatherings','talks','panel discussions','maker activities'],foodAllowed:true,alcoholAllowed:false,accessHours:'09:00–18:30 Asia/Kolkata',arrivalBufferMinutes:30,cleanupBufferMinutes:30,cleanupRequired:true,cancellationNoticeHours:24,accessModel:'pro-bono',approval:'host-approval',notes:'Fictional demonstration policies and inventory. Pro-bono is a demo access model and remains subject to host approval.'}},
 ];
 
 export function openOperationsStore(path = process.env.BACKSTAGE_DB_PATH || DEFAULT_DB) {
@@ -99,9 +100,9 @@ function appRows(db, ws) {
 }
 export function getOverview(db, ws, role, month = null) {
   ensureRole(db,ws,role);
-  const now=nowIso();
-  const expired=db.prepare("SELECT DISTINCT application_id FROM allocations WHERE workspace_id=? AND state='hold' AND expires_at <= ?").all(ws,now);
-  if(expired.length){db.exec('BEGIN IMMEDIATE');try{db.prepare("UPDATE allocations SET state='released' WHERE workspace_id=? AND state='hold' AND expires_at <= ?").run(ws,now);for(const row of expired){const app=db.prepare('SELECT * FROM applications WHERE workspace_id=? AND id=?').get(ws,row.application_id);if(app?.status==='held')transition(db,ws,app,'submitted','Temporary resource hold expired and was released.','system');}db.exec('COMMIT');}catch(error){db.exec('ROLLBACK');throw error;}}
+  if(db.prepare("SELECT 1 FROM allocations WHERE workspace_id=? AND state='hold' AND expires_at<=? LIMIT 1").get(ws,nowIso())){
+    db.exec('BEGIN IMMEDIATE');try{releaseExpiredHolds(db,ws);db.exec('COMMIT');}catch(error){db.exec('ROLLBACK');throw error;}
+  }
   const venues = db.prepare('SELECT * FROM venues WHERE workspace_id=? ORDER BY kind,city,name').all(ws).map((v)=>({id:v.id,name:v.name,city:v.city,locality:v.locality,kind:v.kind,accessModel:v.access_model,fulfillmentModel:v.fulfillment_model,policy:parse(v.policy_json),resources:getResources(db,ws,v.id)}));
   const applications = appRows(db,ws);
   const monthKey = month && /^\d{4}-\d{2}$/.test(month) ? month : new Date().toISOString().slice(0,7);
@@ -114,6 +115,13 @@ export function getOverview(db, ws, role, month = null) {
     pending:applications.filter((a)=>['submitted','needs-information','alternative-proposed','held'].includes(a.status)),
   };
   return {workspace:{id:ws,role},venues,applications,calendar,timezone:'Asia/Kolkata',fictional:true};
+}
+function releaseExpiredHolds(db,ws) {
+  const now=nowIso();
+  const expired=db.prepare("SELECT DISTINCT application_id FROM allocations WHERE workspace_id=? AND state='hold' AND expires_at<=?").all(ws,now);
+  if(!expired.length)return;
+  db.prepare("UPDATE allocations SET state='released' WHERE workspace_id=? AND state='hold' AND expires_at<=?").run(ws,now);
+  for(const row of expired){const app=db.prepare('SELECT * FROM applications WHERE workspace_id=? AND id=?').get(ws,row.application_id);if(app?.status==='held')transition(db,ws,app,'submitted','Temporary resource hold expired and was released.','system');}
 }
 
 function localInstant(date,time) {
@@ -188,6 +196,9 @@ function occupiedRange(db,ws,app,brief) {
   const startsAt=localInstant(brief.date,brief.startTime),endsAt=localInstant(brief.date,brief.endTime);
   const chosen=parse(app.payload_json).resources;
   let setup=Number(brief.setupMinutes)||0, cleanup=Number(brief.cleanupMinutes)||0;
+  const venue=getVenue(db,ws,app.venue_id),policy=venue?parse(venue.policy_json):{};
+  setup=Math.max(setup,Number(policy.arrivalBufferMinutes)||0);
+  cleanup=Math.max(cleanup,Number(policy.cleanupBufferMinutes)||0);
   for (const selected of chosen) {
     const resource=db.prepare('SELECT setup_minutes,cleanup_minutes FROM resources WHERE workspace_id=? AND id=?').get(ws,selected.id);
     if (resource) {setup=Math.max(setup,resource.setup_minutes);cleanup=Math.max(cleanup,resource.cleanup_minutes);}
@@ -201,27 +212,61 @@ function assertFeasible(db,ws,app,brief) {
   const allResources=getResources(db,ws,venue.id);
   if (!rules.eventTypes.includes(brief.eventType)) throw new Error(`This demo host has not listed “${brief.eventType}” as an accepted gathering type.`);
   const range=occupiedRange(db,ws,app,brief);
+  const selectedResources=range.selected.map((item)=>({item,resource:allResources.find((resource)=>resource.id===item.id)})).filter((entry)=>entry.resource);
+  const countWords={one:1,two:2,three:3,four:4};
+  const aliases={mic:'microphone',microphone:'microphone',chair:'chair',chairs:'chair',seating:'chair',board:'whiteboard',whiteboard:'whiteboard',projector:'projector',screen:'screen'};
+  const generic=new Set(['a','an','the','with','and','or','for','of','to','in','on','room','rooms','space','spaces','area','areas','venue','separate','different','capacity','guest','guests','people','person','unit','units']);
+  const words=(value)=>String(value).toLowerCase().match(/[a-z0-9]+/g)||[];
+  const requestedCount=(value)=>{const text=String(value).toLowerCase();return Number(text.match(/\b(\d+)\b/)?.[1]||Object.entries(countWords).find(([word])=>new RegExp(`\\b${word}\\b`).test(text))?.[1]||1);};
+  const requirementTerms=(value)=>words(value).filter((word)=>!generic.has(word)&&!/^\d+$/.test(word)).map((word)=>aliases[word]||word);
+  const resourceTerms=(resource)=>new Set([...words(resource.name),...words(resource.capacity_layout||'')].map((word)=>aliases[word]||word));
+  const selectedRooms=selectedResources.filter(({resource})=>resource.kind==='room');
   for (const requested of brief.roomRequirements||[]) {
-    const candidates=range.selected.map((item)=>allResources.find((resource)=>resource.id===item.id)).filter((resource)=>resource?.kind==='room');
-    const text=String(requested).toLowerCase();
-    const countWords={one:1,two:2,three:3,four:4};
-    const desiredCount=Number(text.match(/\b(\d+)\b/)?.[1]||Object.entries(countWords).find(([word])=>new RegExp(`\\b${word}\\b`).test(text))?.[1]||1);
-    const specific=text.split(/[^a-z0-9]+/).filter((word)=>word.length>3&&!['room','space','area','venue','separate','different','large','small','main'].includes(word));
-    if (candidates.length<desiredCount||!candidates.length||specific.length>0&&!candidates.some((resource)=>specific.some((word)=>resource.name.toLowerCase().includes(word)))) throw new Error(`The requested room condition “${requested}” is not covered by the selected rooms.`);
+    const terms=requirementTerms(requested);
+    const candidates=selectedRooms.filter(({resource})=>terms.every((term)=>resourceTerms(resource).has(term)));
+    const count=requestedCount(requested);
+    if(candidates.length<count)throw new Error(`The requested room condition “${requested}” is not covered by the selected rooms and layouts (${candidates.length} of ${count} requested).`);
   }
+  const equipmentResources=selectedResources.filter(({resource})=>resource.kind==='equipment');
   for (const requested of brief.equipmentRequirements||[]) {
-    const normalized=String(requested).toLowerCase();
-    const aliases={mic:['mic','microphone'],chair:['chair','seating'],whiteboard:['whiteboard','board'],projector:['projector'],screen:['screen']};
-    const match=range.selected.map((item)=>({item,resource:allResources.find((resource)=>resource.id===item.id)})).find(({resource})=>resource?.kind==='equipment'&&(normalized.includes(resource.name.toLowerCase())||resource.name.toLowerCase().includes(normalized)||Object.entries(aliases).some(([key,terms])=>resource.name.toLowerCase().includes(key)&&terms.some((term)=>normalized.includes(term)))));
-    const requestedCount=Number(normalized.match(/\b(\d+)\b/)?.[1]||1);
-    if (!match||match.item.quantity<requestedCount) throw new Error(`The requested equipment “${requested}” is not covered at the requested quantity.`);
+    const terms=requirementTerms(requested);
+    const match=equipmentResources.find(({resource})=>terms.length>0&&terms.every((term)=>resourceTerms(resource).has(term)));
+    const count=requestedCount(requested);
+    if (!match||match.item.quantity<count) throw new Error(`The requested equipment “${requested}” is not covered by selected resources at the requested quantity. Unsupported details must be confirmed.`);
   }
   if (!range.selected.some((s)=>db.prepare("SELECT 1 as ok FROM resources WHERE workspace_id=? AND id=? AND kind='room' AND capacity_layout IS NOT NULL AND capacity>=?").get(ws,s.id,Number(brief.headcount)))) throw new Error('No selected room/layout has documented demonstration capacity for this guest count.');
-  const essentials=[...(brief.essentialRequirements||[])].map((x)=>String(x).toLowerCase());
-  if (!rules.foodAllowed && essentials.some((x)=>x.includes('food')||x.includes('cater')||x.includes('refreshment')||x.includes('meal'))) throw new Error('The host rules do not permit an essential food requirement.');
-  if (essentials.some((x)=>x.includes('alcohol'))&&!rules.alcoholAllowed) throw new Error('The fictional host policy does not permit an essential alcohol requirement.');
-  const unknownEssential=essentials.find((item)=>!item.includes('food')&&!item.includes('catering')&&!item.includes('alcohol')&&!allResources.some((resource)=>item.includes(resource.name.toLowerCase()))&&!rules.eventTypes.some((eventType)=>item.includes(eventType.toLowerCase()))&&!rules.permittedActivities.some((activity)=>item.includes(activity.toLowerCase())));
-  if(unknownEssential)throw new Error(`The essential condition “${unknownEssential}” is not established by this fictional host’s saved facilities or policies; request information before approval.`);
+  const essentials=[...(brief.essentialRequirements||[])].map((x)=>String(x).trim()).filter(Boolean);
+  const policyText=(value)=>words(value).map((word)=>word.endsWith('s')?word.slice(0,-1):word).join(' ');
+  for(const essential of essentials){
+    const normalized=essential.toLowerCase();
+    const dietary=/\b(vegan|vegetarian|halal|kosher|gluten|dairy|nut|allerg|dietary|jain)\w*\b/i.test(normalized);
+    if(dietary&&/food|cater|meal|refreshment/i.test(normalized))throw new Error(`The essential condition “${essential}” needs a dietary or allergy guarantee that is not established by a general food-permission policy.`);
+    const food=/\b(food|cater\w*|refreshment\w*|meal\w*)\b/i.test(normalized);
+    const alcohol=/\balcohol\b/i.test(normalized);
+    const negated=/\b(no|not|without|prohibit\w*|ban\w*)\b/i.test(normalized);
+    if(food){
+      const asksPermission=/\b(allow\w*|permit\w*)\b/i.test(normalized);
+      if(asksPermission&&rules.foodAllowed===true)continue;
+      if(negated&&rules.foodAllowed===false)continue;
+      if(asksPermission&&rules.foodAllowed===false)throw new Error(`The demo host policy explicitly does not permit the essential food condition “${essential}”.`);
+      throw new Error(`The essential condition “${essential}” is not established by food permission alone; request confirmation about the required food arrangement.`);
+    }
+    if(alcohol){
+      const asksPermission=/\b(allow\w*|permit\w*)\b/i.test(normalized);
+      if(asksPermission&&rules.alcoholAllowed===true)continue;
+      if(negated&&rules.alcoholAllowed===false)continue;
+      if(!negated&&rules.alcoholAllowed===false)throw new Error(`The demo host policy explicitly prohibits the essential alcohol condition “${essential}”.`);
+      throw new Error(`The essential condition “${essential}” is not established by the host's alcohol policy.`);
+    }
+    const requestedTerms=requirementTerms(essential);
+    const equipmentMatch=equipmentResources.some(({item,resource})=>requestedTerms.length>0&&requestedTerms.every((term)=>resourceTerms(resource).has(term))&&item.quantity>=requestedCount(essential));
+    if(equipmentMatch)continue;
+    const roomMatch=selectedRooms.some(({resource})=>requestedTerms.length>0&&requestedTerms.every((term)=>resourceTerms(resource).has(term))&&Number(resource.capacity)>=Number(brief.headcount));
+    if(roomMatch)continue;
+    const knownPolicy=[...rules.eventTypes,...rules.permittedActivities].some((condition)=>policyText(condition)===policyText(essential));
+    if(knownPolicy)continue;
+    throw new Error(`The essential condition “${essential}” is not established by the selected resources or an exact host policy; request information before approval.`);
+  }
   for (const selected of range.selected) {
     const resource=db.prepare('SELECT * FROM resources WHERE workspace_id=? AND id=?').get(ws,selected.id);
     const available=db.prepare("SELECT 1 as ok FROM availability_windows WHERE workspace_id=? AND resource_id=? AND released=1 AND starts_at<=? AND ends_at>=? LIMIT 1").get(ws,resource.id,range.startsAt,range.endsAt);
@@ -238,13 +283,21 @@ function allocate(db,ws,app,brief,range,state) {
   for (const selected of range.selected) db.prepare('INSERT INTO allocations(id,workspace_id,application_id,resource_id,starts_at,ends_at,state,expires_at,quantity) VALUES(?,?,?,?,?,?,?,?,?)').run(uid(state),ws,app.id,selected.id,range.startsAt,range.endsAt,state,state==='hold'?new Date(Date.now()+15*60000).toISOString():null,selected.quantity);
 }
 function checklist(db,ws,app,brief) {
-  const venue=getVenue(db,ws,app.venue_id),policy=parse(venue.policy_json),due=localInstant(brief.date,brief.startTime);
+  const venue=getVenue(db,ws,app.venue_id),policy=parse(venue.policy_json),startsAt=localInstant(brief.date,brief.startTime),endsAt=localInstant(brief.date,brief.endTime);
   const chosen=parse(app.payload_json).resources.map((r)=>db.prepare('SELECT name,kind FROM resources WHERE workspace_id=? AND id=?').get(ws,r.id)).filter(Boolean);
-  const tasks=[{label:'Confirm room layout and prepare the selected room',owner:'host'},{label:'Share arrival, access, and host contact details',owner:'organizer'},{label:'Complete room setup before guest arrival',owner:'host'},{label:'Restore the room and complete cleanup',owner:'organizer'}];
-  if (policy.foodAllowed) tasks.push({label:'Confirm permitted food arrangements with the host',owner:'organizer'});
-  if (chosen.some((r)=>r.kind==='equipment')) {tasks.push({label:'Test allocated AV and shared equipment before doors open',owner:'host'},{label:'Return shared equipment after the event',owner:'organizer'});}
-  const deadline=new Date(new Date(due).getTime()-2*3600000).toISOString();
-  for (const task of tasks) db.prepare('INSERT OR IGNORE INTO checklist_items(id,workspace_id,application_id,label,owner,due_at,created_at) VALUES(?,?,?,?,?,?,?)').run(uid('task'),ws,app.id,task.label,task.owner,deadline,nowIso());
+  let cleanupMinutes=Math.max(Number(brief.cleanupMinutes)||0,Number(policy.cleanupBufferMinutes)||0);
+  for(const selected of parse(app.payload_json).resources){const resource=db.prepare('SELECT cleanup_minutes FROM resources WHERE workspace_id=? AND id=?').get(ws,selected.id);if(resource)cleanupMinutes=Math.max(cleanupMinutes,resource.cleanup_minutes);}
+  const before=(instant,minutes)=>new Date(new Date(instant).getTime()-minutes*60000).toISOString();
+  const after=(instant,minutes)=>new Date(new Date(instant).getTime()+minutes*60000).toISOString();
+  const tasks=[
+    {label:'Confirm room layout and prepare the selected room',owner:'host',due:before(startsAt,Number(policy.arrivalBufferMinutes)||0)},
+    {label:'Share arrival, access, and host contact details',owner:'organizer',due:before(startsAt,Number(policy.arrivalBufferMinutes)||0)},
+    {label:'Complete room setup before guest arrival',owner:'host',due:startsAt},
+    {label:'Restore the room and complete cleanup',owner:'organizer',due:after(endsAt,cleanupMinutes)},
+  ];
+  if (policy.foodAllowed) tasks.push({label:'Confirm permitted food arrangements with the host',owner:'organizer',due:before(startsAt,Number(policy.arrivalBufferMinutes)||0)});
+  if (chosen.some((r)=>r.kind==='equipment')) {tasks.push({label:'Test allocated AV and shared equipment before doors open',owner:'host',due:before(startsAt,15)},{label:'Return shared equipment after the event',owner:'organizer',due:after(endsAt,cleanupMinutes)});}
+  for (const task of tasks) db.prepare('INSERT OR IGNORE INTO checklist_items(id,workspace_id,application_id,label,owner,due_at,created_at) VALUES(?,?,?,?,?,?,?)').run(uid('task'),ws,app.id,task.label,task.owner,task.due,nowIso());
 }
 
 export function mutate(db,ws,role,action) {
@@ -256,22 +309,28 @@ export function mutate(db,ws,role,action) {
   db.exec('BEGIN IMMEDIATE');
   try {
     let result;
+    if(role==='host')releaseExpiredHolds(db,ws);
     if (action.type==='save-application'||action.type==='submit-application') {
       if (role!=='organizer') throw new Error('Switch to the organizer simulation to prepare an application.');
       const id=createDraft(db,ws,{...action.payload,submit:action.type==='submit-application'}); result={applicationId:id};
-    } else if(role==='host'&&action.type==='release-availability') {
+    } else if(role==='host'&&action.type==='withdraw-availability') {
       const row=db.prepare('SELECT * FROM availability_windows WHERE workspace_id=? AND id=?').get(ws,String(action.availabilityId||''));if(!row)throw new Error('Availability window not found.');
-      const conflict=db.prepare("SELECT 1 as yes FROM allocations WHERE workspace_id=? AND resource_id=? AND state IN ('hold','reservation') AND starts_at<? AND ends_at>? LIMIT 1").get(ws,row.resource_id,row.ends_at,row.starts_at);if(conflict)throw new Error('Availability cannot be released while an allocation overlaps it.');
+      const conflict=db.prepare("SELECT 1 as yes FROM allocations WHERE workspace_id=? AND resource_id=? AND starts_at<? AND ends_at>? AND (state='reservation' OR (state='hold' AND expires_at>?)) LIMIT 1").get(ws,row.resource_id,row.ends_at,row.starts_at,nowIso());if(conflict)throw new Error('Availability cannot be withdrawn while an active allocation overlaps it.');
       db.prepare('UPDATE availability_windows SET released=0 WHERE workspace_id=? AND id=?').run(ws,row.id);
     } else if(role==='host'&&action.type==='add-internal-block') {
       const resource=db.prepare('SELECT * FROM resources WHERE workspace_id=? AND id=? AND venue_id=?').get(ws,String(action.resourceId||''),String(action.venueId||''));if(!resource)throw new Error('Choose a resource belonging to this demo host.');
       const startsAt=localInstant(String(action.date),String(action.startTime)),endsAt=localInstant(String(action.date),String(action.endTime));if(endsAt<=startsAt)throw new Error('Block end must follow its start.');
-      const overlap=db.prepare("SELECT 1 as yes FROM allocations WHERE workspace_id=? AND resource_id=? AND state IN ('hold','reservation') AND starts_at<? AND ends_at>? LIMIT 1").get(ws,resource.id,endsAt,startsAt);if(overlap)throw new Error(`Cannot block ${resource.name}; it has an active allocation.`);
+      const overlap=db.prepare("SELECT 1 as yes FROM allocations WHERE workspace_id=? AND resource_id=? AND starts_at<? AND ends_at>? AND (state='reservation' OR (state='hold' AND expires_at>?)) LIMIT 1").get(ws,resource.id,endsAt,startsAt,nowIso());if(overlap)throw new Error(`Cannot block ${resource.name}; it has an active allocation.`);
       db.prepare('INSERT INTO internal_blocks(id,workspace_id,venue_id,resource_id,starts_at,ends_at,reason) VALUES(?,?,?,?,?,?,?)').run(uid('block'),ws,action.venueId,resource.id,startsAt,endsAt,String(action.reason||'Host internal block').slice(0,300));
     } else {
       const app=db.prepare('SELECT * FROM applications WHERE workspace_id=? AND id=?').get(ws,String(action.applicationId||''));
       if (!app) throw new Error('Application not found in this demo workspace.');
-      if (role==='organizer') {
+      if(action.type==='toggle-checklist') {
+        if(app.status!=='approved')throw new Error('Checklist items can only be updated for an approved event.');
+        const item=db.prepare('SELECT * FROM checklist_items WHERE workspace_id=? AND application_id=? AND id=?').get(ws,app.id,String(action.itemId||''));if(!item)throw new Error('Checklist item not found.');
+        if(item.owner!==role)throw new Error(`This checklist task belongs to the ${item.owner}; switch simulation roles to update it.`);
+        const completed=item.completed_at?null:nowIso();db.prepare('UPDATE checklist_items SET completed_at=? WHERE workspace_id=? AND application_id=? AND id=?').run(completed,ws,app.id,item.id);db.prepare('INSERT INTO checklist_history(id,workspace_id,checklist_item_id,actor,completed,created_at) VALUES(?,?,?,?,?,?)').run(uid('checkhist'),ws,item.id,role,completed?1:0,nowIso());result={completed:Boolean(completed)};
+      } else if (role==='organizer') {
         if (action.type==='respond-information') {
           if (app.status!=='needs-information') throw new Error('This application is not waiting for organizer information.');
           const payload=parse(app.payload_json);payload.organizerReply=String(action.reply||'').slice(0,2000);db.prepare('UPDATE applications SET payload_json=? WHERE workspace_id=? AND id=?').run(json(payload),ws,app.id);transition(db,ws,app,'submitted','Organizer sent the requested information.','organizer');
@@ -285,9 +344,6 @@ export function mutate(db,ws,role,action) {
         } else if (action.type==='cancel-application') {
           if (!['submitted','needs-information','alternative-proposed','held','approved'].includes(app.status)) throw new Error('This application cannot be cancelled from its current status.');
           db.prepare("UPDATE allocations SET state='released' WHERE workspace_id=? AND application_id=?").run(ws,app.id);transition(db,ws,app,'cancelled','Organizer cancelled the request and released allocations.','organizer');
-        } else if (action.type==='toggle-checklist') {
-          const item=db.prepare('SELECT * FROM checklist_items WHERE workspace_id=? AND application_id=? AND id=?').get(ws,app.id,String(action.itemId||''));if(!item)throw new Error('Checklist item not found.');
-          const completed=item.completed_at?null:nowIso();db.prepare('UPDATE checklist_items SET completed_at=? WHERE workspace_id=? AND id=?').run(completed,ws,item.id);db.prepare('INSERT INTO checklist_history(id,workspace_id,checklist_item_id,actor,completed,created_at) VALUES(?,?,?,?,?,?)').run(uid('checkhist'),ws,item.id,role,completed?1:0,nowIso());result={completed:Boolean(completed)};
         } else throw new Error('Unsupported organizer action.');
       } else {
         if (app.venue_id!==action.venueId && action.venueId) throw new Error('This application belongs to another demonstration host.');

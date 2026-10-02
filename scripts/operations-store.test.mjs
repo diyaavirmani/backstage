@@ -153,6 +153,49 @@ test('approval requires all requested room count and named shared equipment quan
   assert.throws(()=>approve(x,equipment.id),/equipment “2 projectors”/);
 });
 
+test('essential equipment must be selected for this request, even when the venue owns it',t=>{
+  const x=setup();t.after(()=>x.close());
+  const app=createApp(x,[room(x)],{essentials:['Projector']});
+  assert.ok(getOverview(x.db,x.session.workspaceId,'host').venues.find(v=>v.kind==='demo'&&v.city==='Delhi NCR').resources.some(r=>r.name==='Projector'));
+  assert.throws(()=>approve(x,app.id),/essential condition “projector” is not established/i);
+});
+
+test('resource labels do not satisfy undocumented equipment qualifications',t=>{
+  const x=setup();t.after(()=>x.close());
+  const projector=resource(x,'Projector');
+  const requested=createApp(x,[room(x),projector],{essentials:['Projector with HDMI']});
+  assert.throws(()=>approve(x,requested.id),/not established by the selected resources/);
+  const equipment=createApp(x,[room(x),projector],{date:nextWeekday(18)});
+  equipment.payload.brief.equipmentRequirements=['Projector with HDMI'];
+  x.db.prepare('UPDATE applications SET brief_json=? WHERE id=?').run(JSON.stringify(equipment.payload.brief),equipment.id);
+  assert.throws(()=>approve(x,equipment.id),/selected resources at the requested quantity/);
+});
+
+test('general food permission does not establish dietary guarantees and room requests inspect selected identities',t=>{
+  const x=setup();t.after(()=>x.close());
+  const dietary=createApp(x,[room(x)],{essentials:['Vegan food options']});
+  assert.throws(()=>approve(x,dietary.id),/dietary or allergy guarantee/);
+  const specific=createApp(x,[room(x)],{date:nextWeekday(18)});specific.payload.brief.roomRequirements=['Gathering Salon'];
+  x.db.prepare('UPDATE applications SET brief_json=? WHERE id=?').run(JSON.stringify(specific.payload.brief),specific.id);
+  assert.throws(()=>approve(x,specific.id),/selected rooms and layouts/);
+  const size=createApp(x,[room(x)],{date:nextWeekday(22)});size.payload.brief.roomRequirements=['large workshop room'];
+  x.db.prepare('UPDATE applications SET brief_json=? WHERE id=?').run(JSON.stringify(size.payload.brief),size.id);
+  assert.throws(()=>approve(x,size.id),/selected rooms and layouts/);
+});
+
+test('explicit negative host rules are preserved while opposite or unestablished conditions block approval',t=>{
+  const x=setup();t.after(()=>x.close());
+  const prohibited=createApp(x,[room(x)],{essentials:['No alcohol at this event']});
+  assert.doesNotThrow(()=>approve(x,prohibited.id));
+  const required=createApp(x,[room(x)],{date:nextWeekday(18),essentials:['Alcohol must be available']});
+  assert.throws(()=>approve(x,required.id),/explicitly prohibits/);
+  const host= getOverview(x.db,x.session.workspaceId,'host').venues.find((venue)=>venue.kind==='demo'&&venue.city==='Delhi NCR');
+  const policy={...host.policy,alcoholAllowed:true};
+  x.db.prepare('UPDATE venues SET policy_json=? WHERE workspace_id=? AND id=?').run(JSON.stringify(policy),x.session.workspaceId,host.id);
+  const unknown=createApp(x,[room(x)],{date:nextWeekday(22),essentials:['No alcohol at this event']});
+  assert.throws(()=>approve(x,unknown.id),/not established by the host's alcohol policy/);
+});
+
 test('unknown essential conditions cannot be silently approved',t=>{
   const x=setup();t.after(()=>x.close());
   const app=createApp(x,[room(x)],{essentials:['step-free wheelchair access']});
@@ -166,7 +209,7 @@ test('cancellation releases allocations and approval snapshots brief and checkli
   const row=x.db.prepare('SELECT accepted_brief_json FROM applications WHERE id=?').get(first.id);
   assert.ok(JSON.parse(row.accepted_brief_json).title);
   assert.ok(x.db.prepare('SELECT count(*) n FROM checklist_items WHERE application_id=?').get(first.id).n>=5);
-  const task=x.db.prepare('SELECT id FROM checklist_items WHERE application_id=? LIMIT 1').get(first.id);
+  const task=x.db.prepare("SELECT id FROM checklist_items WHERE application_id=? AND owner='organizer' LIMIT 1").get(first.id);
   mutate(x.db,x.session.workspaceId,'organizer',{type:'toggle-checklist',applicationId:first.id,itemId:task.id});
   assert.equal(x.db.prepare('SELECT count(*) n FROM checklist_history WHERE checklist_item_id=?').get(task.id).n,1);
   assert.doesNotThrow(()=>approve(x,first.id));
@@ -174,6 +217,68 @@ test('cancellation releases allocations and approval snapshots brief and checkli
   mutate(x.db,x.session.workspaceId,'organizer',{type:'cancel-application',applicationId:first.id});
   const second=createApp(x,[room(x),resource(x,'Projector')],{date});
   assert.doesNotThrow(()=>approve(x,second.id));
+});
+
+test('checklist tasks have schedule-based deadlines and role ownership is enforced',t=>{
+  const x=setup();t.after(()=>x.close());
+  const app=createApp(x,[room(x),resource(x,'Projector')],{startTime:'10:00',endTime:'12:00',setupMinutes:30,cleanupMinutes:20});
+  approve(x,app.id);
+  const tasks=x.db.prepare('SELECT * FROM checklist_items WHERE application_id=?').all(app.id);
+  const due=(label)=>new Date(tasks.find((task)=>task.label===label).due_at).getTime();
+  const start=new Date(`${app.payload.brief.date}T10:00:00+05:30`).getTime(),end=new Date(`${app.payload.brief.date}T12:00:00+05:30`).getTime();
+  assert.equal(due('Confirm room layout and prepare the selected room'),start-30*60000);
+  assert.equal(due('Test allocated AV and shared equipment before doors open'),start-15*60000);
+  assert.equal(due('Complete room setup before guest arrival'),start);
+  assert.equal(due('Restore the room and complete cleanup'),end+30*60000);
+  assert.equal(due('Return shared equipment after the event'),end+30*60000);
+  const allocation=x.db.prepare("SELECT ends_at FROM allocations WHERE application_id=? AND state='reservation' LIMIT 1").get(app.id);
+  assert.equal(new Date(allocation.ends_at).getTime(),end+30*60000);
+  const hostTask=tasks.find((task)=>task.owner==='host'),organizerTask=tasks.find((task)=>task.owner==='organizer');
+  assert.throws(()=>mutate(x.db,x.session.workspaceId,'organizer',{type:'toggle-checklist',applicationId:app.id,itemId:hostTask.id}),/belongs to the host/);
+  assert.throws(()=>mutate(x.db,x.session.workspaceId,'host',{type:'toggle-checklist',applicationId:app.id,itemId:organizerTask.id}),/belongs to the organizer/);
+  mutate(x.db,x.session.workspaceId,'host',{type:'toggle-checklist',applicationId:app.id,itemId:hostTask.id});
+  mutate(x.db,x.session.workspaceId,'organizer',{type:'toggle-checklist',applicationId:app.id,itemId:organizerTask.id});
+  const shared=getOverview(x.db,x.session.workspaceId,'host').applications.find((row)=>row.id===app.id).checklist;
+  assert.equal(shared.find((item)=>item.id===hostTask.id).completed_at!==null,true);
+  assert.equal(shared.find((item)=>item.id===organizerTask.id).completed_at!==null,true);
+});
+
+test('deadline migration repairs only incomplete tasks and preserves completed history',t=>{
+  const x=setup();
+  const app=createApp(x,[room(x),resource(x,'Projector')],{startTime:'10:00',endTime:'12:00',cleanupMinutes:25});approve(x,app.id);
+  const tasks=x.db.prepare('SELECT * FROM checklist_items WHERE application_id=? ORDER BY created_at').all(app.id);
+  const incomplete=tasks.find(task=>task.label==='Return shared equipment after the event');
+  const completed=tasks.find(task=>task.label==='Complete room setup before guest arrival');
+  const oldDue='2000-01-01T00:00:00.000Z',completedAt='2026-08-01T01:00:00.000Z';
+  x.db.prepare('UPDATE checklist_items SET due_at=? WHERE id IN (?,?)').run(oldDue,incomplete.id,completed.id);
+  x.db.prepare('UPDATE checklist_items SET completed_at=? WHERE id=?').run(completedAt,completed.id);
+  x.db.prepare('INSERT INTO checklist_history(id,workspace_id,checklist_item_id,actor,completed,created_at) VALUES(?,?,?,?,?,?)').run('preserved-history',x.session.workspaceId,completed.id,'host',1,completedAt);
+  x.db.prepare("UPDATE venues SET policy_json=json_remove(policy_json,'$.cleanupBufferMinutes') WHERE workspace_id=? AND kind='demo'").run(x.session.workspaceId);
+  x.db.prepare('DELETE FROM schema_migrations WHERE version=3').run();const path=x.path;x.db.close();x.markClosed();
+  const migrated=openOperationsStore(path);t.after(()=>migrated.close());
+  const repaired=migrated.prepare('SELECT due_at,completed_at FROM checklist_items WHERE id=?').get(incomplete.id);
+  assert.notEqual(repaired.due_at,oldDue);assert.equal(repaired.completed_at,null);
+  const preserved=migrated.prepare('SELECT due_at,completed_at FROM checklist_items WHERE id=?').get(completed.id);
+  assert.equal(preserved.due_at,oldDue);assert.equal(preserved.completed_at,completedAt);
+  assert.equal(migrated.prepare('SELECT count(*) n FROM checklist_history WHERE checklist_item_id=?').get(completed.id).n,1);
+  assert.equal(JSON.parse(migrated.prepare('SELECT policy_json FROM venues WHERE id=?').get(app.payload.venueId).policy_json).cleanupBufferMinutes,30);
+});
+
+test('expired holds do not prevent availability withdrawal or internal blocks, active reservations remain protected',t=>{
+  const x=setup();t.after(()=>x.close());
+  const app=createApp(x,[room(x)]),resourceId=room(x);const venueId=x.db.prepare('SELECT venue_id FROM resources WHERE workspace_id=? AND id=?').get(x.session.workspaceId,resourceId).venue_id;
+  mutate(x.db,x.session.workspaceId,'host',{type:'hold',applicationId:app.id});
+  const occupied=x.db.prepare("SELECT starts_at,ends_at FROM allocations WHERE application_id=?").get(app.id);
+  const availability=x.db.prepare('SELECT * FROM availability_windows WHERE workspace_id=? AND resource_id=? AND released=1 AND starts_at<=? AND ends_at>=? LIMIT 1').get(x.session.workspaceId,resourceId,occupied.starts_at,occupied.ends_at);
+  assert.ok(availability);
+  assert.throws(()=>mutate(x.db,x.session.workspaceId,'host',{type:'withdraw-availability',availabilityId:availability.id}),/active allocation/);
+  assert.throws(()=>mutate(x.db,x.session.workspaceId,'host',{type:'add-internal-block',venueId,resourceId,date:app.payload.brief.date,startTime:'10:30',endTime:'11:00',reason:'Block during live hold'}),/active allocation/);
+  x.db.prepare("UPDATE allocations SET expires_at='2000-01-01T00:00:00.000Z' WHERE application_id=?").run(app.id);
+  assert.doesNotThrow(()=>mutate(x.db,x.session.workspaceId,'host',{type:'add-internal-block',venueId,resourceId,date:app.payload.brief.date,startTime:'10:30',endTime:'11:00',reason:'Block after hold expiry'}));
+  assert.doesNotThrow(()=>mutate(x.db,x.session.workspaceId,'host',{type:'withdraw-availability',availabilityId:availability.id}));
+  const another=createApp(x,[room(x)],{date:nextWeekday(18)});approve(x,another.id);
+  const reservation=x.db.prepare("SELECT * FROM allocations WHERE application_id=? AND state='reservation'").get(another.id);
+  assert.throws(()=>mutate(x.db,x.session.workspaceId,'host',{type:'add-internal-block',venueId:reservation.workspace_id+':demo-delhi-host',resourceId:reservation.resource_id,date:another.payload.brief.date,startTime:'10:30',endTime:'11:00'}),/active allocation/);
 });
 
 test('proposed alternatives require pre-approved flexibility and explicit organizer acceptance',t=>{

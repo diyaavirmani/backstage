@@ -19,7 +19,7 @@ export default function Home() {
               <Link className="button button-dark" href="/organizer">Build an event brief <Arrow /></Link>
               <Link className="text-link" href="/host">I have a space <span aria-hidden="true">→</span></Link>
             </div>
-            <p className="milestone-note"><span aria-hidden="true">↳</span> The first milestone saves your brief here. Venue recommendations and booking coordination are coming next.</p>
+            <p className="milestone-note"><span aria-hidden="true">↳</span> Explore live, source-grounded venue leads, then keep a private draft for researched hosts. Approval and resource calendars are demonstrated with fictional hosts.</p>
             <div className="city-note"><span className="city-mark" aria-hidden="true">✳</span><span>Starting in <strong>Delhi NCR</strong> and <strong>Bengaluru</strong></span></div>
           </div>
           <div className="hero-visual" aria-label="An event brief takes shape into a considered gathering" role="img">
@@ -44,8 +44,8 @@ export default function Home() {
           </div>
           <div className="steps-grid">
             <article className="step-card"><span className="step-number">01</span><div className="step-icon brief-icon" aria-hidden="true"><span /><span /><span /></div><h3>Tell us the shape of it</h3><p>Share the who, when, and what you need. Keep the must-haves and nice-to-haves clear.</p><span className="step-foot">A BRIEF THAT GETS THE DETAILS</span></article>
-            <article className="step-card"><span className="step-number">02</span><div className="step-icon match-icon" aria-hidden="true">✳</div><h3>Find a place that fits</h3><p>Backstage will check a venue’s real policies, rooms, equipment, and availability.</p><span className="step-foot">MATCHED WITH THE WHOLE SETUP</span></article>
-            <article className="step-card"><span className="step-number">03</span><div className="step-icon gather-icon" aria-hidden="true"><span>↗</span></div><h3>Make it happen together</h3><p>Understand why a place works, what’s still unknown, and what to do next.</p><span className="step-foot">CLEAR NEXT STEPS, NO GUESSWORK</span></article>
+            <article className="step-card"><span className="step-number">02</span><div className="step-icon match-icon" aria-hidden="true">✳</div><h3>Find a place to explore</h3><p>Live Sanity knowledge powers venue leads with source links, supported details, and what still needs confirmation.</p><span className="step-foot">SOURCE-GROUNDED VENUE LEADS</span></article>
+            <article className="step-card"><span className="step-number">03</span><div className="step-icon gather-icon" aria-hidden="true"><span>↗</span></div><h3>Coordinate the details</h3><p>Save private drafts for researched leads. Explore host review, resource calendars, and preparation tasks in a clearly fictional demonstration.</p><span className="step-foot">REAL LEADS · FICTIONAL OPERATIONS</span></article>
           </div>
         </section>
 

@@ -16,6 +16,7 @@
     "test:context-outline": "node --test scripts/context-outline.test.mjs scripts/context-citations.test.mjs",
     "test:agent": "node --test scripts/agent-input.test.mjs scripts/agent-validation.test.mjs scripts/agent-retrieval.test.mjs scripts/context-outline.test.mjs scripts/context-citations.test.mjs",
     "test:operations": "node --test scripts/operations-store.test.mjs",
+    "test:e2e": "npm run build && playwright test",
     "sanity:schema:validate": "sanity schemas validate --level error",
     "sanity:schema:deploy": "sanity schemas deploy"
   },
@@ -30,6 +31,7 @@
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@sanity/cli": "^8.13.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
