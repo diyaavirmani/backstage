@@ -1,6 +1,6 @@
 # Sanity Studio, research import, and Context Knowledge Base
 
-The `/venues` page still reads local research JSON and remains labelled as a local preview. Sanity project content and live Context MCP retrieval are being connected separately; do not describe the website catalog as live until a server read path is added.
+The `/venues` page reads local research JSON and remains labelled as a local preview. The organizer’s `/api/venue-discovery` route separately reads current published Sanity records and calls the live Knowledge Base Context MCP endpoint. It does not convert the local catalog page into a live view.
 
 ## 1. Enable Sanity Context
 
@@ -211,7 +211,26 @@ The live check at `2026-10-02T14:03:13Z` fetched the six published venue records
 
 Forensic comparison of the earlier MCP responses found no separate citation annotation, `_meta`, or structured source payload: the MCP tool returned text content and `isError` only. The earlier swapped numbers were present in the generated text itself. The old checker then compounded the problem by stopping after it found any one cited venue per city and by matching URLs across a combined entry. The source-scoped instruction and rebuild produced separately scoped venue material; the corrected checker reads all nine paths and resolves citations within each entry. No dataset query change was needed.
 
-All six entries retain unknown pricing, current availability, and Backstage booking authority. SAIACS approximate capacities remain qualified as unverified without room/layout pairings. Shifu’s publicly stated pro-bono access remains limited to its described founder community and does not establish Backstage eligibility. The `/venues` page still reads local JSON and remains a local preview; Context retrieval is a verified command, not yet the page’s data source.
+All six entries retain unknown pricing, current availability, and Backstage booking authority. SAIACS approximate capacities remain qualified as unverified without room/layout pairings. Shifu’s publicly stated pro-bono access remains limited to its described founder community and does not establish Backstage eligibility. The `/venues` page still reads local JSON and remains a local preview; the organizer discovery route uses live Context reads separately.
+
+## 6. Configure organizer discovery
+
+Add the model key to the ignored repository-root `.env.local` file:
+
+```dotenv
+OPENAI_API_KEY=<your server-side OpenAI API key>
+OPENAI_MODEL=gpt-4.1-mini
+```
+
+Create or use an OpenAI API key in your OpenAI project settings, then paste it directly into `.env.local`; do not put it in chat, terminal commands, public environment variables, or Git. `OPENAI_MODEL` is optional and defaults to `gpt-4.1-mini`. Restart `npm run dev` after changing the file. The production build does not need this key; it is checked only when a discovery request arrives.
+
+The organizer submits its locally saved EventBrief and a small bounded conversation. The server fetches published non-demonstration venue records and source references, connects with the organization Context Viewer token, calls `initial_context`, and lets the model select paths from that live outline through a read tool. It requires successful `knowledge_base_read` calls before creating recommendations. The model returns only venue IDs, localities, and paths it read. The server derives requirement classifications from published structured claims and validates exact venue/locality identity, citation/source associations, and critical capacity claims. Output is withheld when a selected Knowledge Base section cannot be verified. Returned links come from published source records; a valid link alone does not prove a claim.
+
+The organizer UI can display sourced venue notes and requirement statuses and accept follow-up questions. It does not check operational availability, confirm an unknown price or policy, submit a host application, or make a reservation. For example, a Paytm event listing remains historical evidence; Shifu’s pro-bono note retains its founder-community condition; the two Ofis Square locations remain distinct. `/venues` continues to be identified as a local JSON preview.
+
+The agent uses the Vercel AI SDK Core `generateText` structured-output/tool loop, the OpenAI provider package, and `@ai-sdk/mcp` request-scoped client. See the current [AI SDK tool calling guide](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling), [structured output guide](https://ai-sdk.dev/docs/ai-sdk-core/generating-structured-data), and [MCP client reference](https://ai-sdk.dev/docs/reference/ai-sdk-core/create-mcp-client). The Next.js 16.3 App Router endpoint follows the installed [Route Handler documentation](https://nextjs.org/docs/app/getting-started/route-handlers); secrets remain inside server-side code as described in the installed [Server and Client Components guide](https://nextjs.org/docs/app/getting-started/server-and-client-components).
+
+Use `npm run test:agent` for input-boundary and provenance regression tests. These tests do not substitute for an actual model run. The live scenarios (80-person Delhi NCR hackathon, Bengaluru founder gathering/sponsored access, immediate Paytm booking request, and Noida/Gurugram follow-up) must be run only after `OPENAI_API_KEY` is configured. Record actual tool-call/read/citation outcomes in `docs/build-log.md`; never describe a credential-free check as a live agent success.
 
 ## Official references
 

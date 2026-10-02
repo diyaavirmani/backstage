@@ -32,9 +32,13 @@ Recurring events, attendance conditions, cancellation recovery, and richer calen
 
 ## Milestone 2 content foundation
 
-The project includes six researched profiles across Delhi NCR and Bengaluru, linked to dated sources. Each is a research lead, not a partner or booking offer. Publicly documented information, the past Paytm office event listing, and explicit unknowns are represented separately. Capacity is not entered without a room and layout pair. Prices, live availability, and Backstage booking authority remain unknown. The `/venues` catalogue is labelled as local research preview until a live Sanity reader is connected.
+The project includes six researched profiles across Delhi NCR and Bengaluru, linked to dated sources. Each is a research lead, not a partner or booking offer. Publicly documented information, the past Paytm office event listing, and explicit unknowns are represented separately. Capacity is not entered without a room and layout pair. Prices, live availability, and Backstage booking authority remain unknown. The `/venues` catalogue is labelled as a local research preview; the organizer discovery route separately reads the live Sanity Knowledge Base.
 
-Sanity schemas cover venues, host organizations, spaces, resources, policies, hosting opportunities, claims, and source references. Claims preserve their value, evidence type, citations, checked date, and optional historical date. The dataset import and Knowledge Base query are documented in [Sanity setup](sanity-setup.md).
+Sanity schemas cover venues, host organizations, spaces, resources, policies, hosting opportunities, claims, and source references. Claims preserve their value, evidence type, citations, checked date, and optional historical date. The dataset import and Knowledge Base query are documented in [Sanity setup](sanity-setup.md). The organizer’s discovery route now reads the live Knowledge Base, while `/venues` intentionally remains a local JSON preview.
+
+## Milestone 3 organizer discovery
+
+The organizer can submit a saved EventBrief to a server-side discovery route. The route reads published Sanity venue/source records, discovers paths from the live Sanity Context Knowledge Base outline, and exposes bounded entry reads as model tools. Recommendations appear only after real entry reads pass venue identity, locality, and citation checks. The server creates original source links from published Sanity references and classifies requirements from structured claims. Follow-up questions reuse the saved brief and refine which leads are selected. Availability checks, host applications, and bookings remain future work.
 
 ## Milestone 1 boundary
 

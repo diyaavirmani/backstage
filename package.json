@@ -14,12 +14,15 @@
     "sanity:verify-seed": "node scripts/verify-seed.mjs",
     "sanity:context-check": "node scripts/sanity-context-check.mjs",
     "test:context-outline": "node --test scripts/context-outline.test.mjs scripts/context-citations.test.mjs",
+    "test:agent": "node --test scripts/agent-input.test.mjs scripts/agent-validation.test.mjs scripts/agent-retrieval.test.mjs scripts/context-outline.test.mjs scripts/context-citations.test.mjs",
     "sanity:schema:validate": "sanity schemas validate --level error",
     "sanity:schema:deploy": "sanity schemas deploy"
   },
   "dependencies": {
     "@ai-sdk/mcp": "^2.0.66",
+    "@ai-sdk/openai": "^4.0.83",
     "@sanity/client": "^8.9.0",
+    "ai": "^7.0.127",
     "next": "16.3.8",
     "next-sanity": "^13.3.4",
     "react": "19.2.8",

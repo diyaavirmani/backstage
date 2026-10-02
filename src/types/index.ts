@@ -134,6 +134,40 @@ export type MatchExplanation = {
   sourceReferences: SourceReference[];
 };
 
+export type RequirementStatus = "supported" | "unknown" | "contradicted";
+
+export type RequirementCoverage = {
+  requirement: string;
+  status: RequirementStatus;
+  evidence: Array<{
+    claim: string;
+    value: string;
+    evidenceType: EvidenceType;
+    qualification?: string | null;
+  }>;
+};
+
+export type VenueRecommendation = {
+  venueId: string;
+  name: string;
+  city: City;
+  locality: string;
+  relationshipStatus: "research-lead" | "host-confirmed";
+  historical: boolean;
+  requirementCoverage: RequirementCoverage[];
+  documentedFacts: Array<{
+    claim: string;
+    value: string;
+    evidenceType: EvidenceType;
+    historicalDate?: string | null;
+    qualification?: string | null;
+  }>;
+  importantUnknowns: Array<{claim: string; value: string; evidenceType: EvidenceType}>;
+  documentedConflicts: Array<{claim: string; value: string}>;
+  sourceReferences: Array<Pick<SourceReference, "id" | "title" | "url">>;
+  nextStep: string;
+};
+
 export type BookingRequest = {
   id: string;
   eventBriefId: string;

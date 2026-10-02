@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
-import type { City, EventBrief } from "@/types";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import type { City, EventBrief, VenueRecommendation } from "@/types";
 
 const STORAGE_KEY = "backstage.event-brief.v1";
 const emptyForm = {
@@ -23,6 +23,8 @@ const emptyForm = {
 };
 
 type FormValues = typeof emptyForm;
+type Recommendation = VenueRecommendation;
+type ConversationTurn = {role: "user" | "assistant"; content: string};
 
 function csv(value: string) {
   return value.split(",").map((item) => item.trim()).filter(Boolean);
@@ -33,6 +35,14 @@ export function EventBriefForm() {
   const [ready, setReady] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const [conversation, setConversation] = useState<ConversationTurn[]>([]);
+  const [followUp, setFollowUp] = useState("");
+  const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null);
+  const [agentMessage, setAgentMessage] = useState("");
+  const [agentError, setAgentError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [lastBrief, setLastBrief] = useState<EventBrief | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -73,13 +83,17 @@ export function EventBriefForm() {
     setValues((current) => ({ ...current, [field]: value }));
     setSaved(false);
     setError("");
+    setLastBrief(null);
+    setConversation([]);
+    setRecommendations(null);
+    setAgentMessage("");
+    setAgentError("");
   }
 
-  function saveDraft(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function createDraft(): EventBrief | null {
     if (values.endTime <= values.startTime) {
       setError("Choose an end time that comes after the start time.");
-      return;
+      return null;
     }
 
     const draft: EventBrief = {
@@ -107,17 +121,68 @@ export function EventBriefForm() {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
       setSaved(true);
       setError("");
+      setLastBrief(draft);
+      return draft;
     } catch {
       setSaved(false);
       setError("This browser couldn’t save your draft. Check its storage settings and try again.");
+      return null;
     }
+  }
+
+  function saveDraft(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    createDraft();
+  }
+
+  async function runDiscovery(draft: EventBrief, turns: ConversationTurn[]) {
+    setLoading(true);
+    setAgentError("");
+    setRecommendations(null);
+    try {
+      const response = await fetch("/api/venue-discovery", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({brief: draft, conversation: turns.slice(-8)}),
+      });
+      const payload = await response.json() as {error?: string; message?: string; recommendations?: Recommendation[]};
+      if (!response.ok) throw new Error(payload.error || "Venue discovery could not be completed. Please retry.");
+      setRecommendations(payload.recommendations || []);
+      setAgentMessage(payload.message || "Here are the researched venue leads I could verify.");
+      if (payload.message) setConversation((current) => [...current, {role: "assistant" as const, content: payload.message!}].slice(-8));
+    } catch (caught) {
+      setAgentError(caught instanceof Error ? caught.message : "Venue discovery could not be completed. Please retry.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function findVenues() {
+    if (!formRef.current?.reportValidity()) return;
+    const draft = createDraft();
+    if (!draft) return;
+    setConversation([]);
+    const turns = [{role: "user" as const, content: "Find suitable venue leads for my saved event brief."}];
+    setConversation(turns);
+    setLastBrief(draft);
+    void runDiscovery(draft, turns);
+  }
+
+  function sendFollowUp(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!followUp.trim() || !lastBrief || loading) return;
+    const turns = [...conversation, {role: "user" as const, content: followUp.trim()}].slice(-8);
+    setConversation(turns);
+    setFollowUp("");
+    void runDiscovery(lastBrief, turns);
   }
 
   const field = (name: keyof FormValues, value: string) => update(name, value);
 
   return (
-    <form className="brief-form" onSubmit={saveDraft}>
-      <div className="form-progress"><span className="progress-step current"><b>01</b><span>Event basics</span></span><span className="progress-line" /><span className="progress-step"><b>02</b><span>Space &amp; needs</span></span><span className="progress-later">MATCHING COMES NEXT</span></div>
+    <>
+    <form className="brief-form" ref={(element) => { formRef.current = element; }} onSubmit={saveDraft}>
+      <div className="form-progress"><span className="progress-step current"><b>01</b><span>Event basics</span></span><span className="progress-line" /><span className="progress-step"><b>02</b><span>Space &amp; needs</span></span><span className="progress-later">SOURCE-BACKED LEADS</span></div>
       {error && <p className="form-message error-message" role="alert">{error}</p>}
       {saved && <p className="form-message success-message" role="status">Your event brief is saved in this browser. You can come back and edit it any time.</p>}
 
@@ -158,7 +223,29 @@ export function EventBriefForm() {
           </div>
         </section>
       </div>
-      <div className="form-submit"><p>Your brief is saved only on this device. Recommendations and booking requests are not available yet.</p><button className="button button-dark" type="submit" disabled={!ready}>Save event brief <span className="arrow-circle" aria-hidden="true">↗</span></button></div>
+      <div className="form-submit"><p>Your brief stays on this device. Venue leads use published Sanity knowledge; availability and booking still need host confirmation.</p><div className="form-action-group"><button className="button button-light" type="submit" disabled={!ready}>Save event brief</button><button className="button button-dark" type="button" onClick={findVenues} disabled={!ready || loading}>{loading ? "Looking into venues…" : "Find suitable venues"} <span className="arrow-circle" aria-hidden="true">↗</span></button></div></div>
     </form>
+    <section className="discovery-panel" aria-live="polite" aria-busy={loading} aria-labelledby="discovery-heading">
+      <div className="discovery-heading"><p className="eyebrow"><span className="eyebrow-dot" /> SOURCE-BACKED VENUE LEADS</p><h2 id="discovery-heading">A place to begin the conversation.</h2><p>Backstage reads published venue knowledge and links each lead to its original sources. It does not check live availability or submit booking requests.</p></div>
+      {loading && <p className="discovery-state" role="status">Checking the event brief against published venue knowledge…</p>}
+      {agentError && <div className="discovery-state error-message" role="alert"><p>{agentError}</p><button className="button button-light" type="button" onClick={() => lastBrief && void runDiscovery(lastBrief, conversation)} disabled={!lastBrief || loading}>Retry venue search</button></div>}
+      {!loading && recommendations && recommendations.length === 0 && <p className="discovery-state" role="status">{agentMessage} Try refining the event brief or asking a follow-up question below.</p>}
+      {!loading && recommendations && recommendations.length > 0 && <>
+        <p className="discovery-state" role="status">{agentMessage}</p>
+        <div className="recommendation-grid">{recommendations.map((venue) => <article className="recommendation-card" key={venue.venueId}>
+          <div className="venue-card-top"><span className="venue-city">{venue.city}</span><span className="lead-badge">POTENTIAL HOST · NOT ONBOARDED</span></div>
+          <h3>{venue.name}</h3><p className="venue-locality">{venue.locality}</p>
+          {venue.historical && <p className="historical-note">The cited record includes past event hosting. It does not establish current access or permission to book.</p>}
+          {venue.documentedFacts.length > 0 && <section className="coverage-section"><h4>Published venue notes</h4><ul>{venue.documentedFacts.map((fact, index) => <li key={index}><span className="coverage-status supported">{fact.evidenceType === "historical-event" ? `Historical${fact.historicalDate ? ` · ${fact.historicalDate}` : ""}` : fact.evidenceType === "host-confirmed" ? "Host confirmed" : "Publicly documented"}</span><strong>{fact.claim}</strong><small>{fact.value}{fact.qualification ? ` ${fact.qualification}` : ""}</small></li>)}</ul></section>}
+          {venue.importantUnknowns.length > 0 && <section className="coverage-section"><h4>Important unknowns</h4><ul>{venue.importantUnknowns.map((item, index) => <li key={index}><strong>{item.claim}</strong><small>{item.value}</small></li>)}</ul></section>}
+          <section className="coverage-section" aria-label="Event requirement coverage"><h4>How it relates to your brief</h4><ul>{venue.requirementCoverage.map((item) => <li key={item.requirement}><span className={`coverage-status ${item.status}`}>{item.status === "supported" ? "Documented" : item.status === "contradicted" ? "Conflict" : "Needs confirmation"}</span><strong>{item.requirement}</strong>{item.evidence.map((claim, index) => <small key={`${item.requirement}-${index}`}>{claim.claim} {claim.qualification ? claim.qualification : claim.value}</small>)}</li>)}</ul></section>
+          {venue.documentedConflicts.length > 0 && <section className="coverage-section"><h4>Documented conflicts</h4><ul>{venue.documentedConflicts.map((conflict, index) => <li key={index}><strong>{conflict.claim}</strong><small>{conflict.value}</small></li>)}</ul></section>}
+          <p className="recommendation-next"><strong>Suggested next step</strong>{venue.nextStep}</p>
+          <section className="recommendation-sources"><h4>Original sources</h4>{venue.sourceReferences.map((source) => <a key={source.id} href={source.url} target="_blank" rel="noreferrer">{source.title}<span aria-hidden="true"> ↗</span></a>)}</section>
+        </article>)}</div>
+      </>}
+      {!loading && recommendations && <form className="followup-form" onSubmit={sendFollowUp}><label htmlFor="venue-followup">Ask a follow-up question</label><div><input id="venue-followup" value={followUp} onChange={(event) => setFollowUp(event.target.value)} maxLength={500} placeholder="e.g. What about the Noida option?" disabled={loading}/><button className="button button-dark" type="submit" disabled={loading || !followUp.trim()}>Refine leads <span className="arrow-circle" aria-hidden="true">↗</span></button></div></form>}
+    </section>
+    </>
   );
 }

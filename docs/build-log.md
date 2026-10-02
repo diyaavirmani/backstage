@@ -192,3 +192,33 @@
 
 - Passed: lint, seven parser/citation tests, catalog validation, 37-document seed dry run, Sanity schema validation (zero errors), published seed verification (37/37; 117 references resolved; zero drafts/demos), and production build.
 - `npm run typecheck` first raced a simultaneous production build while `.next` route types were being regenerated and reported a missing generated `routes.js`; rerunning after the build completed passed. The production build itself also passed its TypeScript step.
+
+## Milestone 3 — Conversational venue discovery foundation
+
+### Implemented
+
+- Added `POST /api/venue-discovery` using Next.js 16.3 App Router Route Handlers, AI SDK `generateText` with structured output and a bounded tool loop, the OpenAI provider, and the existing MCP client. Provider construction is isolated in `src/lib/ai-provider.ts` and checks server-only `OPENAI_API_KEY` on request; `OPENAI_MODEL` defaults to `gpt-4.1-mini`. A missing model key does not break builds.
+- Each request validates the locally saved EventBrief and a bounded (up to eight messages, six thousand characters) conversation. It fetches current published research venue records and source references using the server-side project token, calls Context `initial_context`, parses the live outline, and gives the model only the currently discovered entry IDs/paths/tags as read choices. The model can make up to six entry-tool calls. Context and entry calls have timeouts and cancellation; MCP cleanup is bounded and always attempted.
+- The model returns only venue identities, localities, and paths it selected after reading. The server validates the actual venue section against published Sanity records, exact localities, source IDs, citation scope, and canonical original URLs. It constructs source links from those records; no model-supplied citations or claim classifications are accepted. Requirement coverage is derived from source-linked structured claims. Unknowns remain unknown; conflicts require explicitly conflicting evidence; capacity needs a named space, layout, and adequate documented count.
+- Added organizer actions to save the brief or find suitable leads, loading/retry/configuration/empty states, sourced recommendation cards, known facts and important unknowns, and follow-up questions that reuse the same saved brief. The page continues to make clear that these are research leads; it does not submit a booking or check a calendar. `/venues` remains a local JSON preview.
+- Added input, retrieval, locality, evidence, capacity, source-link, conflict, and override regression tests. New dependencies use AI SDK `ai@7.0.127`, `@ai-sdk/openai@4.0.83`, and existing `@ai-sdk/mcp@2.0.66`; the AI SDK 7 Node engine requirement is reflected as Node.js 22+ in README. Official current AI SDK tool/structured-output/MCP documentation and the installed Next 16.3 route-handler and server/client component documentation were reviewed.
+
+### Checks and observed retrieval
+
+- `npm run lint` — passed with no warnings.
+- `npm run typecheck` — passed.
+- `npm run test:agent` — passed, 24 tests including malformed brief/time/date handling, rejection of client system/tool/citation fields, empty/failed retrieval, unsupported capacity, source-backed conflict handling, unknown food/access/booking authority, swapped venue paths/localities, and source-link construction.
+- `npm run build` — passed with the Sanity environment available and OpenAI key absent; `/api/venue-discovery` is dynamic and the build did not initialize provider credentials.
+- `npm audit` — passed, zero vulnerabilities after dependency additions.
+- `npm run sanity:validate` — passed for all six source-backed profiles; demonstration inventory remains empty and unsupported capacity, availability, price, and booking authority remain unknown.
+- `npm run sanity:seed:dry-run` — passed, 37 intended stable-ID published research documents across six venues; no writes were performed in this milestone.
+- `npm run sanity:context-check` — live Sanity retrieval succeeded at `2026-10-02T14:43:00Z`. The endpoint listed `initial_context`, `knowledge_base_read`, and `knowledge_base_search`; the checker called the outline and read all nine paths from `kbPFAVeDOOjD`, then matched source IDs/URLs and localities for all six published venues. The verified profiles included Masters’ Union, both distinct Ofis Square locations, historical Paytm event evidence, SAIACS CEO Centre, and Shifu Den. No local fixture was involved.
+- Production HTTP smoke requests to `/api/venue-discovery` returned HTTP 400 for a malformed brief and HTTP 503 with the actionable missing `OPENAI_API_KEY` message for a valid brief. The key is absent in both the process environment and ignored `.env.local`; therefore no OpenAI request or model-driven Knowledge Base tool selection was run, and no live agent scenario is claimed as successful.
+- Browser automation tooling was not available in this workspace, so the interactive navigation/mobile/form-persistence browser journey was not verified. The component flow passed static lint, TypeScript, and production compilation.
+
+### Remaining limitations
+
+- Add `OPENAI_API_KEY` directly to ignored `.env.local` and rerun the requested live scenarios: 80-person Delhi NCR hackathon, Bengaluru founder/sponsored-access exploration, immediate Paytm booking request, and Noida/Gurugram follow-up. Save neither secrets nor raw request/session content in build evidence.
+- Organizer follow-up history is held in component state for the current browser session; the EventBrief itself remains saved locally. No account identity, host applications, live availability, host approval, booking, or reservation transaction is implemented.
+- The discovery endpoint has bounded per-request work but no user authentication or cross-instance rate limiting. Add those before exposing paid model access publicly.
+- No Knowledge Base content or Sanity configuration was changed by this milestone. The catalog route remains a local preview by design.
