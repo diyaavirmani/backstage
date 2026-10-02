@@ -1,3 +1,4 @@
+import "./load-env.mjs";
 import {createClient} from "@sanity/client";
 import {buildDocuments, catalog, validateCatalog} from "./catalog-lib.mjs";
 

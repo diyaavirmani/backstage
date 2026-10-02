@@ -70,3 +70,28 @@
 
 - Run the Sanity setup steps in `docs/sanity-setup.md`, review/build the Knowledge Base, create a Knowledge Base-only Context MCP endpoint, and run `npm run sanity:context-check` with organization Context Viewer credentials.
 - The website currently reads only the local research preview; a later milestone should serve reviewed venue entries via the live Context path and implement grounded event matching. Booking, operational availability, host applications, and host onboarding remain unimplemented.
+
+## Milestone 2B — Sanity resource connection attempt
+
+### Account and configuration inspection
+
+- Read `AGENTS.md`, Sanity setup/query/import/retrieval files, package scripts, and current repository history before changing files. `main` was clean at Milestone 2 commit `e79106a`.
+- `.env.local` was absent. The five Sanity variables are therefore unconfigured; no values were printed. The current CLI config uses placeholders `replace-with-project-id` and `replace-with-dataset-name`.
+- `sanity debug` confirmed the Sanity CLI has an authenticated local token (output redacted) but its account API returned no organizations. `sanity organizations list` reported `No organizations found`; `sanity projects list` returned an empty list. No organization/project/dataset ID is available; no account resources were created or modified.
+- Asked the user to identify the intended account/organization access. Project creation, import, Knowledge Base operations, and live retrieval are paused pending access to the intended organization. Do not substitute the GitHub identity or create an organization by assumption.
+- Verified installed CLI help for `context list/create`, `context imports list/create`, `context build --watch`, `context get`, and `context jobs get`; setup instructions now use only documented commands and inspect existing imports before adding a dataset source.
+
+### Local changes and dependency review
+
+- Added explicit `.env.local` loading for Node seed/MCP commands and the Sanity CLI config using `dotenv`; Next.js continues to load its public project settings through its normal env support. A temporary file with fake placeholders confirmed all five variables load; it was removed immediately and contained no credentials.
+- `npm audit` identified 15 transitive findings (11 moderate, 4 high) in the Sanity CLI/workbench dependency graph: `adm-zip`, `undici`, `js-yaml`, `smol-toml`, and `uuid`, via federation/Vercel/CLI packages. These appeared in both the full and `--omit=dev` audit because Sanity’s CLI/workbench packages are in the installed Sanity package graph; the vulnerable leaves are CLI/config tooling rather than Backstage business logic. Applied compatible lockfile overrides to patched versions (no `--force`, no CLI major downgrade). The full and production-only audits now report zero vulnerabilities.
+- Full local checks after the dependency updates — `npm run lint`, `npm run typecheck`, `npm run sanity:validate`, `npm run sanity:seed:dry-run`, `npm run sanity:schema:validate`, and `npm run build` all passed. Build prerenders `/`, `/host`, `/organizer`, `/venues`, and `/studio/[[...tool]]`.
+- A temporary `.env.local` containing fake placeholder strings verified the env loader reports all five expected names as loaded; the temporary file was removed immediately. Actual final status remains all five variables missing, `.env.local` absent.
+- A second temporary fake-ID `.env.local` was used with `npx sanity debug`; its workspace output showed the injected project ID/dataset. The file was removed immediately. No token values were used or printed.
+
+### External work not completed
+
+- No Sanity project or dataset is available to this account, so schema deployment, seed writes, dataset verification, Knowledge Base create/import/build, and MCP endpoint setup did not run. Import counts, verified document counts, Knowledge Base ID, build status, endpoint tools, and retrieved paths/citations are unavailable.
+- `npm run sanity:seed` and `npm run sanity:context-check` were invoked after the env-loader fix; each stopped before network access with its clear missing-configuration message. No remote writes or MCP calls occurred.
+- The Next.js catalog remains explicitly labeled a local research preview. No live retrieval success is claimed.
+- Required account action: the local Sanity CLI is authenticated but lists zero organizations and zero projects. Confirm this is the intended account; if so, an owner must invite it to the intended organization (or the user must create/join the intended organization). If it is the wrong account, sign in to the intended account with `npx sanity login`. Then select/create the Backstage project and private `production` dataset, enable Context in organization **Labs**, create the project content-write token under project **API → Tokens**, and create the organization Context Viewer token under organization **API → Tokens**. Store the two tokens only in ignored `.env.local`. The exact non-secret project ID and organization ID are not available yet.

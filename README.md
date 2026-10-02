@@ -10,6 +10,8 @@ The responsive product shell, organizer and host navigation, and event brief for
 
 The venue page is a local research preview and does not claim a live Sanity connection. Sanity Context retrieval is implemented as a command but remains unverified until a Knowledge Base, MCP endpoint, and organization token are configured. Conversational recommendations, account profiles, host applications, booking requests, and live calendars are not implemented. Catalog entries are research leads, not partners or bookable inventory.
 
+Sanity connection status: no project or dataset is visible to the currently authenticated Sanity CLI account, and `.env.local` is not configured. No project ID is available to report yet. The setup and exact account blocker are recorded in [docs/sanity-setup.md](docs/sanity-setup.md) and [docs/build-log.md](docs/build-log.md).
+
 ## Run locally
 
 Requires Node.js 20.9 or newer and npm.

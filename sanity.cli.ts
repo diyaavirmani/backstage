@@ -1,3 +1,4 @@
+import "./scripts/load-env.mjs";
 import {defineCliConfig} from "sanity/cli";
 
 export default defineCliConfig({

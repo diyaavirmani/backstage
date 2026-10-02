@@ -1,3 +1,4 @@
+import "./load-env.mjs";
 import {createMCPClient} from "@ai-sdk/mcp";
 import {catalog} from "./catalog-lib.mjs";
 
@@ -39,18 +40,39 @@ try {
   const outlineResult = await withDeadline(client.callTool({name: "initial_context", arguments: {}, options: {timeout, maxTotalTimeout: timeout}}), "initial_context");
   const outline = textContent(outlineResult);
   const idMatch = outline.match(/Knowledge Base id\s*:\s*([\w-]+)/i) || outline.match(/knowledgeBase\s*[=:]\s*["']?([\w-]+)/i);
+  if (outlineResult.isError) throw new Error(`initial_context returned a tool error: ${outline || "no error detail"}`);
   if (!idMatch) throw new Error("initial_context returned no Knowledge Base ID. Check that a Knowledge Base is attached and its build completed.");
   const knowledgeBase = idMatch[1];
-  const knownNames = catalog.venues.map((venue) => venue.name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim());
   const paths = [...new Set([...outline.matchAll(/(?:^|[\s`(])([\w./-]+\.md)(?=[)`\s,]|$)/gim)].map((match) => match[1]))];
-  const entryPath = paths.find((candidate) => knownNames.some((name) => candidate.toLowerCase().replace(/[^a-z0-9]+/g, " ").includes(name))) || paths.find((candidate) => /venue/i.test(candidate) && !/outline|index|readme/i.test(candidate));
-  if (!entryPath) throw new Error("Could not discover a venue entry path from initial_context. Review the Knowledge Base outline and confirm published venue entries are included.");
-  const readResult = await withDeadline(client.callTool({name: "knowledge_base_read", arguments: {knowledgeBase, paths: [entryPath]}, options: {timeout, maxTotalTimeout: timeout}}), "knowledge_base_read");
-  const entry = textContent(readResult);
-  if (readResult.isError || !entry.trim()) throw new Error(`Knowledge Base read returned no entry for the outline path ${entryPath}. Inspect Knowledge Base issues and rebuild.`);
-  const urls = [...new Set(entry.match(/https?:\/\/[^\s)\]>"']+/g) || [])];
-  if (!urls.length) throw new Error(`Retrieved ${entryPath}, but found no source URL citations. Check that source references are projected into Knowledge Base entries.`);
-  console.log(`Live Knowledge Base retrieval succeeded\nKnowledge Base: ${knowledgeBase}\nEntry path: ${entryPath}\nSource references:\n${urls.slice(0, 5).map((source) => `- ${source}`).join("\n")}`);
+  if (!paths.length) throw new Error("initial_context returned no entry paths. Review the Knowledge Base outline and confirm its build completed.");
+  if (paths.length > 100) throw new Error(`The outline contains ${paths.length} paths; refusing an unbounded catalog-wide read. Narrow the Knowledge Base to the reviewed venue dataset.`);
+  const normalize = (value) => value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const retrievedPaths = [];
+  const retrievedVenues = new Set();
+  const citationsByCity = new Map();
+  for (let offset = 0; offset < paths.length; offset += 20) {
+    const batch = paths.slice(offset, offset + 20);
+    const readResult = await withDeadline(client.callTool({name: "knowledge_base_read", arguments: {knowledgeBase, paths: batch}, options: {timeout, maxTotalTimeout: timeout}}), "knowledge_base_read");
+    const entry = textContent(readResult);
+    if (readResult.isError) throw new Error(`knowledge_base_read returned a tool error for outline paths ${batch.join(", ")}: ${entry || "no error detail"}`);
+    if (!entry.trim()) throw new Error(`Knowledge Base read returned no content for outline paths ${batch.join(", ")}. Inspect Knowledge Base issues and rebuild.`);
+    const urls = [...new Set(entry.match(/https?:\/\/[^\s)\]>"']+/g) || [])];
+    const normalizedEntry = normalize(entry);
+    const matched = catalog.venues.filter((venue) => normalizedEntry.includes(normalize(venue.name)));
+    if (matched.length && !urls.length) throw new Error(`Retrieved venue information for ${matched.map((venue) => venue.name).join(", ")}, but found no source URL citations. Check source projections and rebuild.`);
+    for (const venue of matched) {
+      retrievedVenues.add(venue.name);
+      const cityUrls = citationsByCity.get(venue.city) || new Set();
+      for (const source of urls) cityUrls.add(source);
+      citationsByCity.set(venue.city, cityUrls);
+    }
+    retrievedPaths.push(...batch);
+    if (["Delhi NCR", "Bengaluru"].every((city) => citationsByCity.get(city)?.size)) break;
+  }
+  const missingCities = ["Delhi NCR", "Bengaluru"].filter((city) => !citationsByCity.get(city)?.size);
+  if (missingCities.length) throw new Error(`Live entries did not identify source-cited venues in both cities; missing: ${missingCities.join(", ")}. Retrieved ${retrievedVenues.size} catalog venue names from the discovered outline paths. Review the Knowledge Base query and build.`);
+  const totalUrls = [...new Set([...citationsByCity.values()].flatMap((set) => [...set]))];
+  console.log(`Live Knowledge Base retrieval succeeded\nRetrieved at: ${new Date().toISOString()}\nKnowledge Base: ${knowledgeBase}\nEntry paths read: ${retrievedPaths.join(", ")}\nVenue information: ${[...retrievedVenues].join("; ")}\nCitations (Delhi NCR):\n${[...citationsByCity.get("Delhi NCR")].slice(0, 5).map((source) => `- ${source}`).join("\n")}\nCitations (Bengaluru):\n${[...citationsByCity.get("Bengaluru")].slice(0, 5).map((source) => `- ${source}`).join("\n")}\nTotal distinct citations: ${totalUrls.length}`);
 } catch (error) {
   console.error(`Live Context check failed: ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;
