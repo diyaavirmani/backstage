@@ -11,6 +11,7 @@
     "sanity:validate": "node scripts/validate-catalog.mjs",
     "sanity:seed": "node scripts/seed-sanity.mjs",
     "sanity:seed:dry-run": "node scripts/seed-sanity.mjs --dry-run",
+    "sanity:verify-seed": "node scripts/verify-seed.mjs",
     "sanity:context-check": "node scripts/sanity-context-check.mjs",
     "test:context-outline": "node --test scripts/context-outline.test.mjs",
     "sanity:schema:validate": "sanity schemas validate --level error",

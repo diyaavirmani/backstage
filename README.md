@@ -10,7 +10,7 @@ The responsive product shell, organizer and host navigation, and event brief for
 
 The venue page is a local research preview and does not claim a live Sanity connection. Sanity Context retrieval is implemented as a command but remains unverified until a Knowledge Base, MCP endpoint, and organization token are configured. Conversational recommendations, account profiles, host applications, booking requests, and live calendars are not implemented. Catalog entries are research leads, not partners or bookable inventory.
 
-Sanity project `1428jmxu` is configured locally with a private `production` dataset in organization `o8mue7lt8`. The schema is deployed. Dataset import, Knowledge Base build, and live MCP retrieval remain pending the organization Labs enablement and server-only tokens/endpoint setup; `/venues` remains a local JSON preview.
+Sanity project `1428jmxu` in organization `o8mue7lt8` has a private `production` dataset with 37 published research documents and a verified Knowledge Base build (`kbPFAVeDOOjD`). The schema is deployed. Live Context MCP entry retrieval is pending creation of the Knowledge Base-only `backstage-venues` endpoint; `/venues` remains a local JSON preview.
 
 ## Run locally
 
@@ -34,6 +34,7 @@ npm start         # serve a production build
 npm run sanity:validate       # validate source records and unknowns
 npm run sanity:seed:dry-run   # validate intended import without credentials/writes
 npm run sanity:seed           # publish records, skipping existing docs/drafts
+npm run sanity:verify-seed    # verify published records and reference integrity
 npm run sanity:schema:validate # validate Sanity Studio schema locally
 npm run sanity:schema:deploy   # deploy schema with an authenticated Sanity CLI
 npm run sanity:context-check  # verify real Knowledge Base MCP retrieval

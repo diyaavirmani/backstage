@@ -61,16 +61,19 @@ npm run sanity:seed:dry-run
 npm run sanity:schema:validate
 npm run sanity:schema:deploy
 npm run sanity:seed
+npm run sanity:verify-seed
 npm run dev
 ```
 
-Open `http://localhost:3000/studio`. Schema validation is local; schema deployment requires an authenticated Sanity CLI account with suitable dataset access. The seed uses stable IDs, validates every relationship and source before connecting, publishes normal (non-draft) records, and skips existing records and drafts to preserve host edits. Re-running is safe. Only source-backed research is seeded; demonstration inventory is excluded. The dry run validates and reports intended document counts without credentials or writes.
+Open `http://localhost:3000/studio`. Schema validation is local; schema deployment requires an authenticated Sanity CLI account with suitable dataset access. The seed uses stable IDs, validates every relationship and source before connecting, publishes normal (non-draft) records, and skips existing records and drafts to preserve host edits. It writes cyclic venue/space relationships in an atomic Sanity transaction. Re-running is safe. Only source-backed research is seeded; demonstration inventory is excluded. The dry run validates and reports intended document counts without credentials or writes. `sanity:verify-seed` reads back the expected published IDs, checks reference resolution, unknown fields, and demonstration exclusion.
 
 Review the venue records, nested evidence claims, references, and `research-lead` status in Studio before creating a Knowledge Base. Research claims are checked on the dates recorded in the documents; review them again before relying on them.
 
 ## 4. Create a Knowledge Base from the dataset
 
 The installed Sanity CLI supports Knowledge Base list/create/import/build commands. First list the Knowledge Bases in the selected organization. Reuse an existing Backstage venue Knowledge Base if present; otherwise create one with the documented CLI:
+
+Current resource: `Backstage Venue Knowledge` (`kbPFAVeDOOjD`) in organization `o8mue7lt8`. Its `Backstage / production` dataset import is complete and its latest build is ready. Inspect its imports before making changes; do not create a duplicate Knowledge Base or import.
 
 ```bash
 npx sanity context list --organization <ORGANIZATION_ID> --json
@@ -173,7 +176,15 @@ The installed CLI documents `--watch` as waiting and exiting non-zero for build 
 
 ## 5. Create a Knowledge Base-backed Context MCP
 
-In the Sanity Dashboard, open the **Context app → Create MCP** and choose the Backstage Knowledge Base as the endpoint source. Save the endpoint to reveal its URL. Do **not** attach a dataset directly to the MCP endpoint: Sanity documents that a dataset attached directly selects GROQ mode and takes precedence over Knowledge Base sources. The endpoint must expose Knowledge Base mode and its `initial_context` and `knowledge_base_read` tools. See [Configure an MCP endpoint](https://www.sanity.io/docs/ai/sanity-context-configure-mcp) and [Context MCP tools](https://www.sanity.io/docs/ai/sanity-context-mcp-tools).
+For this project, in the Sanity Dashboard open the **Context app → Create MCP** and configure:
+
+1. Endpoint name: `backstage-venues`.
+2. Source mode/type: **Knowledge Bases**.
+3. Source selection: **Backstage Venue Knowledge** (`kbPFAVeDOOjD`) only.
+4. Do not attach a project or dataset source. A directly attached dataset selects GROQ mode and takes precedence over Knowledge Base sources.
+5. Save the endpoint. Copy the endpoint URL shown by the Dashboard directly into `.env.local` as `SANITY_CONTEXT_MCP_URL`.
+
+The endpoint should expose `initial_context` and `knowledge_base_read`. See [Configure an MCP endpoint](https://www.sanity.io/docs/ai/sanity-context-configure-mcp) and [Context MCP tools](https://www.sanity.io/docs/ai/sanity-context-mcp-tools).
 
 Create an organization token with the **Context Viewer** role from organization API/token settings. Copy the endpoint URL shown for the endpoint into `SANITY_CONTEXT_MCP_URL`, and the organization token into `SANITY_ORGANIZATION_TOKEN` in `.env.local`. Keep both private.
 

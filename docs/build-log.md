@@ -121,3 +121,29 @@
 - `npm run sanity:seed` exited before network access because `SANITY_PROJECT_IMPORT_TOKEN` is empty. `npm run sanity:context-check` exited before connecting because `SANITY_CONTEXT_MCP_URL` and `SANITY_ORGANIZATION_TOKEN` are empty. These are blocked setup checks, not successful imports or retrievals.
 - Live import/retrieval remain blocked until an organization admin enables Context and Knowledge Bases under Sanity Manage → organization **Backstage** → **Labs**, and the user creates/saves a project-scoped content-write token under project **API → Tokens** plus an organization **Context Viewer** token under organization **API → Tokens**. The Context MCP URL must then be saved in `.env.local` after configuring an endpoint with Knowledge Base sources only.
 - No Sanity documents have been imported; no Knowledge Base build, MCP tools listing, entry read, or citation evidence exists yet. The site catalog stays labelled a local preview.
+
+## Milestone 2B continuation — Live dataset seed and Knowledge Base build
+
+### Import and dataset verification
+
+- Secret-safe environment inspection found project ID, dataset, project import token, and organization Context Viewer token configured; `SANITY_CONTEXT_MCP_URL` is still missing. `.env.local` remains ignored and was not printed or staged.
+- Confirmed organization `o8mue7lt8`, project `1428jmxu`, and private dataset `production` using the Sanity CLI. Catalog validation passed and the seed dry run validated 37 documents.
+- The first real seed attempt exposed strong reference cycles between venues and spaces. The importer now stages reference-free document skeletons and then restores reference fields in the same atomic transaction, while excluding existing published/draft IDs before writing. This preserves existing host edits and avoids leaving a partial cyclic-reference import.
+- Successful recovery transaction created 26 missing documents and skipped 11 already present from the interrupted first attempt. A second idempotency run created 0 and skipped 37. Total published research documents: **37** — 6 source references, 5 host organizations, 9 spaces, 5 resources, 6 opportunities, and 6 venues.
+- Added `npm run sanity:verify-seed`. Live verification found all 37/37 expected published IDs, six research venues, 117 document references resolving within the seed, zero seed drafts, and zero demonstration venues. The query from `sanity/knowledge-base-query.groq` returned six eligible research venues across Delhi NCR (4) and Bengaluru (2), with seven dereferenced venue-level source references. It excludes demonstration records and does not include private organizer or operational booking data.
+
+### Knowledge Base build
+
+- `npx sanity context list --organization o8mue7lt8 --json` found no pre-existing Knowledge Base. Created **Backstage Venue Knowledge** with public ID `kbPFAVeDOOjD` and the requested purpose to preserve unknowns.
+- Inspected existing imports before adding a source; none existed. Added one dataset source for project `1428jmxu`, dataset `production`, using the complete `sanity/knowledge-base-query.groq`. Import status is `complete`: six of six source records distilled, zero unsupported.
+- Dataset import ID: `e96533ac-0eb1-446a-81a4-1bda7ae12175`. The stored source query selects eligible published venue records, excludes demonstration inventory and demonstration relationship statuses, dereferences original source URLs and related policies/spaces/resources/opportunities, and excludes organizer and operational data.
+- `npx sanity context build kbPFAVeDOOjD --watch` completed successfully. Build job `ctx-build-65e4c6c0-2470-4b40-ba3c-b90a958f5ed6-1790944788387` reached `succeeded`; Knowledge Base state is `ready`, three entries, all six source items cited, and zero issues (including zero critical issues). Build coverage reported all 10 gated entities covered and none missing.
+- The CLI metadata confirms the generated entries and issue counts. Their actual text and citations have not yet been read through MCP; this remains part of the live retrieval check.
+
+### MCP status and checks
+
+- `SANITY_CONTEXT_MCP_URL` remains absent. No MCP endpoint exists yet, so tools, outline paths, venue entry reads, and actual MCP citation URLs are not available. Live Context retrieval is **not** marked successful.
+- Dashboard step for the user: Sanity Dashboard **Context app → Create MCP**, name `backstage-venues`, select **Knowledge Bases** and only `Backstage Venue Knowledge` (`kbPFAVeDOOjD`), attach no dataset, save, then place the displayed URL directly in ignored `.env.local` as `SANITY_CONTEXT_MCP_URL`. The configured Context Viewer token is already present locally.
+- `npm run sanity:context-check` was invoked, but stopped before opening a connection because `SANITY_CONTEXT_MCP_URL` is missing. No Context tools, outline paths, venue entry reads, or actual MCP citation URLs have been observed; live retrieval is not successful yet.
+- Checks passed: lint, TypeScript, outline tests (3/3), catalog validation, dry run (37), schema validation (zero errors), published seed verification (37/37), production build, full npm audit and production-only npm audit (zero vulnerabilities). Schema deployment had already succeeded in the previous log entry.
+- `/venues` still reads local research JSON and remains explicitly labeled a local preview.
