@@ -55,10 +55,14 @@ export type VenueSpace = {
 
 export type Resource = {
   id: string;
+  venueId?: string;
   name: string;
   kind: "room" | "equipment" | "service";
-  capacity?: CapacityAssertion;
+  /** Finite count of independently allocatable units. */
   quantity?: number;
+  /** Demo room capacity belongs to this named layout; never a venue-wide total. */
+  capacityLayout?: string;
+  capacity?: CapacityAssertion;
   notes?: string;
   sourceReferenceIds?: string[];
   availability?: "documented" | "unknown" | "conflicting";
@@ -97,6 +101,7 @@ export type HostingOpportunity = {
   sources: SourceReference[];
   relationshipStatus?: "research-lead" | "host-confirmed" | "demonstration";
   availability?: "documented" | "unknown" | "conflicting";
+  /** Commercial access model is independent of host approval/instant booking. */
 };
 
 export type Venue = {
@@ -172,10 +177,16 @@ export type BookingRequest = {
   id: string;
   eventBriefId: string;
   venueId: string;
-  status: "submitted" | "needs-information" | "approved" | "rejected" | "alternative-proposed";
+  status: "draft" | "submitted" | "needs-information" | "alternative-proposed" | "held" | "approved" | "rejected" | "cancelled";
   requestedResources: string[];
   message?: string;
   createdAt: string;
+  /** Idempotency key is scoped to an authenticated workspace, never an authorization credential. */
+  idempotencyKey?: string;
+  briefSnapshot?: EventBrief;
+  acceptedBriefSnapshot?: EventBrief;
+  proposedSlot?: {date:string;startTime:string;endTime:string};
+  sourceReferences?: SourceReference[];
 };
 
 export type ChecklistItem = {
@@ -185,4 +196,56 @@ export type ChecklistItem = {
   completed: boolean;
   dueAt?: string;
   owner?: "organizer" | "host";
+  completedAt?: string;
+};
+
+export type AvailabilityWindow = {
+  id: string;
+  venueId: string;
+  resourceId: string;
+  startsAt: string;
+  endsAt: string;
+  released: boolean;
+};
+
+export type InternalBlock = {
+  id: string;
+  venueId: string;
+  resourceId: string;
+  startsAt: string;
+  endsAt: string;
+  reason: string;
+};
+
+export type ResourceAllocation = {
+  id: string;
+  bookingRequestId: string;
+  resourceId: string;
+  startsAt: string;
+  endsAt: string;
+  quantity: number;
+  status: "hold" | "reservation" | "released";
+  expiresAt?: string;
+};
+
+export type BookingTransition = {
+  id: string;
+  bookingRequestId: string;
+  actor: "organizer" | "host" | "system";
+  fromStatus?: BookingRequest["status"];
+  toStatus: BookingRequest["status"];
+  note?: string;
+  createdAt: string;
+};
+
+export type OrganizerApplication = BookingRequest & {
+  organizer: {name:string;email:string;phone?:string;organization?:string};
+  audience: string;
+  timing: {date:string;startTime:string;endTime:string;setupMinutes:number;cleanupMinutes:number};
+  essentialRequirements: string[];
+  flexibleRequirements: string[];
+  unansweredQuestions: string[];
+  accessModel: HostingOpportunity["accessModel"];
+  fulfillmentModel: HostingOpportunity["fulfillmentModel"];
+  reviewedByOrganizer: boolean;
 };

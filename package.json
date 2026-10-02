@@ -15,6 +15,7 @@
     "sanity:context-check": "node scripts/sanity-context-check.mjs",
     "test:context-outline": "node --test scripts/context-outline.test.mjs scripts/context-citations.test.mjs",
     "test:agent": "node --test scripts/agent-input.test.mjs scripts/agent-validation.test.mjs scripts/agent-retrieval.test.mjs scripts/context-outline.test.mjs scripts/context-citations.test.mjs",
+    "test:operations": "node --test scripts/operations-store.test.mjs",
     "sanity:schema:validate": "sanity schemas validate --level error",
     "sanity:schema:deploy": "sanity schemas deploy"
   },

@@ -28,7 +28,7 @@ People responsible for venues who want to publish hosting opportunities, permitt
 
 ## Later extensions
 
-Recurring events, attendance conditions, cancellation recovery, and richer calendar and resource allocation workflows are later extensions. Each can follow once source-backed matching and the core request lifecycle are dependable.
+Recurring events, attendance conditions, cancellation recovery/rebooking, and production multi-party host onboarding are later extensions. The first operational request lifecycle is demonstrated with fictional inventory only.
 
 ## Milestone 2 content foundation
 
@@ -38,7 +38,11 @@ Sanity schemas cover venues, host organizations, spaces, resources, policies, ho
 
 ## Milestone 3 organizer discovery
 
-The organizer can submit a saved EventBrief to a server-side discovery route. The route reads published Sanity venue/source records, discovers paths from the live Sanity Context Knowledge Base outline, and exposes bounded entry reads as model tools. Recommendations appear only after real entry reads pass venue identity, locality, and citation checks. The server creates original source links from published Sanity references and classifies requirements from structured claims. Follow-up questions reuse the saved brief and refine which leads are selected. Availability checks, host applications, and bookings remain future work.
+At Milestone 3, the organizer could submit a saved EventBrief to a server-side discovery route. The route reads published Sanity venue/source records, discovers paths from the live Sanity Context Knowledge Base outline, and exposes bounded entry reads as model tools. Recommendations appear only after real entry reads pass venue identity, locality, and citation checks. The server creates original source links from published Sanity references and classifies requirements from structured claims. Follow-up questions reuse the saved brief and refine which leads are selected. The next milestone added an operational demonstration, documented below.
+
+## Milestone 4 operational demonstration
+
+Organizers can save an application draft for a real research lead, with source-backed claims and explicit unanswered questions; submitting it is blocked because Backstage has no verified booking authority at those venues. Two fictional hosts, one in each city, demonstrate request submission, host information requests/decisions, holds, explicit alternative acceptance, calendar allocation, and shared preparation tasks. The simulation is backed by workspace-scoped SQLite data. Its role selector does not authenticate a real organizer or host, and no demo message leaves the application. Real venue availability, prices, policies, or booking permissions are not inferred from the fictional records.
 
 ## Milestone 1 boundary
 

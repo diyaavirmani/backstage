@@ -36,6 +36,9 @@ yarn-error.log*
 
 # local application data and private Codex session exports
 /data/
+/.data/
+*.sqlite
+*.sqlite-*
 /session-exports/
 /.codex-session/
 *.jsonl

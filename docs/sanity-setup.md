@@ -2,6 +2,10 @@
 
 The `/venues` page reads local research JSON and remains labelled as a local preview. The organizer’s `/api/venue-discovery` route separately reads current published Sanity records and calls the live Knowledge Base Context MCP endpoint. It does not convert the local catalog page into a live view.
 
+## Operational demo data boundary
+
+Milestone 4 stores fictional demo venues, room/equipment inventory, policies, availability, requests, holds, reservations, and checklists only in the private server-side SQLite workspace. These records are not seeded into Sanity, are not part of `sanity/knowledge-base-query.groq`, and must never be used as real venue claims. The six researched profiles remain research leads and their application action only creates a private draft; Backstage has no verified authority to submit requests to those hosts.
+
 ## 1. Enable Sanity Context
 
 The authenticated CLI account had no organizations or projects, so this new Backstage organization and project were created in that account on 2 October 2026. Current non-secret resource identifiers:
