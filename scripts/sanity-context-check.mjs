@@ -9,16 +9,16 @@ const mcpUrl = process.env.SANITY_CONTEXT_MCP_URL;
 const contextToken = process.env.SANITY_ORGANIZATION_TOKEN;
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET;
-const projectToken = process.env.SANITY_PROJECT_IMPORT_TOKEN;
+const projectToken = process.env.SANITY_PROJECT_READ_TOKEN;
 const missing = [
   ["SANITY_CONTEXT_MCP_URL", mcpUrl],
   ["SANITY_ORGANIZATION_TOKEN", contextToken],
   ["NEXT_PUBLIC_SANITY_PROJECT_ID", projectId],
   ["NEXT_PUBLIC_SANITY_DATASET", dataset],
-  ["SANITY_PROJECT_IMPORT_TOKEN", projectToken],
+  ["SANITY_PROJECT_READ_TOKEN", projectToken],
 ].filter(([, value]) => !value || value.includes("replace-with")).map(([name]) => name);
 if (missing.length) {
-  console.error(`Live Context check not run: configure ${missing.join(", ")} in ignored .env.local. Use an organization Context Viewer token for MCP and the project import token for published source verification; never expose either in public environment variables.`);
+  console.error(`Live Context check not run: configure ${missing.join(", ")} in ignored .env.local. Use an organization Context Viewer token for MCP and a project read-only token for published source verification; never expose either in public environment variables.`);
   process.exit(1);
 }
 const endpoint = new URL(mcpUrl);

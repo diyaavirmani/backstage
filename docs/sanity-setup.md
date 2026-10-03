@@ -1,6 +1,6 @@
 # Sanity Studio, research import, and Context Knowledge Base
 
-The `/venues` page now queries published, eligible `research-lead` venue records on the server and resolves their source references, claims, spaces, resources, and policies. The query uses the project ID/dataset and a server-only project token with the `published` perspective; it excludes demonstration venues. If the service is not configured or is unavailable, the page labels the checked-in JSON as a local preview and states that it is not live Sanity content. Organizer discovery separately reads current published records and calls the Knowledge Base-only Context MCP endpoint.
+The `/venues` page queries published, eligible `research-lead` venue records on the server using `SANITY_PROJECT_READ_TOKEN`, a project-scoped read-only token. It resolves source references, claims, spaces, resources, and policies with the `published` perspective and excludes demonstrations. If the service is not configured or unavailable, the page labels checked-in JSON as a local preview. Organizer discovery uses the same read-only token for current published records and separately calls the Knowledge Base-only Context MCP endpoint.
 
 ## Operational demo data boundary
 
@@ -34,25 +34,27 @@ npx sanity projects create backstage --organization <ORGANIZATION_ID> --dataset 
 
 The CLI prompts for confirmation/required account setup as applicable. Verify the resulting project and dataset with `npx sanity projects list` and the Sanity dashboard before setting the values below. This uses the documented Sanity CLI; it does not create resources through an undocumented API.
 
-The ignored repository-root `.env.local` contains the actual project ID, dataset, import token, Context MCP URL, and organization Context Viewer token. Never print its contents or stage it. The non-secret identifiers are:
+The ignored repository-root `.env.local` may contain the actual project ID/dataset, a read-only project token, a local import token, Context MCP URL, organization Context Viewer token, and OpenAI key. Never print its contents or stage it. The non-secret identifiers are:
 
 ```dotenv
 NEXT_PUBLIC_SANITY_PROJECT_ID=1428jmxu
 NEXT_PUBLIC_SANITY_DATASET=production
-SANITY_PROJECT_IMPORT_TOKEN=<configured locally>
+SANITY_PROJECT_READ_TOKEN=<configured locally>
+SANITY_PROJECT_IMPORT_TOKEN=<configured locally for local seed only>
 SANITY_CONTEXT_MCP_URL=<configured locally>
 SANITY_ORGANIZATION_TOKEN=<configured locally>
 ```
 
-Keep the two tokens server-side. The project import token should have only the write access needed for the selected dataset. The organization token must have Context Viewer access. Never use either token as a `NEXT_PUBLIC_` variable.
+Keep every token server-side. The read-only token should have only published dataset read access; the import token should have only local seed write access; the organization token must have Context Viewer access. Never use a token as a `NEXT_PUBLIC_` variable.
 
 ### Token creation and local storage
 
-- **Project import token:** in Sanity Manage, open the Backstage project, then **API → Tokens → Add API token**. Choose a project-scoped role that can read the target dataset’s documents and create documents; do not use this token as an organization token. Save the returned value directly in the ignored repository-root `.env.local` as `SANITY_PROJECT_IMPORT_TOKEN`.
+- **Runtime/read token:** in Sanity Manage, open the Backstage project, then **API → Tokens → Add API token**. Choose the least-privileged project-scoped role that can read published documents in the `production` dataset. Save the returned value directly in ignored `.env.local` as `SANITY_PROJECT_READ_TOKEN`. Use this token for the app, catalog, draft evidence retrieval, seed verification, and live Context check.
+- **Local import token:** create a separate project-scoped token with only the write permission needed to publish/skip the researched seed records. Save it as `SANITY_PROJECT_IMPORT_TOKEN` in local ignored `.env.local`. Do not upload it to Railway or include it in the Docker image.
 - **Context token:** in Sanity Manage, open the intended organization, then **API → Tokens → Add API token**. Choose **Context Viewer** (Sanity documents Viewer as the least privilege that works for Context). Save the returned value directly in `.env.local` as `SANITY_ORGANIZATION_TOKEN`.
 - The organization administrator must also enable Context and Knowledge Bases from that organization’s **Labs** page. Creating tokens and enabling Labs are dashboard actions; keep each token out of chat, terminal output, public variables, and Git.
 
-If a required button is unavailable, ask an organization administrator or project owner for the corresponding membership/permission. The project importer needs project content write permission; Context setup needs organization Context Viewer access. The Sanity CLI’s account authentication is separate from both `.env.local` tokens.
+If a required button is unavailable, ask an organization administrator or project owner for the corresponding membership/permission. The project importer needs write permission; app/runtime reads need project read permission; Context setup needs organization Context Viewer access. The Sanity CLI’s account authentication is separate from all `.env.local` tokens.
 
 Node scripts and `sanity.cli.ts` explicitly load the ignored `.env.local` file before reading configuration. Existing shell-provided environment variables take precedence. The Studio configuration also receives public `NEXT_PUBLIC_` settings through Next.js environment loading. Values of tokens must never be printed or added to browser code.
 
@@ -198,7 +200,7 @@ Run the live check:
 npm run sanity:context-check
 ```
 
-It verifies the six published venue/source records through Sanity using the project import token, connects to Context using the organization Context Viewer token, reads every outline path, and checks every venue section against the published source identities and canonical URLs. Numbered footnotes are resolved only through the same entry’s Sources list; an inline URL elsewhere cannot repair a mismatched footnote. It checks all six venue identities, preserves location distinctions for the two Ofis profiles sharing one page, and fails on missing venues, unknown statuses, sources, or mismatched citations. It makes no writes. Focused outline and citation tests run with `npm run test:context-outline`.
+It verifies the six published venue/source records through Sanity using the project read-only token, connects to Context using the organization Context Viewer token, reads every outline path, and checks every venue section against the published source identities and canonical URLs. Numbered footnotes are resolved only through the same entry’s Sources list; an inline URL elsewhere cannot repair a mismatched footnote. It checks all six venue identities, preserves location distinctions for the two Ofis profiles sharing one page, and fails on missing venues, unknown statuses, sources, or mismatched citations. It makes no writes. Focused outline and citation tests run with `npm run test:context-outline`.
 
 ### Current live retrieval status (2 October 2026)
 
@@ -230,7 +232,7 @@ Create or use an OpenAI API key in your OpenAI project settings, then paste it d
 
 The organizer submits its locally saved EventBrief and a small bounded conversation. The server fetches published non-demonstration venue records and source references, connects with the organization Context Viewer token, calls `initial_context`, and lets the model select paths from that live outline through a read tool. It requires successful `knowledge_base_read` calls before creating recommendations. The model returns only venue IDs, localities, and paths it read. The server derives requirement classifications from published structured claims and validates exact venue/locality identity, citation/source associations, and critical capacity claims. Output is withheld when a selected Knowledge Base section cannot be verified. Returned links come from published source records; a valid link alone does not prove a claim.
 
-The organizer UI can display sourced venue notes and requirement statuses and accept follow-up questions. Each recommendation hands its venue identity, exact EventBrief, qualifications, and requirement-derived questions to the existing application builder. When a research draft is saved, the application API resolves that venue and its claims/sources again from published Sanity records using the project token; browser-supplied citations and authority are not used. The draft records the trusted evidence capture time separately from the original source-check dates and cannot be submitted. It does not check operational availability, confirm an unknown price or policy, or make a reservation. Paytm remains historical evidence; Shifu’s pro-bono statement retains its founder-community condition; the two Ofis Square locations remain distinct.
+The organizer UI can display sourced venue notes and requirement statuses and accept follow-up questions. Each recommendation hands its venue identity, exact EventBrief, qualifications, and requirement-derived questions to the existing application builder. When a research draft is saved, the application API resolves that venue and its claims/sources again from published Sanity records using the project read-only token; browser-supplied citations and authority are not used. The draft records the trusted evidence capture time separately from the original source-check dates and cannot be submitted. It does not check operational availability, confirm an unknown price or policy, or make a reservation. Paytm remains historical evidence; Shifu’s pro-bono statement retains its founder-community condition; the two Ofis Square locations remain distinct.
 
 The agent uses the Vercel AI SDK Core `generateText` structured-output/tool loop, the OpenAI provider package, and `@ai-sdk/mcp` request-scoped client. See the current [AI SDK tool calling guide](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling), [structured output guide](https://ai-sdk.dev/docs/ai-sdk-core/generating-structured-data), and [MCP client reference](https://ai-sdk.dev/docs/reference/ai-sdk-core/create-mcp-client). The Next.js 16.3 App Router endpoint follows the installed [Route Handler documentation](https://nextjs.org/docs/app/getting-started/route-handlers); secrets remain inside server-side code as described in the installed [Server and Client Components guide](https://nextjs.org/docs/app/getting-started/server-and-client-components).
 

@@ -4,9 +4,9 @@ import {buildDocuments, catalog} from "./catalog-lib.mjs";
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET;
-const token = process.env.SANITY_PROJECT_IMPORT_TOKEN;
+const token = process.env.SANITY_PROJECT_READ_TOKEN;
 if (!projectId || !dataset || !token || projectId.startsWith("replace-") || dataset.startsWith("replace-") || token.startsWith("replace-")) {
-  throw new Error("Set NEXT_PUBLIC_SANITY_PROJECT_ID, NEXT_PUBLIC_SANITY_DATASET, and SANITY_PROJECT_IMPORT_TOKEN in .env.local to verify the published seed.");
+  throw new Error("Set NEXT_PUBLIC_SANITY_PROJECT_ID, NEXT_PUBLIC_SANITY_DATASET, and SANITY_PROJECT_READ_TOKEN in .env.local to verify the published seed.");
 }
 
 const expected = buildDocuments();

@@ -25,7 +25,7 @@ const mapVenue=(venue:RawVenue):PublishedVenue=>({id:venue._id,name:venue.name,c
 function client() {
   const projectId=process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
   const dataset=process.env.NEXT_PUBLIC_SANITY_DATASET;
-  const token=process.env.SANITY_PROJECT_IMPORT_TOKEN;
+  const token=process.env.SANITY_PROJECT_READ_TOKEN;
   if(!projectId||!dataset||!token) throw new SanityVenueUnavailable("Sanity venue content is not configured.");
   return createClient({projectId,dataset,token,apiVersion:"2025-02-19",perspective:"published",useCdn:false});
 }

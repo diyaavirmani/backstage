@@ -4,11 +4,12 @@ import {mkdirSync, readFileSync} from 'node:fs';
 import {dirname, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const root = process.env.BACKSTAGE_APP_ROOT ? resolve(process.env.BACKSTAGE_APP_ROOT) : resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const migrations = [
   {version:1,sql:readFileSync(resolve(root,'db/migrations/001_operations.sql'),'utf8')},
   {version:2,sql:readFileSync(resolve(root,'db/migrations/002_operational-policy-and-checklist-history.sql'),'utf8')},
   {version:3,sql:readFileSync(resolve(root,'db/migrations/003-checklist-deadlines.sql'),'utf8')},
+  {version:4,sql:readFileSync(resolve(root,'db/migrations/004-discovery-quotas.sql'),'utf8')},
 ];
 const catalog = JSON.parse(readFileSync(resolve(root, 'src/data/research-catalog.json'), 'utf8'));
 const DEFAULT_DB = resolve(root, '.data/backstage.sqlite');
@@ -24,6 +25,10 @@ const DEMOS = [
 
 export function openOperationsStore(path = process.env.BACKSTAGE_DB_PATH || DEFAULT_DB) {
   const dbPath = resolve(path);
+  if (process.env.RAILWAY_ENVIRONMENT_ID) {
+    const mountPath = process.env.RAILWAY_VOLUME_MOUNT_PATH ? resolve(process.env.RAILWAY_VOLUME_MOUNT_PATH) : '';
+    if (!mountPath || dirname(dbPath) !== mountPath) throw new Error('PERSISTENT_STORAGE_UNAVAILABLE');
+  }
   mkdirSync(dirname(dbPath), {recursive:true});
   const db = new DatabaseSync(dbPath);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL;');
@@ -42,6 +47,37 @@ export function openOperationsStore(path = process.env.BACKSTAGE_DB_PATH || DEFA
     catch(error){db.exec('ROLLBACK');db.close();throw error;}
   }
   return db;
+}
+
+export function consumeDiscoveryQuota(db, sessionToken, limits, now = new Date()) {
+  const period = now.toISOString().slice(0,10);
+  const subject = hash(sessionToken || 'anonymous');
+  const globalKey = 'all';
+  const nowIsoValue = now.toISOString();
+  const olderThan = new Date(now.getTime() - 31 * 86400000).toISOString().slice(0,10);
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    db.prepare('DELETE FROM discovery_quota_counters WHERE period < ?').run(olderThan);
+    const global = db.prepare("SELECT request_count FROM discovery_quota_counters WHERE period=? AND scope='global' AND subject_hash=?").get(period,globalKey)?.request_count || 0;
+    const personal = db.prepare("SELECT request_count FROM discovery_quota_counters WHERE period=? AND scope='session' AND subject_hash=?").get(period,subject)?.request_count || 0;
+    if (global >= limits.global) {
+      db.exec('COMMIT');
+      return {allowed:false, reason:'global', globalRemaining:0, sessionRemaining:Math.max(0,limits.perSession-personal)};
+    }
+    if (personal >= limits.perSession) {
+      db.exec('COMMIT');
+      return {allowed:false, reason:'session', globalRemaining:Math.max(0,limits.global-global), sessionRemaining:0};
+    }
+    const insert = db.prepare(`INSERT INTO discovery_quota_counters(period,scope,subject_hash,request_count,updated_at)
+      VALUES(?,?,?,?,?) ON CONFLICT(period,scope,subject_hash) DO UPDATE SET request_count=request_count+1,updated_at=excluded.updated_at`);
+    insert.run(period,'global',globalKey,1,nowIsoValue);
+    insert.run(period,'session',subject,1,nowIsoValue);
+    db.exec('COMMIT');
+    return {allowed:true, reason:null, globalRemaining:limits.global-global-1, sessionRemaining:limits.perSession-personal-1};
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
+  }
 }
 
 function seedWorkspace(db, workspaceId) {

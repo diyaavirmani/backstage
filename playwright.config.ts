@@ -23,7 +23,7 @@ export default defineConfig({
     url:"http://127.0.0.1:3107/api/operations",
     reuseExistingServer:false,
     timeout:90_000,
-    env:{...process.env,PORT:"3107",BACKSTAGE_DB_PATH:database,BACKSTAGE_PLAYWRIGHT_DATA_DIR:dataDir,NEXT_TELEMETRY_DISABLED:"1"},
+    env:{...process.env,PORT:"3107",APP_ORIGIN:"http://127.0.0.1:3107",BACKSTAGE_DB_PATH:database,BACKSTAGE_PLAYWRIGHT_DATA_DIR:dataDir,NEXT_TELEMETRY_DISABLED:"1"},
     stdout:"pipe",
     stderr:"pipe",
   },

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "cp -R .next/static .next/standalone/.next/ && cp -R public .next/standalone/ && cd .next/standalone && node server.js",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "sanity:validate": "node scripts/validate-catalog.mjs",
@@ -16,6 +16,8 @@
     "test:context-outline": "node --test scripts/context-outline.test.mjs scripts/context-citations.test.mjs",
     "test:agent": "node --test scripts/agent-input.test.mjs scripts/agent-validation.test.mjs scripts/agent-retrieval.test.mjs scripts/context-outline.test.mjs scripts/context-citations.test.mjs",
     "test:operations": "node --test scripts/operations-store.test.mjs",
+    "test:deployment-controls": "node --test scripts/deployment-controls.test.mjs scripts/discovery-quota.test.mjs",
+    "verify:standalone": "node scripts/verify-standalone.mjs",
     "test:e2e": "npm run build && playwright test",
     "sanity:schema:validate": "sanity schemas validate --level error",
     "sanity:schema:deploy": "sanity schemas deploy"
@@ -40,6 +42,7 @@
     "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
+    "railway": "^3.12.0",
     "sanity": "^6.17.0",
     "tailwindcss": "^4",
     "typescript": "^5"

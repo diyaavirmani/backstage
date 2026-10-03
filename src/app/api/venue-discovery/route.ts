@@ -8,6 +8,8 @@ import { validateAgentRecommendations } from "../../../../scripts/agent-validati
 import { verifyVenueEvidence } from "../../../../scripts/context-citations.mjs";
 import { parseContextOutline } from "../../../../scripts/context-outline.mjs";
 import { getBackstageModel } from "@/lib/ai-provider";
+import {discoveryQuotaLimits, discoveryRetryAfterSeconds, readRequestTextBounded, validateMutationOrigin} from "../../../../scripts/deployment-controls.mjs";
+import {consumeDiscoveryQuota, openOperationsStore} from "../../../../scripts/operations-store.mjs";
 import type { City, EventBrief } from "@/types";
 
 export const runtime = "nodejs";
@@ -41,14 +43,14 @@ function normalizedTerms(value: string) {
 }
 
 function requiredEnvironment() {
-  const required = ["SANITY_CONTEXT_MCP_URL", "SANITY_ORGANIZATION_TOKEN", "NEXT_PUBLIC_SANITY_PROJECT_ID", "NEXT_PUBLIC_SANITY_DATASET", "SANITY_PROJECT_IMPORT_TOKEN"] as const;
+  const required = ["SANITY_CONTEXT_MCP_URL", "SANITY_ORGANIZATION_TOKEN", "NEXT_PUBLIC_SANITY_PROJECT_ID", "NEXT_PUBLIC_SANITY_DATASET", "SANITY_PROJECT_READ_TOKEN"] as const;
   const missing = required.filter((key) => !process.env[key] || process.env[key]?.startsWith("replace-with"));
   if (missing.length) throw new Error(`Sanity venue discovery is not configured. Add ${missing.join(", ")} to the server environment.`);
   let url: URL;
   try { url = new URL(process.env.SANITY_CONTEXT_MCP_URL!); }
   catch { throw new Error("SANITY_CONTEXT_MCP_URL must be a valid HTTPS URL."); }
   if (url.protocol !== "https:") throw new Error("SANITY_CONTEXT_MCP_URL must use HTTPS.");
-  return {url, contextToken: process.env.SANITY_ORGANIZATION_TOKEN!, projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!, dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!, projectToken: process.env.SANITY_PROJECT_IMPORT_TOKEN!};
+  return {url, contextToken: process.env.SANITY_ORGANIZATION_TOKEN!, projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!, dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!, projectToken: process.env.SANITY_PROJECT_READ_TOKEN!};
 }
 
 function withDeadline<T>(promise: Promise<T>, label: string, ms: number, signal: AbortSignal): Promise<T> {
@@ -66,34 +68,6 @@ function withDeadline<T>(promise: Promise<T>, label: string, ms: number, signal:
   });
 }
 
-async function readBoundedBody(request: Request, maxBytes: number, signal: AbortSignal) {
-  if (!request.body) throw new Error("The request body is empty.");
-  const reader = request.body.getReader();
-  const decoder = new TextDecoder();
-  let body = "";
-  let bytes = 0;
-  try {
-    while (true) {
-      let chunk: ReadableStreamReadResult<Uint8Array>;
-      try { chunk = await withDeadline(reader.read(), "Request body read", 10_000, signal); }
-      catch (error) {
-        await reader.cancel().catch(() => undefined);
-        throw error;
-      }
-      if (chunk.done) break;
-      bytes += chunk.value.byteLength;
-      if (bytes > maxBytes) {
-        void reader.cancel();
-        throw new Error("REQUEST_BODY_TOO_LARGE");
-      }
-      body += decoder.decode(chunk.value, {stream: true});
-    }
-    return body + decoder.decode();
-  } finally {
-    reader.releaseLock();
-  }
-}
-
 function responseText(result: unknown) {
   const content = (result as {content?: Array<{type: string; text?: string}>})?.content || [];
   return content.filter((part) => part.type === "text").map((part) => part.text || "").join("\n");
@@ -105,14 +79,26 @@ export async function POST(request: Request) {
   const timeoutSignal = AbortSignal.timeout(52_000);
   const signal = AbortSignal.any([request.signal, timeoutSignal]);
   try {
-    const contentLength = Number(request.headers.get("content-length") || "0");
-    if (contentLength > 12_000) return Response.json({error: "The request is too large. Reduce the follow-up history and try again."}, {status: 413});
-    const raw = await readBoundedBody(request, 12_000, signal);
+    const originCheck = validateMutationOrigin(request);
+    if (!originCheck.ok) return Response.json({error: originCheck.reason === "missing_configuration" ? "This demo is not configured to accept browser changes yet." : "This request did not come from the configured Backstage site."}, {status: originCheck.reason === "missing_configuration" ? 503 : 403});
+    const raw = await readRequestTextBounded(request, 12_000);
     let parsed: unknown;
     try { parsed = JSON.parse(raw); } catch { return Response.json({error: "We couldn’t read that event brief. Please check it and try again."}, {status: 400}); }
     const input = discoveryBodySchema.safeParse(parsed);
     if (!input.success) return Response.json({error: "The event brief or follow-up is incomplete or invalid. Review the required fields and try again."}, {status: 400});
     const data = input.data as DiscoveryInput;
+    let limits;
+    try { limits = discoveryQuotaLimits(); }
+    catch { return Response.json({error: "Venue discovery limits are not configured correctly. Please try again later."}, {status: 503}); }
+    const sessionCookie = request.headers.get("cookie")?.split(";").map((item)=>item.trim()).find((item)=>item.startsWith("backstage-demo-session="))?.slice("backstage-demo-session=".length) || "anonymous";
+    const quotaDb = openOperationsStore();
+    let quota;
+    try { quota = consumeDiscoveryQuota(quotaDb, sessionCookie, limits); }
+    finally { quotaDb.close(); }
+    if (!quota.allowed) {
+      const retryAfter = discoveryRetryAfterSeconds();
+      return Response.json({error: quota.reason === "global" ? "Today’s shared demo discovery limit has been reached. Please try again after the daily reset." : "You’ve reached today’s discovery limit for this browser session. Please try again after the daily reset.", retryAfterSeconds:retryAfter}, {status:429,headers:{"Retry-After":String(retryAfter)}});
+    }
     const brief = data.brief;
     const latestQuestion = data.conversation[data.conversation.length - 1].content;
 
@@ -269,12 +255,13 @@ First use readVenueKnowledge to read relevant outline entries for ${brief.city}.
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown server error";
     if (message === "REQUEST_BODY_TOO_LARGE") return Response.json({error: "The request is too large. Reduce the follow-up history and try again."}, {status: 413});
+    if (message === "PERSISTENT_STORAGE_UNAVAILABLE") return Response.json({error: "The demo storage is not ready. Please retry shortly."}, {status: 503});
     const missingOpenAI = message.includes("OPENAI_API_KEY");
     const missingSanity = message.includes("SANITY_") || message.includes("Context endpoint");
     const status = missingOpenAI || missingSanity ? 503 : message.includes("cancelled") || message.includes("timed out") ? 504 : 502;
     if (status === 502 || status === 504) {
       const providerStatus = Number((error as {statusCode?: unknown; status?: unknown})?.statusCode || (error as {status?: unknown})?.status) || null;
-      console.error(JSON.stringify({event: "venue_discovery_failed", status, stage: failureStage, errorType: error instanceof Error ? error.name : "Unknown", providerStatus, diagnostic: error instanceof ReferenceError ? error.message.slice(0, 160) : undefined}));
+      console.error(JSON.stringify({event: "venue_discovery_failed", status, stage: failureStage, errorType: error instanceof Error ? error.name : "Unknown", providerStatus}));
     }
     return Response.json({error: missingOpenAI || missingSanity ? message : status === 504 ? "Venue discovery took too long. Please retry." : "We couldn’t verify venue evidence for this response. No recommendations were shown. Please retry."}, {status});
   } finally {
