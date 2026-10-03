@@ -18,9 +18,11 @@
     "test:operations": "node --test scripts/operations-store.test.mjs",
     "test:deployment-controls": "node --test scripts/deployment-controls.test.mjs scripts/discovery-quota.test.mjs",
     "verify:standalone": "node scripts/verify-standalone.mjs",
+    "verify:docker-image": "node scripts/verify-docker-image.mjs",
     "test:e2e": "npm run build && playwright test",
     "sanity:schema:validate": "sanity schemas validate --level error",
-    "sanity:schema:deploy": "sanity schemas deploy"
+    "sanity:schema:deploy": "sanity schemas deploy",
+    "sanity:dev": "sanity dev --host 127.0.0.1"
   },
   "dependencies": {
     "@ai-sdk/mcp": "^2.0.66",
@@ -28,7 +30,6 @@
     "@sanity/client": "^8.9.0",
     "ai": "^7.0.127",
     "next": "16.3.8",
-    "next-sanity": "^13.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },

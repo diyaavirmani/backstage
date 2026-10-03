@@ -1,0 +1,30 @@
+name: Docker image smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Build production image without private credentials
+        run: >-
+          docker build
+          --build-arg NEXT_PUBLIC_SANITY_PROJECT_ID=1428jmxu
+          --build-arg NEXT_PUBLIC_SANITY_DATASET=production
+          --tag backstage:ci .
+      - name: Verify image and mounted-volume restart persistence
+        env:
+          BACKSTAGE_DOCKER_IMAGE: backstage:ci
+        run: node scripts/verify-docker-image.mjs

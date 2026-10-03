@@ -8,7 +8,7 @@ The product helps organizers explain their event setup and helps hosts coordinat
 
 The responsive product shell, event brief and live Sanity Context discovery are implemented. The brief validates required fields and persists in browser local storage. Organizers can save source-backed draft applications for the six researched leads; these leads cannot be submitted because Backstage has no verified booking authority for them. Two clearly fictional demonstration hosts, one per city, support the full application-review, hold, approval, resource calendar, cancellation, alternative-slot, and preparation checklist workflow. Demonstration operations are stored server-side in SQLite and scoped by an opaque HTTP-only simulation cookie. Host/organizer role switching is a workflow simulation, not production identity or authorization. Communications stay inside the application.
 
-Milestone 6 adds the Railway deployment package, a runtime readiness check, and persisted public-demo discovery limits. The service configuration targets one replica and a `/data` volume, while private Sanity/OpenAI values remain runtime-only. Deployment has not been performed: the Railway CLI/account context and Docker/Podman are unavailable in the implementation environment. See [deployment preparation](docs/deployment.md) for exact variables, setup, budget notes, and remaining checks.
+Milestone 6 prepares the Railway deployment package, a runtime readiness check, and persisted public-demo discovery limits. Milestone 6B moves Sanity Studio to the local Sanity CLI workflow and adds a credential-free Docker image smoke workflow. The logged-in Railway account currently has no listed projects, so there is no Backstage service to inspect or link; no infrastructure was applied and the app is not deployed. Local Docker/Podman is unavailable, so image verification is delegated to GitHub Actions; the first workflow result is pending push. See [deployment preparation](docs/deployment.md) for the read-only Railway result, image checks, variables, and remaining steps.
 
 The `/venues` page reads published, eligible venue records and related claims, spaces, resources, policies, and sources from Sanity on the server. If Sanity is not configured or cannot be reached, it shows the checked-in research catalogue as an explicitly labeled local preview. The organizer discovery API connects to the Knowledge Base-only Context MCP endpoint and freshly published Sanity records at request time. It requires actual entry reads before returning recommendations, validates entry-scoped source identity and original URLs, and builds citations from verified published records. Audience restrictions and resource quantities must match evidence; conflicting or unestablished conditions remain unknown. Model-backed discovery requires server-only `OPENAI_API_KEY`; builds do not. Each recommendation can open the existing application builder with the exact discovery brief, unanswered requirements, and qualifications. Saving a research draft re-resolves the selected published venue and its source claims on the server, records the evidence capture date, and remains private and unsubmitable. The operational request, calendar, approval, and reservation workflow is available only for fictional demonstration hosts; real-host calendars and booking authority are not connected.
 
@@ -39,12 +39,14 @@ npm run sanity:seed           # publish records, skipping existing docs/drafts
 npm run sanity:verify-seed    # verify published records and reference integrity
 npm run sanity:schema:validate # validate Sanity Studio schema locally
 npm run sanity:schema:deploy   # deploy schema with an authenticated Sanity CLI
+npm run sanity:dev             # run the editing Studio locally at localhost:3333/studio
 npm run sanity:context-check  # verify real Knowledge Base MCP retrieval
 npm run test:context-outline  # test Context outline and citation parsing
 npm run test:agent            # test agent input and provenance guards
 npm run test:operations       # test SQLite operations, persistence, and concurrent approvals
 npm run test:deployment-controls # test same-origin checks, bounded bodies, and persistent discovery caps
 npm run verify:standalone     # run the traced Next.js artifact with isolated persistent storage
+npm run verify:docker-image   # verify a locally built image and volume restart persistence
 npm run test:e2e              # production build plus deterministic Chromium walkthroughs
 ```
 

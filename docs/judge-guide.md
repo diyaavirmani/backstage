@@ -34,4 +34,4 @@ Every venue, request, calendar entry, resource, and confirmation in this section
 
 Implemented: published Sanity catalog retrieval with an explicitly labeled fallback, real Context entry reads, server-validated source citations and requirement coverage, follow-up discovery, a reviewable private application draft for research leads, and the fictional host workflow for approvals and resources.
 
-Future production work: organizer and host identity, host onboarding and verified booking authority, real operational availability, request delivery, payment or sponsorship processing, and migration to managed multi-instance storage. Railway deployment is prepared but remains pending account access and budget approval; Backstage is not represented as deployed.
+Future production work: organizer and host identity, host onboarding and verified booking authority, real operational availability, request delivery, payment or sponsorship processing, and migration to managed multi-instance storage. Railway deployment is prepared but remains pending creation or selection of a project in the authenticated account and a reviewed plan/budget; Backstage is not represented as deployed.

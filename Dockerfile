@@ -28,7 +28,15 @@ COPY --from=builder --chown=node:node /app/public ./public
 # These files are loaded by the operational API at runtime and are copied
 # explicitly in addition to Next.js output-file tracing.
 COPY --from=builder --chown=node:node /app/db ./db
-COPY --from=builder --chown=node:node /app/scripts ./scripts
+COPY --from=builder --chown=node:node \
+  /app/scripts/operations-store.mjs \
+  /app/scripts/deployment-controls.mjs \
+  /app/scripts/agent-input.mjs \
+  /app/scripts/agent-retrieval.mjs \
+  /app/scripts/agent-validation.mjs \
+  /app/scripts/context-citations.mjs \
+  /app/scripts/context-outline.mjs \
+  ./scripts/
 COPY --from=builder --chown=node:node /app/src/data/research-catalog.json ./src/data/research-catalog.json
 USER node
 EXPOSE 3000

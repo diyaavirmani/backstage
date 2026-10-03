@@ -2,9 +2,9 @@
 
 ## Status and product boundary
 
-The Railway package is prepared for the Backstage repository and project `1428jmxu`. No Railway account, service, volume, domain, or public deployment has been verified or created in this milestone. Real venues remain research leads: the app may save private drafts but cannot submit requests to them. The approval/calendar workflow uses fictional hosts and role switching remains a simulation.
+The Railway package is prepared for the Backstage repository and Sanity project `1428jmxu`. The account is authenticated, but no Railway project, service, volume, domain, or public deployment is available or created. Real venues remain research leads: the app may save private drafts but cannot submit requests to them. The approval/calendar workflow uses fictional hosts and role switching remains a simulation.
 
-The package uses the repository Dockerfile and Railway's current TypeScript Infrastructure as Code format at `.railway/railway.ts`. Railway has deprecated `railway.json` / `railway.toml` for new services in favor of IaC. The checked-in configuration is a named `backstage` partial so its plan is scoped to this app's service and volume; inspect the plan and current Railway project before applying it. The Railway CLI/account was not available during Milestone 6. The bundled IaC command reported that it requires Railway CLI 5.42.1 or newer; no plan was applied.
+The package uses the repository Dockerfile and Railway's current TypeScript Infrastructure as Code format at `.railway/railway.ts`. Railway has deprecated `railway.json` / `railway.toml` for new services in favor of IaC. The checked-in configuration is a named `backstage` partial so its plan is scoped to this app's service and volume; inspect the plan and current Railway project before applying it. The repository's npm package `railway@3.12.0` is the IaC SDK, separate from the installed executable Railway CLI 5.63.1. On 3 October 2026, the CLI authenticated as the existing GitHub/repository owner, but `railway list --json` returned no projects, `railway status` reported no linked project, and the read-only `railway config plan --file .railway/railway.ts --json` could not proceed without a linked project. No resources were planned or changed. The account's usage query showed $0 current/estimated usage for the newly opened billing period, but did not expose the billing plan. No plan, payment settings, or billable resources were changed.
 
 ## Build and package locally
 
@@ -14,10 +14,12 @@ The image uses Node 24 on Debian Bookworm, a supported Node release with the bui
 docker build \
   --build-arg NEXT_PUBLIC_SANITY_PROJECT_ID=1428jmxu \
   --build-arg NEXT_PUBLIC_SANITY_DATASET=production \
-  -t backstage:milestone-6 .
+  -t backstage:milestone-6b .
 ```
 
-The runtime is Next standalone output. The Dockerfile also explicitly copies `db/migrations`, `scripts`, and `src/data/research-catalog.json`, because the server reads these from disk. `.dockerignore` excludes `.env*`, Git data, node_modules, SQLite files and sidecars, Playwright output, session exports, and build output. Do not pass a private token as a build argument, Docker `ARG`, `NEXT_PUBLIC_*`, or image layer.
+The runtime is Next standalone output. Sanity Studio is run locally with `npm run sanity:dev` on `http://localhost:3333/studio`; its schemas and config remain in the repository. The public Next.js runtime does not embed Studio. The only `next-sanity` import was the embedded Studio route, and the production standalone output included Studio route chunks. That route and package are removed; public catalog and evidence reads still use `@sanity/client`, and discovery still uses Context MCP. The Dockerfile explicitly copies `db/migrations`, the seven server-side script modules it uses, and `src/data/research-catalog.json`. `.dockerignore` excludes `.env*`, Git data, node_modules, SQLite files and sidecars, Playwright output, session exports, and build output. Do not pass a private token as a build argument, Docker `ARG`, `NEXT_PUBLIC_*`, or image layer.
+
+The credential-free GitHub Actions workflow `.github/workflows/docker-smoke.yml` builds the actual image and runs `scripts/verify-docker-image.mjs` with an isolated named volume. It checks startup/readiness without DB creation, a returned static CSS asset, a fictional request, host approval, checklist completion, and persistence across a container stop/start. Run the same image check locally with `BACKSTAGE_DOCKER_IMAGE=backstage:milestone-6b npm run verify:docker-image` after building the image. The script cleans up only the uniquely named container and volume it created.
 
 After Docker is installed, the isolated volume/restart check is:
 
@@ -32,7 +34,7 @@ docker run --rm -d --name backstage-m6 \
   backstage:milestone-6
 ```
 
-Use the UI to submit a fictional demo request, approve it, and complete a checklist task; restart the container against the same `/tmp/backstage-m6-volume`, then verify the same application, allocation, and task remain. Remove only that temporary directory after review. This Docker check was not run because Docker and Podman were unavailable in the implementation environment. `npm run verify:standalone` assembled the traced output plus explicit runtime files in a temporary directory, started the production server with isolated mounted storage, saved and approved a fictional application, completed a host task, restarted the process, and verified that the workspace, reservation, and task completion persisted. It also verified the health route did not initialize SQLite. This validates the standalone files and application behavior, but does not replace an actual image build; see `docs/build-log.md`.
+`npm run verify:standalone` separately assembles the traced output plus explicit runtime files in a temporary directory and validates the application and persistence behavior without Docker. It does not replace an actual image build. Local Docker availability and the GitHub Actions image result are recorded in `docs/build-log.md`.
 
 ## Railway resources and service settings
 
@@ -70,7 +72,28 @@ The persisted daily discovery quota applies per hashed application session cooki
 
 ## Dependency audit status
 
-On 3 October 2026, `npm audit` reported 13 high-severity findings in the dependency graph; `npm audit --omit=dev` reported 11. The affected chain includes `braces`, `chokidar`, `micromatch`, `fast-glob`, and `globby`, reached through Sanity/Studio packages (`next-sanity`, `sanity`, and CLI/codegen tooling). The reported automated remedies downgrade Sanity CLI, Sanity, and Next-Sanity across major versions. The registry's latest `braces` version is still 3.0.3, which the advisory marks affected, so no compatible patched leaf version was available to pin. No forced or unrelated downgrade was applied. Recheck advisories and compatibility before production use; the findings include the embedded Studio/runtime graph as well as development tooling.
+Before separating Studio, the full audit reported 13 high findings and the production-only audit reported 11. They all traced to the same advisory, [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) (CVE-2026-93687), for `braces` versions `<=3.0.3`; the advisory listed no patched version when checked on 3 October 2026. The affected transitive package paths include `chokidar`, `micromatch`, `fast-glob`, and `globby`, through Sanity tooling and Next ESLint tooling. The only reported remediation was a major-version downgrade; no forced downgrade, unsupported override, or suppression was applied.
+
+After removing the public embedded Studio route and `next-sanity`, `npm audit --omit=dev` reports zero findings, and the full audit reports 12 high package findings from that same single `braces` advisory. `sanity`, `@sanity/cli`, and `eslint-config-next` remain development dependencies and retain the affected paths. This does not patch the vulnerable package: it removes the Studio/Sanity development graph from the deployed production dependency graph. The production standalone artifact must also be inspected and the Docker image smoke workflow must pass before claiming runtime package separation has been verified. Recheck the advisory and fixes before upgrading tooling.
+
+The full audit's affected installed versions and representative dependency paths are:
+
+| Affected package | Installed version | Path to the advisory package |
+| --- | --- | --- |
+| `braces` | 3.0.3 | Advisory root; affected range is `<=3.0.3` |
+| `chokidar` | 3.6.0 | `@sanity/cli@8.13.0` → `@sanity/codegen@8.1.1` → `chokidar` → `braces` |
+| `micromatch` | 4.0.8 | Next ESLint and Sanity `globby` → `fast-glob@3.3.1` → `micromatch` → `braces` |
+| `fast-glob` | 3.3.1 | `@next/eslint-plugin-next@16.3.8` and `globby@11.1.0` → `fast-glob` → `micromatch` → `braces` |
+| `globby` | 11.1.0 | `@sanity/cli@8.13.0` → `@sanity/codegen@8.1.1` → `globby` → `fast-glob` → `micromatch` → `braces` |
+| `@sanity/codegen` | 8.1.1 | Sanity CLI dependency; brings `chokidar` and `globby` paths above |
+| `@sanity/cli` | 8.13.0 | Direct development tool; includes codegen/runtime CLI paths above |
+| `sanity` | 6.17.0 | Direct development tool; includes the Sanity CLI build path |
+| `@sanity/cli-build` | 6.4.2 | `@sanity/cli@8.13.0` → `sanity@6.17.0` optional peer/runtime tool graph |
+| `@sanity/runtime-cli` | 17.14.0 | `@sanity/cli@8.13.0` → runtime CLI → CLI build → Sanity tool graph |
+| `@next/eslint-plugin-next` | 16.3.8 | `eslint-config-next@16.3.8` → plugin → `fast-glob` → `micromatch` → `braces` |
+| `eslint-config-next` | 16.3.8 | Direct development lint config; includes the Next ESLint path above |
+
+These are npm's multiple affected-package rows and paths for one advisory, not twelve distinct vulnerabilities. Production-only audit and standalone artifact checks are separate from the still-vulnerable development-tool graph.
 
 ## Health, storage, backups, and restarts
 
