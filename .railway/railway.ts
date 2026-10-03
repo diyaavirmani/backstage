@@ -5,7 +5,7 @@ import {defineRailway,github,project,service,volume} from "railway/iac";
 export const partial="backstage";
 
 export default defineRailway(()=>{
-  const data=volume("backstage-data",{region:"asia-southeast1",sizeMB:512});
+  const data=volume("backstage-data",{region:"asia-southeast1",sizeMB:500});
   const app=service("Backstage",{
     source:github("diyaavirmani/backstage",{branch:"main"}),
     build:{builder:"DOCKERFILE",dockerfilePath:"Dockerfile"},
