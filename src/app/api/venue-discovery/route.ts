@@ -3,7 +3,7 @@ import { createMCPClient } from "@ai-sdk/mcp";
 import { createClient } from "@sanity/client";
 import { z } from "zod";
 import { discoveryBodySchema } from "../../../../scripts/agent-input.mjs";
-import { assertContextOutline, assertContextTools, assertKnowledgeReads } from "../../../../scripts/agent-retrieval.mjs";
+import { assertContextOutline, assertContextTools, assertKnowledgeReads, candidateHasVerifiedSources } from "../../../../scripts/agent-retrieval.mjs";
 import { validateAgentRecommendations } from "../../../../scripts/agent-validation.mjs";
 import { verifyVenueEvidence } from "../../../../scripts/context-citations.mjs";
 import { parseContextOutline } from "../../../../scripts/context-outline.mjs";
@@ -226,7 +226,8 @@ First use readVenueKnowledge to read relevant outline entries for ${brief.city}.
       const venue = venues.find((item) => item._id === candidate.venueId);
       const validPaths = checkedPathsByVenue.get(candidate.venueId);
       return !!venue && selectedVenueIds.has(candidate.venueId) && venue.city === brief.city && venue.locality === candidate.locality
-        && candidate.entryPaths.length > 0 && candidate.entryPaths.every((path) => validPaths?.has(path));
+        && candidate.entryPaths.length > 0 && candidate.entryPaths.every((path) => validPaths?.has(path))
+        && candidateHasVerifiedSources(candidate,evidence);
     });
     const rejectedModelCandidateCount = output.recommendations.length - scopedModelCandidates.length;
     const validationOutput = explicitVenueCandidates.length ? {recommendations: explicitVenueCandidates} : {recommendations: scopedModelCandidates};
@@ -238,7 +239,7 @@ First use readVenueKnowledge to read relevant outline entries for ${brief.city}.
         : message.includes("locality that does not match") ? "venue_locality_mismatch"
           : message.includes("do not provide validated evidence") ? "unverified_entry_path"
             : message.includes("No published citation") ? "missing_verified_citations" : "recommendation_validation_failed";
-      console.info(JSON.stringify({event: "venue_discovery_candidate_rejected", category, candidateCount: output.recommendations.length}));
+      console.info(JSON.stringify({event: "venue_discovery_candidate_rejected", category, candidateCount: output.recommendations.length, candidateIdentities: output.recommendations.map((candidate)=>({venueId:candidate.venueId,locality:candidate.locality,entryPaths:candidate.entryPaths})), verifiedCitationScopes:evidence.checks.map((check)=>({venueId:check.venue._id,path:check.path,valid:check.valid,sourceIds:[...new Set(check.citationLabels.flatMap((citation)=>citation.sourceIds||[]))]}))}));
       throw error;
     }
     console.info(JSON.stringify({
@@ -260,6 +261,7 @@ First use readVenueKnowledge to read relevant outline entries for ${brief.city}.
     return Response.json({
       recommendations: validated.recommendations.map((item) => Object.fromEntries(Object.entries(item as Record<string, unknown>).filter(([key]) => key !== "evidencePaths"))),
       requestedRequirements: validated.requestedRequirements,
+      retrievalEvidence: validated.recommendations.map((item)=>({venueId:item.venueId,entryPaths:item.evidencePaths,sourceReferenceIds:item.sourceReferences.map((source)=>source.id)})),
       message: validated.recommendations.length
         ? `I found ${validated.recommendations.length} researched ${brief.city} lead${validated.recommendations.length === 1 ? "" : "s"}. These are options to investigate; availability and booking permission still need host confirmation.`
         : `I couldn't verify a suitable ${brief.city} lead from the entries retrieved. You can ask a more specific question or try again.`,

@@ -15,3 +15,10 @@ export function assertKnowledgeReads(entries, modelToolCalls) {
   if (!modelToolCalls || !entries?.length) throw new Error("The model did not read a Knowledge Base entry; no recommendations can be returned.");
   if (entries.some((entry) => !entry.text?.trim() || !entry.knowledgeBase || !entry.path)) throw new Error("A Knowledge Base entry read was empty or incomplete.");
 }
+
+export function candidateHasVerifiedSources(candidate, evidence) {
+  if (!candidate?.venueId || !Array.isArray(candidate.entryPaths) || !candidate.entryPaths.length) return false;
+  return (evidence?.checks || []).some((check) => check.valid && check.venue?._id === candidate.venueId
+    && candidate.entryPaths.includes(check.path)
+    && check.citationLabels?.some((citation) => Array.isArray(citation.sourceIds) && citation.sourceIds.length > 0));
+}

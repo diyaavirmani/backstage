@@ -140,7 +140,7 @@ function validateBrief(brief) {
   const startsAt=localInstant(brief.date,brief.startTime), endsAt=localInstant(brief.date,brief.endTime);
   if (endsAt<=startsAt) throw new Error('Event end time must come after its start time.');
 }
-function createDraft(db, ws, payload) {
+function createDraft(db, ws, payload, trustedResearchEvidence = null) {
   const venue=getVenue(db,ws,payload.venueId);
   if (!venue) throw new Error('That venue is not available in this workspace.');
   const brief=payload.brief;
@@ -181,7 +181,8 @@ function createDraft(db, ws, payload) {
   const evidence=researchRecord?researchRecord.claims.map((claim)=>({claim:claim.claim,value:claim.value,evidenceType:claim.evidenceType,qualification:claim.qualification||null,checkedAt:claim.checkedAt,sourceReferences:claim.sourceIds.map((id)=>catalog.sources.find((source)=>source.id===id)).filter(Boolean).map(({id,title,url})=>({id,title,url}))})):[];
   const unanswered=Array.isArray(payload.questions)?payload.questions.map(String).slice(0,20):[];
   if (venue.kind==='research') unanswered.push('Current availability and permitted dates','Current price and any sponsored or pro-bono eligibility','Whether the host permits Backstage to submit or confirm a booking');
-  const appPayload={organizer,resources,questions:[...new Set(unanswered)],flexibleSlot,reviewed:payload.reviewed===true,sources,evidence,summary:researchRecord?.summary||null,venueKind:venue.kind};
+  const authoritative=venue.kind==='research'&&trustedResearchEvidence?.venueId===catalogVenueId?trustedResearchEvidence:null;
+  const appPayload={organizer,resources,questions:[...new Set(unanswered)],flexibleSlot,reviewed:payload.reviewed===true,sources:authoritative?.sources||sources,evidence:authoritative?.evidence||evidence,summary:authoritative?.summary||researchRecord?.summary||null,venueKind:venue.kind,researchEvidenceCapturedAt:authoritative?.capturedAt||null,researchVenueId:authoritative?.venueId||null,discoveryBriefSnapshot:payload.discoveryBriefSnapshot||null,discoveryCreatedAt:payload.discoveryCreatedAt||null};
   const id=existing?.id||uid('application'),created=nowIso(), status=payload.submit?'submitted':'draft';
   if(existing){db.prepare('UPDATE applications SET payload_json=?,brief_json=?,updated_at=? WHERE workspace_id=? AND id=?').run(json(appPayload),json(brief),created,ws,id);transition(db,ws,existing,status,payload.submit?'Organizer reviewed and submitted this demonstration request.':'Organizer updated the application draft.','organizer');}
   else {db.prepare('INSERT INTO applications(id,workspace_id,venue_id,status,idempotency_key,payload_json,brief_json,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)').run(id,ws,venue.id,status,idempotencyKey,json(appPayload),json(brief),created,created);db.prepare('INSERT INTO transition_history(id,workspace_id,application_id,actor,from_status,to_status,note,created_at) VALUES(?,?,?,?,?,?,?,?)').run(uid('transition'),ws,id,'organizer',null,status,payload.submit?'Organizer reviewed and submitted this demonstration request.':'Application draft saved.',created);}
@@ -300,7 +301,7 @@ function checklist(db,ws,app,brief) {
   for (const task of tasks) db.prepare('INSERT OR IGNORE INTO checklist_items(id,workspace_id,application_id,label,owner,due_at,created_at) VALUES(?,?,?,?,?,?,?)').run(uid('task'),ws,app.id,task.label,task.owner,task.due,nowIso());
 }
 
-export function mutate(db,ws,role,action) {
+export function mutate(db,ws,role,action,trustedResearchEvidence = null) {
   ensureRole(db,ws,role);
   if (action.type==='switch-role') {
     if (!['organizer','host'].includes(action.role)) throw new Error('Role simulation must be organizer or host.');
@@ -312,7 +313,7 @@ export function mutate(db,ws,role,action) {
     if(role==='host')releaseExpiredHolds(db,ws);
     if (action.type==='save-application'||action.type==='submit-application') {
       if (role!=='organizer') throw new Error('Switch to the organizer simulation to prepare an application.');
-      const id=createDraft(db,ws,{...action.payload,submit:action.type==='submit-application'}); result={applicationId:id};
+      const id=createDraft(db,ws,{...action.payload,submit:action.type==='submit-application'},trustedResearchEvidence); result={applicationId:id};
     } else if(role==='host'&&action.type==='withdraw-availability') {
       const row=db.prepare('SELECT * FROM availability_windows WHERE workspace_id=? AND id=?').get(ws,String(action.availabilityId||''));if(!row)throw new Error('Availability window not found.');
       const conflict=db.prepare("SELECT 1 as yes FROM allocations WHERE workspace_id=? AND resource_id=? AND starts_at<? AND ends_at>? AND (state='reservation' OR (state='hold' AND expires_at>?)) LIMIT 1").get(ws,row.resource_id,row.ends_at,row.starts_at,nowIso());if(conflict)throw new Error('Availability cannot be withdrawn while an active allocation overlaps it.');

@@ -1,6 +1,42 @@
 import {expect,test,type Browser,type BrowserContext,type Page} from "@playwright/test";
 import {mkdirSync} from "node:fs";
 
+type TestApplication={id:string;idempotency_key:string;status:string;venue_id:string;venue_name:string;city:string;locality:string;kind:string;payload:Record<string,unknown>;brief:Record<string,unknown>;acceptedBrief:null;proposed:null;history:unknown[];checklist:unknown[]};
+type TestOverview={applications:TestApplication[]};
+
+test("source-backed discovery handoff opens the matching private draft (deterministic fixture)",async({page})=>{
+  const testDate=futureWeekday(18);let savedApplication:TestApplication|undefined;let posted:Record<string,unknown>|undefined;
+  // Explicit test fixture: this route never runs in the product and contains no live recommendation claim.
+  await page.route("**/api/venue-discovery",route=>route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({message:"Deterministic browser fixture only.",recommendations:[{venueId:"venue-masters-union-gurugram",name:"Masters’ Union Campus",city:"Delhi NCR",locality:"DLF Cyber Park, Udyog Vihar Phase III, Gurugram",relationshipStatus:"research-lead",historical:false,requirementCoverage:[{requirement:"Capacity for 24 guests in one documented room layout",status:"unknown",evidence:[]},{requirement:"Available for the selected date",status:"unknown",evidence:[]}],documentedFacts:[{claim:"Public hosting invitation",value:"Offsites, conferences, and meetings are mentioned.",evidenceType:"public-documentation",qualification:"Room terms and audience eligibility are not specified."}],importantUnknowns:[{claim:"Room-specific capacity",value:"Unknown from reviewed sources."}],documentedConflicts:[],sourceReferences:[{id:"source-mu",title:"Masters’ Union company events",url:"https://mastersunion.org/for-companies"}],nextStep:"Ask the host about fit and terms."}]})}));
+  await page.route("**/api/operations**",async route=>{
+    if(route.request().method()==="GET"){
+      const response=await route.fetch();const fresh=await response.json() as TestOverview;
+      await route.fulfill({response,json:{...fresh,applications:savedApplication?[savedApplication,...fresh.applications.filter((app)=>app.id!==savedApplication?.id)]:fresh.applications}});return;
+    }
+    const body=await route.request().postDataJSON() as {payload:Record<string,unknown>};posted=body.payload;const payload=body.payload;
+    savedApplication={id:"fixture-research-draft",idempotency_key:String(payload.idempotencyKey),status:"draft",venue_id:String(payload.venueId),venue_name:"Masters’ Union Campus",city:"Delhi NCR",locality:"DLF Cyber Park, Udyog Vihar Phase III, Gurugram",kind:"research",payload:{organizer:payload.organizer,resources:[],questions:payload.questions,flexibleSlot:null,sources:[{id:"source-mu",title:"Masters’ Union company events",url:"https://mastersunion.org/for-companies"}],evidence:[{claim:"Public hosting invitation",value:"Offsites are mentioned.",evidenceType:"public-documentation",qualification:"Subject to host terms.",checkedAt:"2026-10-02",sourceReferences:[{id:"source-mu",title:"Masters’ Union company events",url:"https://mastersunion.org/for-companies"}]}],summary:"Fixture content",venueKind:"research"},brief:payload.brief as Record<string,unknown>,acceptedBrief:null,proposed:null,history:[],checklist:[]};
+    await route.fulfill({json:{ok:true,applicationId:savedApplication.id}});
+  });
+  await page.goto("/organizer");await fillEventBrief(page,testDate);await page.getByRole("button",{name:"Save event brief"}).click();await page.getByRole("button",{name:"Find suitable venues"}).click();
+  const recommendation=page.locator(".recommendation-card").filter({hasText:"Masters’ Union Campus"});await expect(recommendation).toBeVisible();await expect(recommendation.getByRole("link",{name:/Masters’ Union company events/})).toHaveAttribute("href","https://mastersunion.org/for-companies");
+  await recommendation.getByRole("button",{name:"Prepare application draft"}).click();await expect(page.locator("#application-builder")).toBeVisible();
+  await expect(page.getByLabel("Potential host")).toHaveValue(/venue-masters-union-gurugram$/);await expect(page.locator("#application-builder .brief-snapshot")).toContainText("Organizer browser journey");await expect(page.getByLabel("Questions still needing an answer")).toContainText("Capacity for 24 guests");
+  await expect(page.getByText(/Discovery evidence and qualifications/)).toBeVisible();await expect(page.getByRole("button",{name:"Submit demo request"})).toBeDisabled();await expect(page.getByRole("button",{name:"Save application draft"})).toBeDisabled();
+  await page.getByLabel("Organizer name").fill("Fixture Organizer");await page.getByLabel("Email",{exact:true}).fill("fixture@example.test");await page.getByLabel(/I have reviewed the brief snapshot/).check();await page.getByRole("button",{name:"Save application draft"}).click();
+  await expect(page.getByRole("status").filter({hasText:"Application draft saved"})).toBeVisible();expect(String(posted?.venueId)).toMatch(/venue-masters-union-gurugram$/);expect((posted?.brief as Record<string,unknown>)?.title).toBe("Organizer browser journey");expect((posted?.discoveryBriefSnapshot as Record<string,unknown>)?.title).toBe("Organizer browser journey");expect(posted?.authoritativeResearchEvidence).toBeUndefined();
+  const saved=page.locator(".application-card").filter({hasText:"Fixture Organizer"});await expect(saved).toContainText("DRAFT ONLY");await expect(saved.getByRole("link",{name:/Masters’ Union company events/}).first()).toHaveAttribute("href","https://mastersunion.org/for-companies");
+  await page.reload();await expect(page.locator(".application-card").filter({hasText:"Fixture Organizer"})).toContainText("DRAFT ONLY");
+  await page.setViewportSize({width:390,height:844});const size=await page.evaluate(()=>({width:document.documentElement.clientWidth,scrollWidth:document.documentElement.scrollWidth}));expect(size.scrollWidth).toBeLessThanOrEqual(size.width);await page.screenshot({path:`${process.env.PLAYWRIGHT_ARTIFACT_DIR||".playwright-artifacts"}/research-handoff-mobile.png`,fullPage:true});
+});
+
+test("example briefs are explicit and do not create applications or reservations",async({page})=>{
+  await page.goto("/organizer");const example=page.getByLabel("Try an example");const load=page.getByRole("button",{name:"Load example"});
+  await example.selectOption("delhi-hackathon");await load.click();await expect(page.getByLabel(/What are you calling it/)).toHaveValue("Delhi NCR community hackathon");await expect(page.getByLabel(/Expected guests/)).toHaveValue("80");await expect(page.getByLabel("Rooms or areas")).toHaveValue("Main event room, breakout rooms");
+  await example.selectOption("bengaluru-founders");await load.click();await expect(page.locator(".brief-form select").first()).toHaveValue("Bengaluru");await expect(page.getByLabel(/Who’s coming/)).toHaveValue("Early-stage founders and startup operators");
+  await example.selectOption("demo-workshop");await load.click();await expect(page.getByLabel(/What are you calling it/)).toHaveValue("Fictional host workshop demo");await expect(page.getByLabel("Rooms or areas")).toHaveValue("Workshop Studio");
+  const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem("backstage.event-brief.v1")||"null") as {date:string;startTime:string;endTime:string;setupMinutes:number;cleanupMinutes:number}|null);expect(stored?.date).toBeTruthy();const eventDate=new Date(`${stored!.date}T12:00:00+05:30`);expect(eventDate.getTime()).toBeGreaterThan(Date.now());expect(eventDate.getTime()-Date.now()).toBeLessThan(100*86400000);expect(new Intl.DateTimeFormat("en-US",{weekday:"long",timeZone:"Asia/Kolkata"}).format(eventDate)).not.toBe("Sunday");expect(stored!.startTime).toBe("11:00");expect(stored!.endTime).toBe("13:00");expect(stored!.setupMinutes).toBe(30);expect(stored!.cleanupMinutes).toBe(30);await expect(page.locator(".application-card")).toHaveCount(0);await expect(page.locator(".calendar-item")).toHaveCount(0);
+});
+
 function futureWeekday(offset:number) {
   const date=new Date();date.setHours(12,0,0,0);date.setDate(date.getDate()+offset);
   while(date.getDay()===0)date.setDate(date.getDate()+1);
@@ -61,17 +97,6 @@ test("organizer brief, host review, shared resources, cancellation, and mobile c
     await expect(organizer.locator(".brief-form").getByLabel(/Event date/)).toHaveValue(date);
     await organizer.screenshot({path:`${artifactDir}/organizer-saved-brief.png`,fullPage:true});
 
-    await selectOptionMatching(organizer,"Potential host",/RESEARCH LEAD.*Masters’ Union Campus/);
-    await organizer.getByRole("button",{name:"Load saved event brief"}).click();
-    await organizer.getByLabel("Organizer name").fill("Browser Test Organizer");
-    await organizer.getByLabel("Email",{exact:true}).fill("organizer@example.test");
-    await organizer.getByRole("button",{name:"Save application draft"}).click();
-    const researchCard=organizer.locator(".application-card").filter({hasText:"Masters’ Union Campus"});
-    await expect(researchCard).toContainText("DRAFT ONLY");
-    await expect(organizer.getByRole("button",{name:"Submit demo request"})).toBeDisabled();
-    await expect(researchCard.getByRole("link").first()).toHaveAttribute("href","https://mastersunion.org/for-companies");
-
-    await organizer.getByRole("button",{name:"Start a new application draft"}).click();
     await organizer.getByRole("button",{name:"Load saved event brief"}).click();
     await selectOptionMatching(organizer,"Potential host",/FICTIONAL DEMO.*Backstage Demo House/);
     await organizer.getByLabel("Event title").fill("First approved event");

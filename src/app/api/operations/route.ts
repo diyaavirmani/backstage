@@ -1,10 +1,12 @@
 import {cookies} from "next/headers";
 import {NextRequest, NextResponse} from "next/server";
 import {getOverview, mutate, openOperationsStore, researchVenues, resolveWorkspace, type OperationsDatabase} from "../../../../scripts/operations-store.mjs";
+import {getPublishedResearchEvidence} from "@/lib/sanity-venue-data";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const COOKIE = "backstage-demo-session";
+type OperationsRequest={type:string;payload?:Record<string,unknown>;[key:string]:unknown};
 
 async function session() {
   const jar=await cookies();
@@ -35,10 +37,19 @@ export async function POST(request: NextRequest) {
   try {
     const raw=await request.text();
     if(raw.length>256_000)return NextResponse.json({error:"This request is too large. Shorten the application details and try again."},{status:413});
-    const body=JSON.parse(raw) as Record<string,unknown>;
+    const body=JSON.parse(raw) as OperationsRequest;
     if (!body||typeof body!=="object"||typeof body.type!=="string") return NextResponse.json({error:"Choose a supported workspace action."},{status:400});
     const current=await session();db=current.db;
-    const result=mutate(db,current.workspace.workspaceId,current.workspace.role,body);
+    let trustedResearchEvidence=null;
+    if(["save-application","submit-application"].includes(body.type)&&typeof body.payload?.venueId==="string"){
+      const venue=researchVenues(current.workspace.workspaceId).find((item)=>item.id===body.payload?.venueId);
+      if(venue){
+        if(body.type==="submit-application") throw new Error("Researched venues are draft-only because Backstage has no verified authority to submit booking requests.");
+        trustedResearchEvidence=await getPublishedResearchEvidence(venue.catalogId);
+        if(trustedResearchEvidence.name!==venue.name||trustedResearchEvidence.city!==venue.city||trustedResearchEvidence.locality!==venue.locality) throw new Error("Published venue identity no longer matches this workspace. Refresh and prepare the draft again.");
+      }
+    }
+    const result=mutate(db,current.workspace.workspaceId,current.workspace.role,body as Record<string,unknown>,trustedResearchEvidence);
     const response=NextResponse.json({ok:true,...result});
     if (current.jar.get(COOKIE)?.value!==current.workspace.token) response.cookies.set(COOKIE,current.workspace.token,{httpOnly:true,sameSite:"lax",secure:process.env.NODE_ENV==="production",path:"/",maxAge:60*60*24*30});
     return response;

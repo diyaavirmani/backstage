@@ -24,7 +24,7 @@ export default defineConfig({
     reuseExistingServer:false,
     timeout:90_000,
     env:{...process.env,PORT:"3107",BACKSTAGE_DB_PATH:database,BACKSTAGE_PLAYWRIGHT_DATA_DIR:dataDir,NEXT_TELEMETRY_DISABLED:"1"},
-    stdout:"ignore",
+    stdout:"pipe",
     stderr:"pipe",
   },
 });

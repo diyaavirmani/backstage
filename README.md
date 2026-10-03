@@ -8,9 +8,9 @@ The product helps organizers explain their event setup and helps hosts coordinat
 
 The responsive product shell, event brief and live Sanity Context discovery are implemented. The brief validates required fields and persists in browser local storage. Organizers can save source-backed draft applications for the six researched leads; these leads cannot be submitted because Backstage has no verified booking authority for them. Two clearly fictional demonstration hosts, one per city, support the full application-review, hold, approval, resource calendar, cancellation, alternative-slot, and preparation checklist workflow. Demonstration operations are stored server-side in SQLite and scoped by an opaque HTTP-only simulation cookie. Host/organizer role switching is a workflow simulation, not production identity or authorization. Communications stay inside the application.
 
-The `/venues` page remains a local JSON research preview. The organizer discovery API connects to the Knowledge Base-only Context MCP endpoint and freshly published Sanity venue/source records at request time. It requires actual entry reads before returning recommendations, checks the entry, locality, source identity, canonical URL, and structured claim associations, and builds citations from verified published source records. Audience restrictions and resource quantities must match evidence; conflicts and unestablished conditions remain unknown. Model-backed discovery requires server-only `OPENAI_API_KEY`; builds and the rest of the app do not. Recommendations are potential hosts to investigate, not partners or bookable inventory. The operational request, calendar, approval, and reservation workflow is available only for fictional demonstration hosts; real-host calendars and booking authority are not connected.
+The `/venues` page reads published, eligible venue records and related claims, spaces, resources, policies, and sources from Sanity on the server. If Sanity is not configured or cannot be reached, it shows the checked-in research catalogue as an explicitly labeled local preview. The organizer discovery API connects to the Knowledge Base-only Context MCP endpoint and freshly published Sanity records at request time. It requires actual entry reads before returning recommendations, validates entry-scoped source identity and original URLs, and builds citations from verified published records. Audience restrictions and resource quantities must match evidence; conflicting or unestablished conditions remain unknown. Model-backed discovery requires server-only `OPENAI_API_KEY`; builds do not. Each recommendation can open the existing application builder with the exact discovery brief, unanswered requirements, and qualifications. Saving a research draft re-resolves the selected published venue and its source claims on the server, records the evidence capture date, and remains private and unsubmitable. The operational request, calendar, approval, and reservation workflow is available only for fictional demonstration hosts; real-host calendars and booking authority are not connected.
 
-Sanity project `1428jmxu` in organization `o8mue7lt8` has a private `production` dataset with 37 published research documents and Knowledge Base `kbPFAVeDOOjD`. The schema is deployed, and `backstage-venues` exposes `initial_context`, `knowledge_base_read`, and `knowledge_base_search`. Live source-grounded retrieval passed for all six venues on 2 October 2026. `/venues` remains a local JSON preview. The operational demo inventory is created only in the SQLite application store and is excluded from Sanity and the Knowledge Base query.
+Sanity project `1428jmxu` in organization `o8mue7lt8` has a private `production` dataset with 37 published research documents and Knowledge Base `kbPFAVeDOOjD`. The schema is deployed, and `backstage-venues` exposes `initial_context`, `knowledge_base_read`, and `knowledge_base_search`. The live Context check verified all six venue entries on 3 October 2026; the live browser walkthrough retrieved Shifu with source `source-shifu-den`, ran a follow-up, opened its original source, and saved a private draft. The `/venues` server query excludes drafts and demonstration content. The operational demo inventory is created only in the SQLite application store and is excluded from Sanity and the Knowledge Base query.
 
 ## Run locally
 
@@ -41,15 +41,23 @@ npm run sanity:context-check  # verify real Knowledge Base MCP retrieval
 npm run test:context-outline  # test Context outline and citation parsing
 npm run test:agent            # test agent input and provenance guards
 npm run test:operations       # test SQLite operations, persistence, and concurrent approvals
+npm run test:e2e              # production build plus deterministic Chromium walkthroughs
 ```
+
+The opt-in live browser walkthrough requires configured server-side Sanity and OpenAI credentials and makes real model requests:
+
+```bash
+DOTENV_CONFIG_PATH=.env.local BACKSTAGE_LIVE_BROWSER=1 node -r dotenv/config ./node_modules/@playwright/test/cli.js test tests/e2e/live-discovery.spec.ts
+```
+It writes only bounded, non-secret retrieval evidence into ignored `.playwright-artifacts/`.
 
 ## Next milestones
 
 1. Replace simulation workspaces with production organizer/host identity, authorization, and onboarding; connect verified hosts and their current policies.
 2. Move operational storage to a managed durable, multi-instance database and add production alerting, backups, and operational recovery.
-3. Serve the venue catalog from published Sanity content and add freshness/rebuild monitoring.
+3. Add verified host availability, real request delivery, payment/sponsorship operations, and booking authority only after hosts onboard.
 4. Consider recurring events and attendance conditions after production booking controls are reliable.
 
-See [the product brief](docs/product-brief.md), [architecture](docs/architecture.md), [Sanity setup](docs/sanity-setup.md), [build log](docs/build-log.md), and [session capture guide](docs/session-capture.md).
+See [the product brief](docs/product-brief.md), [architecture](docs/architecture.md), [Sanity setup](docs/sanity-setup.md), [judge walkthrough](docs/judge-guide.md), [build log](docs/build-log.md), and [session capture guide](docs/session-capture.md).
 
 To use organizer discovery locally, add `OPENAI_API_KEY` to ignored `.env.local` (never a `NEXT_PUBLIC_` variable). `OPENAI_MODEL` is optional and defaults to `gpt-4.1-mini`. Sanity’s project import token, Context MCP URL, and organization Context Viewer token must also be configured for the live retrieval path; see [Sanity setup](docs/sanity-setup.md). For the local SQLite path, backup and production deployment constraints, see [operations setup](docs/operations-setup.md).

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {assertContextTools, assertContextOutline, assertKnowledgeReads} from "./agent-retrieval.mjs";
+import {assertContextTools, assertContextOutline, assertKnowledgeReads, candidateHasVerifiedSources} from "./agent-retrieval.mjs";
 
 test("requires the live Knowledge Base outline and read tools", () => {
   assert.throws(() => assertContextTools(["groq_query"]), /initial_context/);
@@ -19,4 +19,14 @@ test("refuses recommendations after a failed or empty entry read", () => {
   assert.throws(() => assertKnowledgeReads([{knowledgeBase: "kb1", path: "venues/a", text: "  "}], 1), /empty or incomplete/);
   assert.throws(() => assertKnowledgeReads([{knowledgeBase: "kb1", path: "venues/a", text: "venue source material"}], 0), /did not read/);
   assert.doesNotThrow(() => assertKnowledgeReads([{knowledgeBase: "kb1", path: "venues/a", text: "venue source material"}], 1));
+});
+
+test("candidate citations must be verified in that venue's selected entry scope",()=>{
+  const evidence={checks:[
+    {valid:true,venue:{_id:"venue-shifu"},path:"venues/shifu",citationLabels:[{sourceIds:["source-shifu"]}]},
+    {valid:true,venue:{_id:"venue-saiacs"},path:"venues/saiacs",citationLabels:[{sourceIds:[]}]},
+  ]};
+  assert.equal(candidateHasVerifiedSources({venueId:"venue-shifu",entryPaths:["venues/shifu"]},evidence),true);
+  assert.equal(candidateHasVerifiedSources({venueId:"venue-saiacs",entryPaths:["venues/saiacs"]},evidence),false);
+  assert.equal(candidateHasVerifiedSources({venueId:"venue-shifu",entryPaths:["venues/saiacs"]},evidence),false);
 });
