@@ -1,6 +1,6 @@
 # Backstage recording script (4–5 minutes)
 
-The redesigned workflow is on `feat/green-saas-redesign` and is not deployed by this task. Rehearse on localhost; record this navigation on the public app only after a separately authorized release. Use the same browser tab throughout. The browser receives its own demo workspace cookie. The public demo has persisted discovery limits of five requests per session and fifty requests total per day; this script uses two discovery calls. Do not reset counters or raise those limits for a recording. If the shared limit has already been reached, record the non-live walkthrough and label discovery as unavailable rather than retrying repeatedly.
+The redesigned workflow and illustrated UI are now live at the public URL (source revision `c8ff4f1`). Rehearse on localhost if desired, then use the public app for this recording. Use the same browser tab throughout. The browser receives its own demo workspace cookie. The public demo has persisted discovery limits of five requests per session and fifty requests total per day; this script uses two discovery calls. Do not reset counters or raise those limits for a recording. If the shared limit has already been reached, record the non-live walkthrough and label discovery as unavailable rather than retrying repeatedly.
 
 Use fictional organizer contact details in the demo. Do not show private environment settings, browser storage, cookies, database contents, or raw provider output.
 

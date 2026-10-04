@@ -6,7 +6,7 @@ Backstage helps organizers describe what they are hosting, then retrieves source
 
 ## Redesign branch navigation
 
-The green workspace redesign is available on `feat/green-saas-redesign` for local review; this task does not merge or deploy it. The instructions below describe that branch. The public URL above continues to serve the previously deployed revision.
+The green workspaces and illustrated presentation are now live at the URL above (source revision `c8ff4f1`, deployed from `feat/green-saas-redesign`). The navigation below works on the public app. The external design-reference PR remains unmerged.
 
 ## Try discovery in your own browser
 
