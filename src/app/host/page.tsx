@@ -1,13 +1,22 @@
-import {OperationsWorkspace} from "@/components/operations-workspace";
-import {SiteHeader} from "@/components/site-header";
+import { SiteHeader } from "@/components/site-header";
+import { WorkspaceShell } from "@/components/workspace-shell";
+import { PageHeader } from "@/components/ui";
+import { OperationsWorkspace } from "@/components/operations-workspace";
 
 export default function HostPage() {
-  return <>
-    <SiteHeader active="host" />
-    <main className="host-page page-wrap">
-      <div className="host-heading"><p className="eyebrow"><span className="eyebrow-dot"/> FICTIONAL HOST DEMONSTRATION</p><h1>Host workspace</h1><p>Review demo requests, allocate fictional resources, and coordinate preparation. Role switching is a simulation; researched venues are not onboarded for bookings.</p></div>
-      <OperationsWorkspace mode="host" />
-    </main>
-    <footer className="site-footer page-wrap"><span>BACKSTAGE · HOST SIMULATION</span><span>Fictional operations workspace</span><span>DELHI NCR · BENGALURU</span></footer>
-  </>;
+  return (
+    <>
+      <SiteHeader active="host" />
+      <WorkspaceShell kind="host">
+        <main id="main-content">
+          <PageHeader
+            label="Fictional host demonstration"
+            title="Host workspace"
+            description="Review requests, coordinate resources, and prepare together in your private demo workspace."
+          />
+          <OperationsWorkspace mode="host" />
+        </main>
+      </WorkspaceShell>
+    </>
+  );
 }

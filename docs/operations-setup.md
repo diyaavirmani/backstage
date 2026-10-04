@@ -65,10 +65,14 @@ The setup follows the [Playwright installation guide](https://playwright.dev/doc
 
 These steps can supplement the automated Playwright scenario with a quick hands-on review.
 
-1. On `/organizer`, save a complete event brief; open the application section and load it.
+1. On the redesign branch, complete the three-step Event brief and save from Review. Open Private drafts and load it. Examples fill only the form.
 2. Select a researched lead and save a draft. Confirm its original sources, evidence, unknowns, and draft-only label; verify its submit button is disabled.
 3. Select a clearly fictional demo host, select a room and equipment, edit the brief snapshot, enter organizer contact details, and set a flexibility range.
 4. Review and submit. Confirm the request appears in the host simulation queue without any external message being sent.
 5. Place a temporary hold, observe its calendar label, then approve the request. Confirm resource allocation, the accepted brief snapshot, and checklist appear.
 6. Try another overlapping event using the same room or equipment; confirm the host gets a resource-specific conflict. Propose an available flexible slot, switch to organizer simulation to accept it, then approve from the host simulation.
-7. Navigate calendar months, filter by resource, add an internal block outside active allocations, and repeat the same steps at a narrow mobile width.
+7. In Resource calendar, navigate months, filter by resource, open an entry, or use the internal-block dialog outside active allocations. In Preparation, check role-owned tasks and see the other role’s progress. Repeat at a narrow mobile width.
+
+## Green workspace branch
+
+The redesign uses the existing APIs and database without migration or contract changes. `?view=requests`, `?view=calendar`, and `?view=preparation` identify host views; month/resource filters persist in URL history. Private drafts are at `/organizer?view=drafts`. Open **View application details** for actions, evidence snapshots and history. Requests and Preparation share persisted checklist state; actions still require the matching simulated role. This branch is not deployed by the redesign task.
