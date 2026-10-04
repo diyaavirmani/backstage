@@ -4,6 +4,26 @@ import { SiteFooter } from "@/components/site-footer";
 import { Badge, SourceLink } from "@/components/ui";
 import { PresentationIcon } from "@/components/presentation-icon";
 import catalog from "@/data/research-catalog.json";
+import {
+  runStructureEval,
+  venuesFromCatalog,
+} from "../../scripts/structure-eval.mjs";
+import { structureEvalCases } from "../../scripts/structure-eval-cases.mjs";
+
+// Computed at build time from the reviewed catalog and the production verifier (see docs/structure-eval.md).
+const evaluation = runStructureEval(
+  venuesFromCatalog(catalog),
+  structureEvalCases,
+);
+const traps = [
+  {
+    id: "ofis-sohna-outside-food",
+    keyword: "the text contains “outside-food permission”.",
+  },
+  { id: "saiacs-300-seats", keyword: "the text mentions “approximately 350 seats”." },
+  { id: "shifu-free-students", keyword: "the text says “pro bono” and “free”." },
+  { id: "paytm-200", keyword: "the text contains 2026, which is more than 200." },
+];
 
 export default function Home() {
   const shifu = catalog.venues.find(
@@ -263,6 +283,56 @@ export default function Home() {
               </div>
             </article>
           </div>
+        </section>
+
+        <section
+          className="structure-proof page-wrap"
+          aria-labelledby="structure-heading"
+        >
+          <div className="section-heading">
+            <h2 id="structure-heading">
+              Keyword search
+              <br />
+              would have said yes.
+            </h2>
+            <p>
+              We asked {evaluation.length} real organizer questions of the same
+              published venue text. A keyword match answered{" "}
+              {evaluation.filter((row) => row.keywordCorrect).length} correctly;
+              Backstage&apos;s structured checks answered{" "}
+              {evaluation.filter((row) => row.structuredCorrect).length}.
+              Keyword matching errs toward a confident yes. Backstage errs
+              toward “needs confirmation”.
+            </p>
+          </div>
+          <div className="proof-grid">
+            {traps.map((trap) => {
+              const row = evaluation.find((item) => item.id === trap.id)!;
+              return (
+                <article className="proof-card" key={trap.id}>
+                  <p className="proof-question">“{row.question}”</p>
+                  <p>
+                    <span className="proof-label proof-wrong">
+                      Keyword match: yes
+                    </span>{" "}
+                    because {trap.keyword}
+                  </p>
+                  <p>
+                    <span className="proof-label proof-right">
+                      Backstage: not established
+                    </span>{" "}
+                    because {row.why}.
+                  </p>
+                </article>
+              );
+            })}
+          </div>
+          <a
+            className="text-link"
+            href="https://github.com/diyaavirmani/backstage/blob/main/docs/structure-eval.md"
+          >
+            See all {evaluation.length} questions, the method and our misses →
+          </a>
         </section>
 
         <section className="research-boundary page-wrap">

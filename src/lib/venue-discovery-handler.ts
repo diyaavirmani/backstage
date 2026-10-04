@@ -264,6 +264,18 @@ First use readVenueKnowledge to read relevant outline entries for ${brief.city}.
       }), brief),
       requestedRequirements: validated.requestedRequirements,
       retrievalEvidence: validated.recommendations.map((item)=>({venueId:item.venueId,entryPaths:item.evidencePaths,sourceReferenceIds:item.sourceReferences.map((source)=>source.id)})),
+      // A sanitized record of what the agent actually did, so organizers and reviewers can audit the answer.
+      verification: {
+        knowledgeBaseIds: [...new Set(readEntries.map((entry) => entry.knowledgeBase))],
+        outlineEntryCount: outline.length,
+        scopedEntryCount: eligible.length,
+        localityFilter: {included: localityIntent.included, excluded: localityIntent.excluded},
+        entriesRead: readEntries.map((entry) => ({path: entry.path, tag: entry.tag})),
+        readToolCalls: modelToolCalls,
+        modelCandidateCount: output.recommendations.length,
+        rejectedCandidateCount: rejectedModelCandidateCount,
+        citationChecks: evidence.checks.map((check) => ({venueId: check.venue._id, path: check.path, valid: check.valid && (check.citationLabels.some((citation) => citation.sourceIds?.length) || check.inlineSourceIds.length > 0), sourceIds: [...new Set([...check.citationLabels.flatMap((citation) => citation.sourceIds || []), ...check.inlineSourceIds])]})),
+      },
       message: validated.recommendations.length
         ? `I found ${validated.recommendations.length} researched ${brief.city} lead${validated.recommendations.length === 1 ? "" : "s"}. These are options to investigate; availability and booking permission still need host confirmation.`
         : `I couldn't verify a suitable ${brief.city} lead from the entries retrieved. You can ask a more specific question or try again.`,

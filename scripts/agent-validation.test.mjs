@@ -182,3 +182,11 @@ test("documented facts link only verified claim sources and keep their subject f
   assert.deepEqual(fact.sourceReferences.map((item) => item.id), [source._id]);
   assert.equal(result.recommendations[0].contacts, undefined, "contacts are attached by the server handler from Sanity, not by model validation");
 });
+
+test("caveats are scoped to their clause and terms match whole words only", () => {
+  const facilities = {...venue, claims: [...venue.claims, {_key: "claim-av", subject: "equipment", claim: "The page describes AV systems and display screens", value: "Exact inventory and room assignment remain unknown", evidenceType: "public-documentation", sources: [source]}]};
+  const run = (requirement) => validateAgentRecommendations({output: outputFor(), venues: [facilities], brief: {...brief, essentialRequirements: [requirement]}, evidence: {checks: [validCheck]}}).recommendations[0].requirementCoverage.find((item) => item.requirement === requirement).status;
+  assert.equal(run("Display screens"), "supported", "a caveat on inventory does not hide documented screens");
+  assert.equal(run("Projector"), "unknown", "an unnamed item stays unknown");
+  assert.equal(run("Main room"), "unknown", "\"main\" does not match \"remain\"");
+});

@@ -30,3 +30,12 @@ test("candidate citations must be verified in that venue's selected entry scope"
   assert.equal(candidateHasVerifiedSources({venueId:"venue-saiacs",entryPaths:["venues/saiacs"]},evidence),false);
   assert.equal(candidateHasVerifiedSources({venueId:"venue-shifu",entryPaths:["venues/saiacs"]},evidence),false);
 });
+
+test("an inline link to the venue's own published source verifies it only when the whole check is valid",()=>{
+  const evidence={checks:[
+    {valid:true,venue:{_id:"venue-saiacs"},path:"venues/saiacs",citationLabels:[],inlineSourceIds:["source-saiacs"]},
+    {valid:false,venue:{_id:"venue-ofis"},path:"venues/ofis",citationLabels:[],inlineSourceIds:["source-ofis"]},
+  ]};
+  assert.equal(candidateHasVerifiedSources({venueId:"venue-saiacs",entryPaths:["venues/saiacs"]},evidence),true);
+  assert.equal(candidateHasVerifiedSources({venueId:"venue-ofis",entryPaths:["venues/ofis"]},evidence),false);
+});

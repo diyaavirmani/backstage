@@ -72,3 +72,14 @@ test("keeps Ofis locations distinct when both cite the same official page", () =
   assert.deepEqual(result.checks.map(({venue}) => venue._id).sort(), ["ofis-gurugram", "ofis-noida"]);
   assert.deepEqual(result.checks.map(({matchedUrls}) => matchedUrls), [["https://ofissquare.com/events-spaces"], ["https://ofissquare.com/events-spaces"]]);
 });
+
+test("inline links inside a venue's own section map to that venue's source IDs only", () => {
+  const saiacs = venues.find(({_id}) => _id === "saiacs");
+  const shifu = venues.find(({_id}) => _id === "shifu");
+  const result = verifyVenueEvidence([{path: "venues/bengaluru/saiacs", text: section(saiacs)}], [saiacs]);
+  assert.equal(result.checks[0].valid, true);
+  assert.deepEqual(result.checks[0].inlineSourceIds, ["saiacs-src"]);
+  const foreign = verifyVenueEvidence([{path: "venues/bengaluru/saiacs", text: section(saiacs, "", shifu.sources[0].url)}], [saiacs]);
+  assert.deepEqual(foreign.checks[0].inlineSourceIds, [], "another venue's URL never vouches for this venue");
+  assert.equal(foreign.checks[0].valid, false);
+});

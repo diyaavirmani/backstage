@@ -21,8 +21,11 @@ export function ResearchLeadCard({
   venue,
   onPrepare,
   brief,
+  retrieval,
 }: {
   venue: VenueRecommendation;
+  /** Knowledge Base entries and citations that verified this lead in the current discovery run. */
+  retrieval?: { entryPaths: string[]; sourceReferenceIds: string[] };
   /** The discovery snapshot that produced this lead; never the live, edited form. */
   brief?: EventBrief;
   onPrepare: () => void;
@@ -266,6 +269,21 @@ export function ResearchLeadCard({
             availability, or booking authority.
           </p>
         </section>
+        {retrieval && (
+          <section className="coverage-section">
+            <h3>Knowledge Base evidence for this lead</h3>
+            <p>
+              Read through Sanity Context:{" "}
+              {retrieval.entryPaths.map((path) => (
+                <code key={path}>{path} </code>
+              ))}
+            </p>
+            <p className="ops-muted">
+              Citations matched to published sources:{" "}
+              {retrieval.sourceReferenceIds.join(", ")}
+            </p>
+          </section>
+        )}
         <section className="recommendation-sources">
           <h3>Original sources verified for this lead</h3>
           {sources.map((source) => (

@@ -171,6 +171,8 @@ export function verifyVenueEvidence(entries, venues) {
         path: entry.path,
         heading: current.title,
         citationLabels: associations,
+        // Inline links inside this venue's own section that match its published sources are provenance too.
+        inlineSourceIds: [...new Set(expectedSources.filter((source) => matchedInlineUrls.includes(canonicalUrl(source.url))).map((source) => source._id))],
         matchedUrls: [...coveredUrls],
         expectedUrls,
         valid: citationIssues.length === 0 && missingUrls.length === 0 && missingLocality.length === 0,

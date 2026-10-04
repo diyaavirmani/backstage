@@ -45,6 +45,7 @@ npm run sanity:dev             # run the editing Studio locally at localhost:333
 npm run sanity:context-check  # verify real Knowledge Base MCP retrieval
 npm run test:context-outline  # test Context outline and citation parsing
 npm run test:agent            # test agent input and provenance guards
+npm run eval:structure        # keyword match vs structured verifier on real records (writes docs/structure-eval.md)
 npm run test:operations       # test SQLite operations, persistence, and concurrent approvals
 npm run test:deployment-controls # test same-origin checks, bounded bodies, and persistent discovery caps
 npm run verify:standalone     # run the traced Next.js artifact with isolated persistent storage
