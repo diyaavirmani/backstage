@@ -516,3 +516,12 @@ The live test initially stopped at a whole-card text check that interpreted the 
 - Successful operations profile: 371 requests; 90 reads, 90 draft saves, 90 submissions; at concurrency 50, one approval succeeded and 89 exact resource conflicts were returned. Two role-owned checklist tasks, the reservation, all applications, and the global quota survived restart. Peak sampled server RSS was 144.1 MiB; database integrity remained `ok` with zero foreign-key failures. Stage p50/p95/p99 were 8.9/14.0/17.6 ms at concurrency 1, 26.7/46.5/52.7 ms at 5, 63.6/422.7/519.5 ms at 20, and 173.4/401.7/425.2 ms at 50.
 
 GitHub Docker CI and Railway health/page verification for the pushed correction are pending; they will be recorded below after the deployment completes.
+
+### Push, CI, and Railway closeout — 4 October 2026
+
+- Fix commit `1e4d46ad2fd38653000a49833e813ea769d832aa` was pushed to `origin/main`; `git ls-remote` matched that SHA.
+- GitHub Actions [Docker image smoke run 37192451881](https://github.com/diyaavirmani/backstage/actions/runs/37192451881) completed successfully for that exact SHA. The workflow built the production image and passed the mounted-volume stop/start persistence smoke check.
+- The existing Railway Backstage service deployed commit `1e4d46ad2fd38653000a49833e813ea769d832aa` as deployment `d47f747a-3388-4714-bb90-74699f572cef` with status `SUCCESS`. It remains on the existing trial plan with one replica and the `/data` volume mount; no Railway resource, billing, or quota settings were changed.
+- Read-only HTTPS checks returned 200 for `/api/health`, `/`, `/venues`, `/organizer`, and `/host`. Health returned only `{"status":"ready"}`. `/venues` identified its content as Published Sanity and included the published catalog; this confirms catalog rendering, not a new provider discovery call.
+- No stress requests, database resets, workflow mutations, or new live discovery calls were sent to Railway. The local five-call evidence and the unrerun corrected whole-card browser selector caveat above remain unchanged.
+- Remaining limitation: the live localhost browser test reached the five-request provider cap and its broad card-text assertion failed because the shared Ofis source title contains both location names. API evidence confirms the final structured result is Gurugram-only with no Noida identity or entry path; the revised locality-focused DOM assertion was not rerun live. Mocked provider failure cases are not live provider evidence.
