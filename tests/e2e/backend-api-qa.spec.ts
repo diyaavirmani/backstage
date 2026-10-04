@@ -1,5 +1,10 @@
 import {expect,test} from "@playwright/test";
 import {request as nodeRequest} from "node:http";
+import {join,resolve} from "node:path";
+import {createRequire} from "node:module";
+import {spawn} from "node:child_process";
+import {createServer} from "node:net";
+const {DatabaseSync}=createRequire(`${process.cwd()}/tests/e2e/backend-api-qa.spec.ts`)("node:sqlite") as {DatabaseSync:new(path:string)=>{exec(sql:string):void;close():void}};
 
 const origin="http://127.0.0.1:3107";
 const validBrief=(overrides:Record<string,unknown>={})=>({
@@ -31,6 +36,21 @@ test("route handlers reject malformed briefs, dates, origins, and streamed overs
   expect(streamed.body).not.toMatch(/OPENAI_API_KEY|SANITY_CONTEXT_MCP_URL|Bearer\s/i);
   const oversizedOperations=await streamedPost("/api/operations",["{\"type\":\"x\",\"padding\":\"","z".repeat(260_000),"\"}"]);
   expect(oversizedOperations.status).toBe(413);
+});
+
+test("exhausted fresh-database initialization waits return a sanitized storage-unavailable response",async()=>{
+  test.setTimeout(45_000);
+  const dataDirectory=process.env.BACKSTAGE_PLAYWRIGHT_DATA_DIR;expect(dataDirectory).toBeTruthy();
+  const path=join(dataDirectory!,"blocked-initialization.sqlite");const blocker=new DatabaseSync(path);blocker.exec("PRAGMA journal_mode=DELETE; BEGIN EXCLUSIVE;");
+  const port=await new Promise<number>((resolvePort,reject)=>{const server=createServer();server.once("error",reject);server.listen(0,"127.0.0.1",()=>{const address=server.address();server.close(error=>error?reject(error):resolvePort(typeof address==="object"&&address?address.port:0));});});
+  const origin=`http://127.0.0.1:${port}`;const isolated=spawn(process.execPath,[resolve(".next/standalone/server.js")],{cwd:resolve(".next/standalone"),env:{PATH:process.env.PATH||"/usr/bin:/bin",NODE_ENV:"production",PORT:String(port),HOSTNAME:"127.0.0.1",APP_ORIGIN:origin,BACKSTAGE_DB_PATH:path,NEXT_TELEMETRY_DISABLED:"1"},stdio:"ignore"});
+  try{
+    const healthDeadline=Date.now()+10_000;let ready=false;while(Date.now()<healthDeadline){try{const health=await fetch(`${origin}/api/health`);if(health.ok){ready=true;break;}}catch{}await new Promise(resolveWait=>setTimeout(resolveWait,100));}expect(ready).toBeTruthy();
+    const response=await fetch(`${origin}/api/operations`);expect(response.status).toBe(503);const result=await response.json();expect(result.error).toMatch(/storage is not ready/i);expect(JSON.stringify(result)).not.toMatch(/Bearer|SANITY_CONTEXT_MCP_URL|OPENAI_API_KEY/i);
+  }finally{blocker.exec("ROLLBACK");blocker.close();isolated.kill("SIGTERM");await new Promise(resolveExit=>isolated.once("exit",resolveExit));}
+  const restartPort=await new Promise<number>((resolvePort,reject)=>{const server=createServer();server.once("error",reject);server.listen(0,"127.0.0.1",()=>{const address=server.address();server.close(error=>error?reject(error):resolvePort(typeof address==="object"&&address?address.port:0));});});
+  const retryOrigin=`http://127.0.0.1:${restartPort}`;const recoveredServer=spawn(process.execPath,[resolve(".next/standalone/server.js")],{cwd:resolve(".next/standalone"),env:{PATH:process.env.PATH||"/usr/bin:/bin",NODE_ENV:"production",PORT:String(restartPort),HOSTNAME:"127.0.0.1",APP_ORIGIN:retryOrigin,BACKSTAGE_DB_PATH:path,NEXT_TELEMETRY_DISABLED:"1"},stdio:"ignore"});
+  try{const deadline=Date.now()+10_000;let recovered=false;while(Date.now()<deadline){try{const response=await fetch(`${retryOrigin}/api/operations`);if(response.ok){recovered=true;break;}}catch{}await new Promise(resolveWait=>setTimeout(resolveWait,100));}expect(recovered).toBeTruthy();}finally{recoveredServer.kill("SIGTERM");await new Promise(resolveExit=>recoveredServer.once("exit",resolveExit));}
 });
 
 test("operations API scopes forged identifiers and concurrent retries to the cookie workspace",async({browser})=>{

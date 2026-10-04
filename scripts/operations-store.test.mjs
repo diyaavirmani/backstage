@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import {Worker} from 'node:worker_threads';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
-import {getOverview,mutate,openOperationsStore,resolveWorkspace} from './operations-store.mjs';
+import {consumeDiscoveryQuota,getOverview,mutate,openOperationsStore,resolveWorkspace} from './operations-store.mjs';
 
 function setup() {
   const dir=mkdtempSync(join(tmpdir(),'backstage-ops-'));
@@ -334,6 +334,34 @@ test('versioned migration upgrades an existing v1 operational database without l
   const resourceRow=upgraded.prepare('SELECT capacity_layout FROM resources WHERE id=?').get('ws:test:demo-room');
   assert.equal(venue.access_model,'sponsored');assert.equal(venue.fulfillment_model,'host-approval');assert.equal(resourceRow.capacity_layout,'classroom rows');
   assert.ok(upgraded.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='checklist_history'").get());upgraded.close();
+});
+
+test('bounded SQLite initialization contention returns the sanitized storage sentinel and can recover',t=>{
+  const dir=mkdtempSync(join(tmpdir(),'backstage-init-lock-')),path=join(dir,'locked.sqlite');
+  t.after(()=>rmSync(dir,{recursive:true,force:true}));
+  const lock=new DatabaseSync(path);lock.exec('PRAGMA journal_mode=DELETE; BEGIN EXCLUSIVE;');
+  assert.throws(()=>openOperationsStore(path,{initializationTimeoutMs:100}),error=>error instanceof Error&&error.message==='PERSISTENT_STORAGE_UNAVAILABLE');
+  lock.exec('ROLLBACK');lock.close();
+  const recovered=openOperationsStore(path);assert.equal(recovered.prepare('PRAGMA integrity_check').get().integrity_check,'ok');recovered.close();
+});
+
+test('upgrade preserves applications, allocations, completed checklist history, and discovery quotas',t=>{
+  const x=setup();
+  const roomId=resource(x,'Workshop Studio');const projectorId=resource(x,'Projector');
+  const app=createApp(x,[roomId,projectorId]);approve(x,app.id);
+  const approved=getOverview(x.db,x.session.workspaceId,'organizer').applications.find(item=>item.id===app.id);
+  const organizerTask=approved.checklist.find(item=>item.owner==='organizer');
+  mutate(x.db,x.session.workspaceId,'organizer',{type:'toggle-checklist',applicationId:app.id,itemId:organizerTask.id});
+  consumeDiscoveryQuota(x.db,'upgrade-preservation-session',{perSession:10,global:50});
+  const before={applications:x.db.prepare('SELECT id,status,payload_json,brief_json,accepted_brief_json FROM applications WHERE workspace_id=?').all(x.session.workspaceId),allocations:x.db.prepare('SELECT application_id,resource_id,state,starts_at,ends_at FROM allocations WHERE workspace_id=? ORDER BY resource_id').all(x.session.workspaceId),history:x.db.prepare('SELECT application_id,actor,from_status,to_status,note FROM transition_history WHERE workspace_id=? ORDER BY created_at').all(x.session.workspaceId),checklist:x.db.prepare('SELECT application_id,label,owner,due_at,completed_at FROM checklist_items WHERE workspace_id=? ORDER BY id').all(x.session.workspaceId),checklistHistory:x.db.prepare('SELECT actor,completed FROM checklist_history WHERE workspace_id=?').all(x.session.workspaceId),quota:x.db.prepare('SELECT period,scope,subject_hash,request_count FROM discovery_quota_counters ORDER BY scope,subject_hash').all()};
+  x.db.prepare('DELETE FROM schema_migrations WHERE version IN (2,3,4)').run();
+  const path=x.path;x.db.close();x.markClosed();
+  const upgraded=openOperationsStore(path);t.after(()=>upgraded.close());
+  const workspaceId=x.session.workspaceId;
+  const after={applications:upgraded.prepare('SELECT id,status,payload_json,brief_json,accepted_brief_json FROM applications WHERE workspace_id=?').all(workspaceId),allocations:upgraded.prepare('SELECT application_id,resource_id,state,starts_at,ends_at FROM allocations WHERE workspace_id=? ORDER BY resource_id').all(workspaceId),history:upgraded.prepare('SELECT application_id,actor,from_status,to_status,note FROM transition_history WHERE workspace_id=? ORDER BY created_at').all(workspaceId),checklist:upgraded.prepare('SELECT application_id,label,owner,due_at,completed_at FROM checklist_items WHERE workspace_id=? ORDER BY id').all(workspaceId),checklistHistory:upgraded.prepare('SELECT actor,completed FROM checklist_history WHERE workspace_id=?').all(workspaceId),quota:upgraded.prepare('SELECT period,scope,subject_hash,request_count FROM discovery_quota_counters ORDER BY scope,subject_hash').all()};
+  assert.deepEqual(after,before);
+  assert.equal(upgraded.prepare('SELECT count(*) n FROM schema_migrations').get().n,4);
+  t.after(()=>x.close());
 });
 
 function worker(path,workspaceId,applicationId) {

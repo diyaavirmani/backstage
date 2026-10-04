@@ -5,6 +5,8 @@
 **Runtime:** Node 24.21.0, Next.js 16.3.8, Playwright Chromium, isolated temporary SQLite files
 **Scope:** Evaluation only. No application or backend implementation was changed. Added tests and this report preserve the reproduced failures as diagnostics.
 
+The original report below records the baseline defects. The correction pass and post-fix results are recorded at the end; they supersede the earlier “follow-up order” and pre-fix status.
+
 ## Findings first
 
 ### Moderate — concurrent first requests can fail while SQLite migrations initialize
@@ -127,3 +129,66 @@ The latter requires credentials in ignored `.env.local` and sends one live local
 2. Parse positive and excluded locality constraints explicitly and strengthen outline path identity; preserve a regression for the Gurugram-only follow-up.
 3. Add injectable provider transports for deterministic timeout, authentication, rate-limit, malformed-output, and MCP failure tests.
 4. Rerun the opt-in discovery browser journey with no more than five sequential provider requests and verify a positive Gurugram-only result plus the brief snapshot.
+
+## Correction and verification pass — 4 October 2026
+
+**Tested revision:** working tree based on `c76f9f0d0021e8f3ba444e2da89ea5c0df8561da` before the correction commit. **Runtime:** Node 24.21.0, Next.js production standalone on localhost, isolated temporary SQLite, Playwright Chromium. No load, mutation, or quota traffic was sent to Railway.
+
+### SQLite startup correction
+
+The required pre-fix reproduction was run first: the former single-database/12-worker diagnostic failed with 6/12 openers returning duplicate `schema_migrations.version` errors. This reproduces the earlier lock/version race.
+
+Migration checking now takes place after `BEGIN IMMEDIATE`, so each waiting opener sees the version ledger after it owns the write transaction. Fresh-database WAL setup, migration table creation, and migration application retry only `SQLITE_BUSY`/`SQLITE_LOCKED` contention under one bounded deadline. Exhaustion returns `PERSISTENT_STORAGE_UNAVAILABLE`; the discovery and operations HTTP handlers return a sanitized 503. Active migrations roll back on failure, and failed store connections close. The existing store call shape remains unchanged; the optional initialization-time override is an internal test seam.
+
+Post-fix `npm run test:operations` passed its 12-worker test against **10 separate fresh database files (120 successful opens)**. Each file has exactly one row for each of migration versions 1–4, `integrity_check=ok`, and zero foreign-key violations. A held exclusive lock exhausted a shortened test deadline; the API integration test verified the production operations handler returned a sanitized 503, then recovered after the lock was released. An upgrade test re-applied migration ledger versions 2–4 and confirmed the pre-existing application and accepted brief, active allocations, transition history, completed checklist timestamp/history, and daily quota counters were byte-for-byte unchanged.
+
+### Locality and entry-path correction
+
+Locality parsing now records explicit inclusions and exclusions. Exclusions win contradictory mentions; Gurgaon and Gurugram map to one locality; `not only Noida, but also Gurugram` includes both. Six requested phrases plus contradictory ambiguity regressions pass. Entry matching still uses dynamically discovered outline paths, but when a path identifies Noida or Gurugram/Gurgaon its location discriminator must agree with the structured venue locality. The two Ofis Square records remain distinct even though both cite `source-ofis-events` and its shared original URL.
+
+The five-request real browser journey ran once against localhost with actual OpenAI and Sanity Context. All five API requests returned source-validated recommendations and successful reads from Knowledge Base `kbPFAVeDOOjD`:
+
+| Request | Returned venue(s) | Actual entry path(s) | Source IDs / result |
+| --- | --- | --- | --- |
+| Bengaluru founder discovery | `venue-shifu-den-bengaluru` | `venues/bengaluru/shifu_den` | `source-shifu-den`; 3 supported and 7 unknown requirement statuses; founder-community condition remained visible. |
+| Founder follow-up | `venue-shifu-den-bengaluru` | `venues/bengaluru/shifu_den` | `source-shifu-den`; exact same saved brief was sent. |
+| 80-person Delhi NCR hackathon | `venue-ofis-noida-sector-62` | `venues/delhi_ncr/ofis_square_noida` | `source-ofis-events`; capacity, breakout rooms, equipment, schedule/availability, and budget remained unknown. |
+| Noida refinement | Noida Ofis and historical Paytm lead | `venues/delhi_ncr/ofis_square_noida`, `venues/delhi_ncr/paytm_office_noida` | `source-ofis-events`, `source-gdg-thinkfluence-paytm`; Paytm stayed historical. |
+| Exclude Noida; Gurugram only | `venue-ofis-gurugram-sohna-road` | `venues/delhi_ncr/ofis_square_gurugram` | `source-ofis-events`; no Noida venue identity/locality or Noida-specific Ofis/Paytm entry was returned; all 16 requested requirement classifications stayed unknown. The brief sent on this request equaled the brief sent on the 80-person discovery. |
+
+The browser journey opened Shifu's original `https://den.shifuventures.com/` source, saved its private research draft, reloaded the page, and restored the evidence snapshot before continuing the three Delhi NCR turns. The terminal test initially failed only because it searched the entire Gurugram recommendation card for the text “Noida”; the common Ofis source title itself mentions both locations. The assertion is now based on the venue's structured locality, candidate identity, and selected entry path. **That selector correction was not rerun live** because the five permitted provider calls had already completed. Live server output and its sanitized ignored artifact show the above successful final Gurugram result; the corrected final DOM selector remains not rechecked live.
+
+### Provider failures
+
+The route's provider boundary is now an internal server-side dependency seam, not a public endpoint or client flag. `npm run test:provider-failures` makes 11 bounded scenarios using in-process mocks: OpenAI HTTP 401 and 429, generation timeout, request cancellation, Context authorization failure, MCP outline transport failure, Knowledge Base entry-read failure, missing Knowledge Base tools, empty outline, malformed model output, plus one mocked source-validated success. Failure responses contain no provider messages/tokens, no recommendations, applications, or allocations; Context clients close when created. The expected discovery quota increment is the only persisted failure-side effect. These cases are mocked and do not establish provider reliability or live authentication.
+
+### Load and regression results
+
+The existing missing-configuration benchmark remains separately labeled and unchanged in purpose. It ran 500 localhost discovery requests at concurrency 1/5/20/50 plus restart, each stopping before provider egress with the expected missing-OpenAI 503. It had zero unexpected errors; quota state was 400 before restart and 500 after, with clean integrity and foreign-key checks. Final run metrics:
+
+| Concurrency | Requests | p50 | p95 | p99 | Throughput | Peak RSS |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 100 | 6.6 ms | 11.7 ms | 13.1 ms | 114.56 req/s | 128.1 MiB |
+| 5 | 100 | 26.4 ms | 43.5 ms | 55.1 ms | 184.09 req/s | 131.8 MiB |
+| 20 | 100 | 64.0 ms | 348.1 ms | 541.1 ms | 179.96 req/s | 149.3 MiB |
+| 50 | 100 | 238.2 ms | 485.8 ms | 551.9 ms | 176.14 req/s | 172.0 MiB |
+| Restart, 50 | 100 | 190.1 ms | 729.0 ms | 750.5 ms | 130.25 req/s | 132.7 MiB |
+
+New `npm run test:backend-operations-stress` ran 371 requests against a separate temporary production standalone server and database:
+
+| Concurrency | Action / count | p50 | p95 | p99 | Throughput | Outcomes |
+| ---: | --- | ---: | ---: | ---: | ---: | --- |
+| 1 | Workspace reads / 90 | 8.9 ms | 14.0 ms | 17.6 ms | 105.03 req/s | 90 successful |
+| 5 | Draft saves / 90 | 26.7 ms | 46.5 ms | 52.7 ms | 168.49 req/s | 90 successful |
+| 20 | Submissions / 90 | 63.6 ms | 422.7 ms | 519.5 ms | 169.29 req/s | 90 successful |
+| 50 | Competing approvals / 90 | 173.4 ms | 401.7 ms | 425.2 ms | 205.18 req/s | 1 successful approval, 89 exact shared-room conflicts |
+
+The profile also switched organizer/host simulations, completed both role-owned checklist tasks, and made one expected no-credentials discovery call to record a quota. Peak sampled server RSS was 144.1 MiB. After restarting the isolated server, the same session restored all 90 applications, the approved allocation, both checklist completions, and the quota. Before and after restart, SQLite integrity was `ok` and foreign-key checks returned zero rows. No errors outside explicitly expected missing-provider and shared-resource outcomes occurred.
+
+The earlier missing-configuration profile and this operations profile each stayed below the 500-request limit; they were separate isolated runs. Neither contacted Railway.
+
+### Checks and remaining gaps
+
+The post-fix check set is: `npm run test:agent` (33 passed), `npm run test:operations` (32 passed, including the 10-database startup race), `npm run test:deployment-controls` (6 passed), `npm run test:provider-failures` (4 test groups covering 11 scenarios), `npm run test:backend-api-qa` (3 passed), deterministic Playwright workflow tests (passed; live tests skipped in deterministic mode), lint, typecheck, production build, catalog validation (six venues), and seed dry run (37 documents; no writes). Final production build and deterministic-browser counts are recorded in the matching build-log entry after the last rerun.
+
+Remaining limits: provider failure tests are mocks; the five-call live test's corrected card-locality assertion was not rerun; no separate live “book Paytm now” prompt was sent; and production authentication/real host identity remain out of scope. Local stress used fictional organizer contacts and temporary SQLite only. Do not reset or load-test the Railway database.

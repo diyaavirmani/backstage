@@ -13,6 +13,8 @@ const migrations = [
 ];
 const catalog = JSON.parse(readFileSync(resolve(root, 'src/data/research-catalog.json'), 'utf8'));
 const DEFAULT_DB = resolve(root, '.data/backstage.sqlite');
+const INITIALIZATION_TIMEOUT_MS = 15_000;
+const SQLITE_BUSY_TIMEOUT_MS = 250;
 const nowIso = () => new Date().toISOString();
 const uid = (prefix) => `${prefix}_${randomUUID()}`;
 const hash = (token) => createHash('sha256').update(token).digest('hex');
@@ -23,30 +25,77 @@ const DEMOS = [
   {id:'demo-bengaluru-host',name:'Backstage Demo Commons · Bengaluru',city:'Bengaluru',locality:'Fictional Indiranagar, Bengaluru',rooms:[{id:'demo-bengaluru-room-forum',name:'Forum Room',capacity:36,layout:'theatre seating'},{id:'demo-bengaluru-room-lab',name:'Maker Lab',capacity:18,layout:'workbench layout'}],equipment:[{id:'demo-bengaluru-projector',name:'Projector',quantity:1},{id:'demo-bengaluru-mic',name:'Wireless microphone',quantity:2},{id:'demo-bengaluru-whiteboard',name:'Whiteboard',quantity:2}],policy:{eventTypes:['Workshop','Community meetup','Talk or panel','Other'],permittedActivities:['workshops','community gatherings','talks','panel discussions','maker activities'],foodAllowed:true,alcoholAllowed:false,accessHours:'09:00–18:30 Asia/Kolkata',arrivalBufferMinutes:30,cleanupBufferMinutes:30,cleanupRequired:true,cancellationNoticeHours:24,accessModel:'pro-bono',approval:'host-approval',notes:'Fictional demonstration policies and inventory. Pro-bono is a demo access model and remains subject to host approval.'}},
 ];
 
-export function openOperationsStore(path = process.env.BACKSTAGE_DB_PATH || DEFAULT_DB) {
+export function openOperationsStore(path = process.env.BACKSTAGE_DB_PATH || DEFAULT_DB, options = {}) {
   const dbPath = resolve(path);
   if (process.env.RAILWAY_ENVIRONMENT_ID) {
     const mountPath = process.env.RAILWAY_VOLUME_MOUNT_PATH ? resolve(process.env.RAILWAY_VOLUME_MOUNT_PATH) : '';
     if (!mountPath || dirname(dbPath) !== mountPath) throw new Error('PERSISTENT_STORAGE_UNAVAILABLE');
   }
   mkdirSync(dirname(dbPath), {recursive:true});
-  const db = new DatabaseSync(dbPath);
-  db.exec('PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL;');
-  db.exec('CREATE TABLE IF NOT EXISTS schema_migrations(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)');
-  for(const migration of migrations){
-    if(db.prepare('SELECT 1 FROM schema_migrations WHERE version=?').get(migration.version))continue;
-    db.exec('BEGIN IMMEDIATE');
-    try {
-      for(const statement of migration.sql.split(';').map((sql)=>sql.trim()).filter(Boolean)){
-        const alter=statement.match(/^ALTER TABLE ([A-Za-z0-9_]+) ADD COLUMN ([A-Za-z0-9_]+)/i);
-        if(alter&&db.prepare(`PRAGMA table_info(${alter[1]})`).all().some((column)=>column.name===alter[2]))continue;
-        db.exec(statement);
+  const requestedWait = Number(options.initializationTimeoutMs ?? INITIALIZATION_TIMEOUT_MS);
+  const waitLimit = Number.isFinite(requestedWait) ? Math.max(0, Math.min(requestedWait, INITIALIZATION_TIMEOUT_MS)) : INITIALIZATION_TIMEOUT_MS;
+  const deadline = Date.now() + waitLimit;
+  let db;
+  const retryInitialization = (operation) => {
+    while (true) {
+      try {
+        const value = operation();
+        if (Date.now() > deadline) throw new Error('PERSISTENT_STORAGE_UNAVAILABLE');
+        return value;
       }
-      db.prepare('INSERT INTO schema_migrations(version,applied_at) VALUES(?,?)').run(migration.version,nowIso());db.exec('COMMIT');
+      catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const transient = /SQLITE_BUSY|SQLITE_LOCKED|database is locked|database table is locked|database is busy/i.test(message);
+        if (!transient) throw error;
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) throw new Error('PERSISTENT_STORAGE_UNAVAILABLE');
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, Math.min(25, remaining));
+      }
     }
-    catch(error){db.exec('ROLLBACK');db.close();throw error;}
+  };
+  try {
+    db = retryInitialization(() => new DatabaseSync(dbPath));
+    db.exec(`PRAGMA busy_timeout=${SQLITE_BUSY_TIMEOUT_MS}; PRAGMA foreign_keys=ON;`);
+    retryInitialization(() => db.exec('PRAGMA journal_mode=WAL;'));
+    retryInitialization(() => db.exec('CREATE TABLE IF NOT EXISTS schema_migrations(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)'));
+    for (const migration of migrations) {
+      retryInitialization(() => {
+        let transactionOpen = false;
+        try {
+          db.exec('BEGIN IMMEDIATE');
+          transactionOpen = true;
+          // The version check must be inside the write transaction. Another process
+          // may have applied this migration while this connection waited for the lock.
+          if (db.prepare('SELECT 1 FROM schema_migrations WHERE version=?').get(migration.version)) {
+            db.exec('COMMIT');
+            transactionOpen = false;
+            return;
+          }
+          for (const statement of migration.sql.split(';').map((sql) => sql.trim()).filter(Boolean)) {
+            const alter = statement.match(/^ALTER TABLE ([A-Za-z0-9_]+) ADD COLUMN ([A-Za-z0-9_]+)/i);
+            if (alter && db.prepare(`PRAGMA table_info(${alter[1]})`).all().some((column) => column.name === alter[2])) continue;
+            db.exec(statement);
+          }
+          db.prepare('INSERT INTO schema_migrations(version,applied_at) VALUES(?,?)').run(migration.version, nowIso());
+          db.exec('COMMIT');
+          transactionOpen = false;
+        } catch (error) {
+          if (transactionOpen) {
+            try { db.exec('ROLLBACK'); }
+            catch (rollbackError) { throw new AggregateError([error, rollbackError], 'Migration failed and its transaction could not be rolled back.'); }
+          }
+          throw error;
+        }
+      });
+    }
+    return db;
+  } catch (error) {
+    if (db) {
+      try { db.close(); }
+      catch (closeError) { throw new AggregateError([error, closeError], 'Store initialization failed and the connection could not be closed.'); }
+    }
+    throw error;
   }
-  return db;
 }
 
 export function consumeDiscoveryQuota(db, sessionToken, limits, now = new Date()) {
