@@ -66,18 +66,22 @@ export function PageHeader({
   description,
   label,
   children,
+  illustration,
 }: {
   title: string;
   description: string;
   label?: string;
   children?: ReactNode;
+  illustration?: "organizer" | "venues" | "host";
 }) {
   return (
-    <header className="page-heading">
+    <header
+      className={`page-heading${illustration ? ` page-heading-cover cover-${illustration}` : ""}`}
+    >
       <div>
-        {label && <p className="eyebrow">{label}</p>}
         <h1>{title}</h1>
         <p>{description}</p>
+        {label && <p className="page-context">{label}</p>}
       </div>
       {children}
     </header>

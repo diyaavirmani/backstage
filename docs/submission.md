@@ -32,6 +32,8 @@ The live organizer flow uses the deployed app and real Sanity Context retrieval.
 
 The project uses Next.js App Router and TypeScript. Published venue knowledge lives in Sanity. The organizer agent reads Sanity Context Knowledge Base entries and validates their claims and citations against published Sanity records. Operational applications and allocations are handled separately by the application’s SQLite backend.
 
+The illustrated presentation on the unmerged feature branch is inspired by the visual direction Vaibhav Pathak (`vkpdeveloper`) proposed in [PR #2](https://github.com/diyaavirmani/backstage/pull/2). That design assistance is acknowledged here. The feature branch implements its own presentation and original AI illustration without merging the PR or importing its code or assets. The public app still serves its separately deployed revision until a release is authorized.
+
 ## How I Used Sanity
 
 I modeled venues, host organizations, spaces, shared resources, policies, hosting opportunities, claims, and source references in Sanity. A claim carries its value, evidence type, source, and date checked; room capacity also identifies its room and layout. The catalog query reads published research records and their related claims and sources. It excludes drafts, demonstration inventory, private organizer information, and operational bookings.

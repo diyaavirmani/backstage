@@ -5,8 +5,10 @@ import { Button, DetailDialog } from "@/components/ui";
 
 export function SiteHeader({
   active,
+  tone = "light",
 }: {
   active?: "organizer" | "host" | "venues";
+  tone?: "light" | "dark";
 }) {
   const [menu, setMenu] = useState(false);
   const links = (
@@ -42,7 +44,7 @@ export function SiteHeader({
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
-      <header className="site-header">
+      <header className={`site-header site-header-${tone}`}>
         <div className="header-inner">
           <Link className="wordmark" href="/" aria-label="Backstage home">
             <span className="wordmark-icon" aria-hidden="true">
@@ -56,6 +58,7 @@ export function SiteHeader({
           >
             {links}
           </nav>
+          <span className="header-coverage">Delhi NCR · Bengaluru</span>
           <Link
             className="header-action button button-dark desktop-navigation"
             href="/organizer"

@@ -99,6 +99,11 @@ for (const width of [360, 390, 768, 1024, 1440])
         path: `${output}/green-saas/${route === "/" ? "home" : route.slice(1)}-${width}.png`,
         fullPage: true,
       });
+      if (route === "/" && (width === 390 || width === 1440)) {
+        await page.screenshot({
+          path: `${output}/green-saas/home-viewport-${width}.png`,
+        });
+      }
     }
     expect(errors).toEqual([]);
     expect(consoleErrors).toEqual([]);
