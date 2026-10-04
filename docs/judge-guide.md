@@ -1,37 +1,47 @@
 # Backstage judge walkthrough
 
-Backstage is a venue coordination agent for Delhi NCR and Bengaluru. The connected knowledge project is Sanity project `1428jmxu`, dataset `production`, with Knowledge Base `kbPFAVeDOOjD`.
+Start at the deployed app: **[https://backstage-production-0849.up.railway.app](https://backstage-production-0849.up.railway.app)**.
 
-## 1. See live, sourced venue discovery
+Backstage helps organizers describe what they are hosting, then retrieves source-backed venue leads from Sanity. The six researched venues are not Backstage partners: organizers can prepare private application drafts, but cannot submit booking requests to them. The host approval and calendar workflow uses fictional demo hosts. Switching between Organizer and Host is a simulation, not production account authentication.
 
-1. Start the app with `npm run dev` and open `/venues`. The page should say **Published Sanity content** and show six eligible research leads. The city filter separates Delhi NCR from Bengaluru; the two Ofis Square locations remain separate cards even though they share an original source page.
-2. Open `/organizer`. In **Try an example**, choose **Bengaluru founders · qualified eligibility** and click **Load example**. This changes and saves the event brief only; it does not create an application or reservation.
-3. Click **Find suitable venues**. The app reads current paths from the Sanity Context outline and reads Knowledge Base entries before it displays any lead. Ask a follow-up about Shifu Den’s pro-bono access and eligibility.
-4. Review Shifu’s source link and qualification. The public page describes a founder community; it does not prove every organizer qualifies or establish Backstage booking permission. The card must leave current availability, price, and booking authority unknown.
+## Try discovery in your own browser
 
-The Knowledge Base uses structured venue, claim, source, and relationship records. That structure lets the app check venue identity, locality, evidence type, source association, and source-check date, while leaving unknown values unresolved. A recent Sanity fetch does not change the date when the source itself was checked.
+1. Open `/organizer` in the same browser where you want to keep your demo workspace. Backstage creates an isolated, cookie-scoped workspace for this browser; no account sign-in is required.
+2. In **Try an example**, choose **Bengaluru founders · qualified eligibility**, then click **Load example**. This explicitly fills and saves the sample brief; it does not create an application or reservation.
+3. Click **Find suitable venues** and wait for live discovery. Backstage reads the current Sanity Context outline and actual Knowledge Base entries before showing recommendations.
+4. Review the Shifu Den card. Open its source link to `https://den.shifuventures.com/`. The source describes pro-bono access for a founder community; it does not establish that every organizer qualifies. Room/layout capacity, current availability, price terms, and Backstage booking authority remain unknown.
+5. Ask a follow-up such as “What founder eligibility does the source establish, and what would the host still need to confirm?” The saved event brief remains attached to the follow-up.
 
-## 2. Prepare a private research application draft
+Discovery uses a shared daily limit of five requests per browser session and fifty across the demo. The limits are persisted; please avoid repeated refreshes or retry loops.
 
-1. On the Shifu recommendation, click **Prepare application draft**. The existing builder should select Shifu and carry over the exact brief used for discovery, its evidence qualifications, and requirement questions that still need answers.
-2. Add organizer details and review the snapshot, questions, and source links. If you edit the brief, the builder identifies the original discovery brief and asks you to review the application contents.
-3. Click **Save application draft**. The saved card shows the source evidence capture time separately from the original source-check dates. **Submit demo request** stays disabled for a researched venue; no contact or booking request is sent.
+## Save a research draft
 
-The server resolves the venue and source evidence again from published Sanity records when it saves the draft. Values supplied by the browser cannot establish citations or booking permission.
+1. On the recommendation, click **Prepare application draft**. The selected venue and exact brief carry into the application builder with evidence qualifications and unanswered questions.
+2. Review the snapshot and source links, enter demo contact details, check the review box, then click **Save application draft**.
+3. Reload `/organizer` to see the restored **DRAFT ONLY** application. **Submit demo request** remains disabled for researched venues because Backstage has no verified booking authority for them.
 
-## 3. Demonstrate fictional host approval and resource conflict
+## Try fictional host operations
 
-1. Return to the event brief and choose **Fictional host workshop · operations demo**. Click **Load example**. The example date is generated in Asia/Kolkata and falls on a weekday within the demo hosts’ seeded availability window.
-2. In **Application workspace**, choose **[FICTIONAL DEMO] Backstage Demo House**. Select **Workshop Studio** and the shared **Projector**, add a sample organizer name and email, and submit after reviewing. This fictional request enters the simulated host queue.
-3. Start another demo application for the same date and overlapping time. Choose **Gathering Salon** and the same shared **Projector**. Submit it with a date-flexibility range that includes a later weekday.
-4. Switch the simulation role to **Host** and approve the first request. Try to approve the second: its shared projector allocation conflicts. Propose an available weekday and time inside the organizer-approved range.
-5. Switch back to **Organizer**, accept the proposed alternative, then return to **Host** and approve it. The monthly calendar now shows the two reservations on separate dates. Open **Confirmed events** to review each accepted brief and shared checklist.
-6. Complete a host-owned checklist item in Host simulation and an organizer-owned item in Organizer simulation. Each side sees the same saved progress.
+1. In the event brief, choose **Fictional host workshop · operations demo**, then click **Load example** and **Save event brief**.
+2. In **Application workspace**, click **Load saved event brief**. Select **[FICTIONAL DEMO] Backstage Demo House**, choose **Workshop Studio** and **Projector**, add fictional organizer details, review the request, and click **Submit demo request**.
+3. Open `/host`. Set **Simulation role** to **Host** and select **Approve & allocate** on the new request. The selected demo resources become allocated; the accepted brief and shared checklist appear in **Confirmed events**.
+4. Complete a host-owned checklist item. Switch the simulation role to **Organizer** and complete an organizer-owned item; both roles see the same saved checklist progress.
 
-Every venue, request, calendar entry, resource, and confirmation in this section is fictional demonstration inventory stored in the application’s SQLite database. It is excluded from Sanity and the Knowledge Base. Role switching is a simulation, not production authentication.
+These operations use fictional policies, availability, inventory, requests, and confirmations stored in Backstage’s SQLite database. Nothing is sent to a real host. For a longer shared-projector conflict and alternative-slot walkthrough, follow [the recording script](demo-script.md).
+
+## Local alternative
+
+Use Node.js 22.13 or newer and npm:
+
+```bash
+npm install
+npm run dev
+```
+
+Then open [http://localhost:3000](http://localhost:3000). Live discovery needs the server-only Sanity Context, Sanity read, and OpenAI environment variables described in [Sanity setup](sanity-setup.md). Without them, the catalog explicitly identifies itself as a local research preview and live discovery reports that configuration is missing.
 
 ## Implemented and future work
 
-Implemented: published Sanity catalog retrieval with an explicitly labeled fallback, real Context entry reads, server-validated source citations and requirement coverage, follow-up discovery, a reviewable private application draft for research leads, and the fictional host workflow for approvals and resources.
+Implemented: published Sanity catalog retrieval, real Knowledge Base entry reads through Context MCP, source-checked recommendations and follow-ups, private research application drafts, and a fictional host approval/resource/checklist demo.
 
-Future production work: organizer and host identity, host onboarding and verified booking authority, real operational availability, request delivery, payment or sponsorship processing, and migration to managed multi-instance storage. Railway deployment is prepared but remains pending creation or selection of a project in the authenticated account and a reviewed plan/budget; Backstage is not represented as deployed.
+Future production work includes organizer and host authentication, verified host onboarding and booking authority, actual operational availability, delivery of real applications, and production-grade multi-instance storage and recovery. See [architecture](architecture.md), [deployment details](deployment.md), and the [build log](build-log.md).
