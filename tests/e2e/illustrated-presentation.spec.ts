@@ -95,3 +95,36 @@ test("covered workspaces retain readable boundaries and mobile view labels", asy
     ).toBeFocused();
   }
 });
+
+test("example dropdown has an inset caret while keeping native selection and explicit loading", async ({
+  page,
+}) => {
+  await page.goto("/organizer");
+  const select = page.getByRole("combobox", { name: "Try an example" });
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 950 });
+    await expect(select).toHaveCSS("appearance", "none");
+    await expect(select).toHaveCSS(
+      "background-position",
+      "calc(100% - 14px) 50%",
+    );
+    await expect(select).toHaveCSS("padding-right", "44px");
+    await select.focus();
+    await expect(select).toBeFocused();
+    await page.screenshot({
+      path: `.playwright-artifacts/green-saas/example-dropdown-${width}.png`,
+    });
+  }
+  await select.selectOption("bengaluru-founders");
+  await expect(page.getByLabel(/Event name/)).toHaveValue("");
+  await page.getByRole("button", { name: "Load example" }).click();
+  await expect(page.getByLabel(/Event name/)).toHaveValue(
+    "Bengaluru founder gathering",
+  );
+  expect(
+    await page.evaluate(() => localStorage.getItem("backstage.event-brief.v1")),
+  ).toBeNull();
+  await page.emulateMedia({ forcedColors: "active" });
+  await expect(select).toHaveCSS("appearance", "auto");
+  await expect(select).toHaveCSS("background-image", "none");
+});
