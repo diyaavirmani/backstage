@@ -81,6 +81,12 @@ export function ResearchLeadCard({
             </li>
           ))}
         </ul>
+        {!facts.length && (
+          <p className="helper-text">
+            The verified sources do not document further facts for this lead.
+            Use the sources and open questions below.
+          </p>
+        )}
         {facts.length > 3 && (
           <p className="helper-text">
             {facts.length - 3} more documented fact

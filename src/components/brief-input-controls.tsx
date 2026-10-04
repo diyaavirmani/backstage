@@ -34,7 +34,9 @@ export function AudienceInput({
             })
           }
           aria-invalid={Boolean(error)}
-          aria-describedby="audience-help"
+          aria-describedby={
+            error ? "audience-help error-audience" : "audience-help"
+          }
         >
           <option value="">Choose an audience</option>
           {audienceChoices.map((v) => (
@@ -46,8 +48,11 @@ export function AudienceInput({
         <label className="field">
           <span>Audience or community — custom details</span>
           <input
+            id="brief-audience-details"
             value={audience.details}
             maxLength={120}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? "error-audience" : undefined}
             onChange={(e) => update({ details: e.target.value })}
           />
         </label>

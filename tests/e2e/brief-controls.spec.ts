@@ -52,6 +52,15 @@ for (const width of [390, 1440])
     await expect(page.getByLabel(/Audience or community/)).toHaveValue(
       "Early-stage founders and startup operators",
     );
+    await page.getByLabel(/Audience or community — custom details/).fill("");
+    await page.getByLabel("Community/organization name").fill("Example coding club");
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    await expect(page.locator("#error-audience")).toHaveText(
+      "Describe the audience or choose a listed option.",
+    );
+    await expect(
+      page.getByLabel(/Audience or community — custom details/),
+    ).toBeFocused();
     await page.locator("#brief-audience").selectOption("Students");
     await page.locator("#brief-audience").focus();
     await page.keyboard.press("Tab");
@@ -105,6 +114,12 @@ for (const width of [390, 1440])
     expect(before.essentialRequirements).toContain("Outside-food permission");
     expect(before.flexibleRequirements).toEqual(["Parking"]);
     expect(requests[0].brief).toEqual(before);
+    const setupSection = page.locator(".suggested-setup");
+    await expect(setupSection.getByRole("heading", { name: "Proposed spaces" })).toBeVisible();
+    await expect(setupSection.locator("li").first()).toContainText(
+      "Main space for 100 attendees",
+    );
+    await expect(setupSection).toContainText("No breakout room is inferred from headcount alone.");
     await page
       .getByLabel("Adjust proposed spaces")
       .fill("Main presentation room, optional discussion area");

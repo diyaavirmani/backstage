@@ -2207,6 +2207,34 @@ legend {
 .recommendation-card > .card-actions {
   margin-top: auto;
 }
+.suggested-setup {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 24px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--sage);
+}
+.suggested-setup h4 {
+  font-size: 14px;
+  margin: 8px 0 0;
+}
+.suggested-setup ul {
+  margin: 0;
+  padding-left: 18px;
+  list-style: disc;
+}
+.suggested-setup p {
+  margin: 0;
+}
+.suggested-setup textarea {
+  width: 100%;
+  resize: vertical;
+}
+.suggested-setup .button {
+  justify-self: start;
+}
 .lead-unknowns > ul {
   padding-left: 18px;
   list-style: disc;

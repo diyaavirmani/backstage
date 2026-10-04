@@ -152,7 +152,11 @@ export function EventBriefForm() {
     if (!field) return;
     setQueryValues({ view: "brief", step: basics.includes(field) ? "1" : "2" });
     window.setTimeout(
-      () => document.getElementById(`brief-${field}`)?.focus(),
+      () =>
+        (
+          document.getElementById(`brief-${field}-details`) ??
+          document.getElementById(`brief-${field}`)
+        )?.focus(),
       0,
     );
   }
@@ -890,23 +894,51 @@ export function EventBriefForm() {
             </p>
             {setup && (
               <section
-                className="review-section"
+                className="suggested-setup"
                 aria-labelledby="suggested-setup-heading"
               >
                 <h3 id="suggested-setup-heading">Suggested event setup</h3>
+                <p className="helper-text">
+                  A proposal based on your brief’s activities, attendees and
+                  equipment. It is not a venue’s documented spaces or
+                  capacity, and it says nothing about date availability; check
+                  those on each lead below.
+                </p>
+                <h4>Proposed spaces</h4>
+                <ul>
+                  {setup.rooms.map((room) => (
+                    <li key={room}>{room}</li>
+                  ))}
+                </ul>
+                <h4>Why this is suggested</h4>
                 <p>{setup.reason}</p>
+                <h4>Equipment placement</h4>
                 <p>{setup.equipmentPlacement}</p>
+                <h4>Assumptions to confirm</h4>
                 <ul>
                   {setup.assumptions.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
-                <label className="field">
+                {lastBrief && lastBrief.roomRequirements.length > 0 && (
+                  <p className="helper-text">
+                    Your discovery brief already lists:{" "}
+                    {lastBrief.roomRequirements.join(", ")}. Using this setup
+                    replaces those spaces in the editable form only.
+                  </p>
+                )}
+                <label className="field" htmlFor="setup-rooms">
                   <span>Adjust proposed spaces</span>
-                  <input
+                  <textarea
+                    id="setup-rooms"
+                    rows={3}
                     value={setupRooms}
+                    aria-describedby="setup-rooms-help"
                     onChange={(e) => setSetupRooms(e.target.value)}
                   />
+                  <small id="setup-rooms-help">
+                    Separate spaces with commas.
+                  </small>
                 </label>
                 <Button
                   type="button"

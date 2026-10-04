@@ -42,10 +42,10 @@ export function suggestEventSetup(brief) {
   const handsOn = /hackathon|coding|workshop|hands.on/i.test(activities);
   const parallel = /parallel|simultaneous|breakout/i.test(activities);
   const layout = handsOn
-    ? "classroom or grouped tables for laptop work"
+    ? "classroom or grouped-table layout for laptop work"
     : /talk|panel|screening/i.test(activities)
       ? "seated presentation layout"
-      : "mixed seating for discussion and networking";
+      : "mixed seating layout for discussion and networking";
   return {
     rooms: [
       `Main space for ${brief.headcount} attendees in a ${layout}`,

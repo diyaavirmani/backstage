@@ -1,4 +1,7 @@
-import { deduplicateRequirements } from "../../scripts/brief-controls.mjs";
+import {
+  deduplicateRequirements,
+  parseAudience,
+} from "../../scripts/brief-controls.mjs";
 import type { City, EventBrief } from "@/types";
 
 export const BRIEF_STORAGE_KEY = "backstage.event-brief.v1";
@@ -43,8 +46,13 @@ export function validateBriefForm(
     ["eventType", 80],
     ["audience", 120],
   ] as const) {
-    if (!values[key].trim() || (key === "audience" && values[key] === "Other"))
-      errors[key] = "This field is required.";
+    if (!values[key].trim()) errors[key] = "This field is required.";
+    else if (
+      key === "audience" &&
+      parseAudience(values.audience).choice === "Other" &&
+      ["", "other"].includes(parseAudience(values.audience).details.trim().toLowerCase())
+    )
+      errors[key] = "Describe the audience or choose a listed option.";
     else if (values[key].trim().length > max)
       errors[key] = `Use ${max} characters or fewer.`;
   }
