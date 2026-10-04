@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Button, DetailDialog } from "@/components/ui";
+import { Icon, LogoMark } from "@/components/icons";
 
 export function SiteHeader({
   active,
@@ -42,12 +43,10 @@ export function SiteHeader({
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
-      <header className="site-header">
+      <header className={active ? "site-header site-header-app" : "site-header"}>
         <div className="header-inner">
           <Link className="wordmark" href="/" aria-label="Backstage home">
-            <span className="wordmark-icon" aria-hidden="true">
-              <span />
-            </span>
+            <LogoMark />
             <span>backstage</span>
           </Link>
           <nav
@@ -56,12 +55,15 @@ export function SiteHeader({
           >
             {links}
           </nav>
-          <Link
-            className="header-action button button-dark desktop-navigation"
-            href="/organizer"
-          >
-            Plan an event <span aria-hidden="true">↗</span>
-          </Link>
+          <div className="header-actions desktop-navigation">
+            <span className="header-region">
+              <Icon name="pin" size={14} />
+              Delhi NCR · Bengaluru
+            </span>
+            <Link className="header-action button button-dark" href="/organizer">
+              Plan an event <Icon name="arrowRight" size={16} />
+            </Link>
+          </div>
           <Button
             className="mobile-menu-button"
             variant="secondary"
@@ -70,6 +72,7 @@ export function SiteHeader({
             aria-haspopup="dialog"
             onClick={() => setMenu(true)}
           >
+            <Icon name="menu" size={16} />
             Menu
           </Button>
         </div>
