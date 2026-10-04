@@ -43,6 +43,16 @@ npm run test:e2e
 
 The end-to-end scenario uses fresh Chromium contexts. It transfers only the opaque demo workspace cookie and saved sample brief to the second context so organizer and host views can work in the same simulated workspace. No discovery request is issued: `test:agent` contains credential-free unit tests, while OpenAI and Sanity are not mocked or contacted by this browser suite. Discovery's separately recorded live retrieval evidence remains in `docs/build-log.md`.
 
+### Opt-in live discovery browser check
+
+The opt-in `tests/e2e/live-discovery.spec.ts` uses the localhost production server, Playwright's temporary database, and the real OpenAI/Sanity Context settings from ignored `.env.local`. It performs up to five discovery requests in sequence, including the Bengaluru founder flow and Delhi NCR locality follow-ups. Its catalog/read/citation metadata artifact is sanitized and ignored. It does not reset or change Railway quotas. Run only when spending the allowed live calls:
+
+```bash
+npx --yes --package=node@24 --call 'BACKSTAGE_LIVE_BROWSER=1 node --import ./scripts/load-env.mjs ./node_modules/playwright/cli.js test tests/e2e/live-discovery.spec.ts'
+```
+
+The single-request locality defect reproduction can be run separately with `npm run test:backend-live-locality-diagnostic`; it intentionally fails while the reproduced Gurugram follow-up returns no validated lead. Do not combine that diagnostic with the five-request suite when enforcing a five-call ceiling. Both run against localhost and isolated SQLite, never the public Railway app.
+
 Screenshots, failure screenshots, traces, and Playwright output are written under ignored `.playwright-artifacts/`. Do not stage these files or raw browser state. The suite captures organizer and host desktop/mobile screens for visual inspection.
 
 The setup follows the [Playwright installation guide](https://playwright.dev/docs/intro) and its [`webServer` configuration](https://playwright.dev/docs/test-webserver). The current Next.js route-handler and testing guides are installed at `node_modules/next/dist/docs/01-app/01-getting-started/15-route-handlers.md` and `node_modules/next/dist/docs/01-app/02-guides/testing/playwright.md`.

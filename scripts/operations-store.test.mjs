@@ -345,10 +345,59 @@ function worker(path,workspaceId,applicationId) {
   });
 }
 
+function actionWorker(path,workspaceId,action,role='host') {
+  return new Promise((resolveWorker,reject)=>{
+    const w=new Worker(new URL('./ops-action-race-worker.mjs',import.meta.url),{workerData:{path,workspaceId,action,role}});
+    let settled=false;
+    w.on('message',(message)=>{if(message.ready){w.postMessage('go');return;}settled=true;resolveWorker(message);});
+    w.on('error',reject);w.on('exit',(code)=>{if(!settled&&code!==0)reject(new Error(`worker exited ${code}`));});
+  });
+}
+
 test('separate SQLite connections cannot concurrently approve overlapping requests',async t=>{
   const x=setup();t.after(()=>x.close());
   const date=nextWeekday();const first=createApp(x,[room(x)],{date}),second=createApp(x,[room(x)],{date});
   const outcomes=await Promise.all([worker(x.path,x.session.workspaceId,first.id),worker(x.path,x.session.workspaceId,second.id)]);
   assert.equal(outcomes.filter((o)=>o.ok).length,1,JSON.stringify(outcomes));
   assert.equal(outcomes.filter((o)=>!o.ok&&o.error.includes('Conflict on')).length,1,JSON.stringify(outcomes));
+});
+
+test('approval and an overlapping host internal block cannot both commit',async t=>{
+  const x=setup();t.after(()=>x.close());
+  const app=createApp(x,[room(x)]);const range=app.payload.brief;
+  const venueId=x.db.prepare('SELECT venue_id FROM resources WHERE workspace_id=? AND id=?').get(x.session.workspaceId,room(x)).venue_id;
+  const actions=[
+    {type:'approve',applicationId:app.id},
+    {type:'add-internal-block',venueId,resourceId:room(x),date:range.date,startTime:'10:30',endTime:'11:30',reason:'Fictional concurrent maintenance block'},
+  ];
+  const results=await Promise.all(actions.map(action=>actionWorker(x.path,x.session.workspaceId,action)));
+  assert.equal(results.filter(result=>result.ok).length,1,JSON.stringify(results));
+  assert.equal(results.filter(result=>!result.ok).length,1,JSON.stringify(results));
+  const reservation=x.db.prepare("SELECT count(*) n FROM allocations WHERE workspace_id=? AND application_id=? AND state='reservation'").get(x.session.workspaceId,app.id).n;
+  const block=x.db.prepare('SELECT count(*) n FROM internal_blocks WHERE workspace_id=? AND resource_id=?').get(x.session.workspaceId,room(x)).n;
+  assert.equal(reservation+block,1,'either the reservation or the overlapping block must win atomically');
+});
+
+test('separate rooms racing for one shared projector produce exactly one allocation',async t=>{
+  const x=setup();t.after(()=>x.close());
+  const date=nextWeekday();const projector=resource(x,'Projector');
+  const first=createApp(x,[room(x),projector],{date,title:'Room one shared projector race'});
+  const second=createApp(x,[resource(x,'Gathering Salon'),projector],{date,title:'Room two shared projector race'});
+  const results=await Promise.all([worker(x.path,x.session.workspaceId,first.id),worker(x.path,x.session.workspaceId,second.id)]);
+  assert.equal(results.filter(result=>result.ok).length,1,JSON.stringify(results));
+  assert.equal(results.filter(result=>!result.ok&&result.error.includes('Conflict on Projector')).length,1,JSON.stringify(results));
+  assert.equal(x.db.prepare("SELECT count(*) n FROM allocations WHERE workspace_id=? AND resource_id=? AND state='reservation'").get(x.session.workspaceId,projector).n,1);
+});
+
+test('approval racing cancellation leaves no active allocations after cancellation settles',async t=>{
+  const x=setup();t.after(()=>x.close());
+  const app=createApp(x,[room(x)]);
+  const results=await Promise.all([
+    actionWorker(x.path,x.session.workspaceId,{type:'approve',applicationId:app.id}),
+    actionWorker(x.path,x.session.workspaceId,{type:'cancel-application',applicationId:app.id},'organizer'),
+  ]);
+  assert.equal(results.filter(result=>result.ok).length>=1,true,JSON.stringify(results));
+  const final=getOverview(x.db,x.session.workspaceId,'organizer').applications.find(item=>item.id===app.id);
+  if(final.status==='cancelled')assert.equal(x.db.prepare("SELECT count(*) n FROM allocations WHERE workspace_id=? AND application_id=? AND state IN ('hold','reservation')").get(x.session.workspaceId,app.id).n,0);
+  else assert.equal(final.status,'approved','a failed cancellation may leave the valid committed approval');
 });
