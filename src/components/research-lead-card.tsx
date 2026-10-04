@@ -10,6 +10,7 @@ import {
   formatEvidenceDate,
 } from "@/components/ui";
 import { ContactRoutes, VenueEnquiry } from "@/components/venue-enquiry";
+import { VenuePhotos } from "@/components/venue-photos";
 import {
   confirmationQuestions,
   labelledSources,
@@ -57,8 +58,13 @@ export function ResearchLeadCard({
         <Badge>Research lead · not onboarded</Badge>
         <span className="venue-city">{venue.city}</span>
       </div>
-      <h3>{venue.name}</h3>
-      <p className="venue-locality">{venue.locality}</p>
+      <div className="venue-card-heading">
+        <div>
+          <h3>{venue.name}</h3>
+          <p className="venue-locality">{venue.locality}</p>
+        </div>
+        <VenuePhotos venueName={venue.name} gallery={venue.gallery} />
+      </div>
       <section className="lead-summary">
         <h4>Why consider this venue</h4>
         {venue.historical && (

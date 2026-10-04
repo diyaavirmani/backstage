@@ -12,6 +12,10 @@ import {
   normalizeContacts,
   reviewedContactRecords,
 } from "../../../scripts/venue-contacts.mjs";
+import {
+  normalizeGallery,
+  reviewedGalleryRecord,
+} from "../../../scripts/venue-photos.mjs";
 
 export const metadata = { title: "Venue research — Backstage" };
 
@@ -37,6 +41,10 @@ export default async function VenuesPage() {
       summary: venue.summary,
       relationshipStatus: venue.relationshipStatus,
       contacts: normalizeContacts(reviewedContacts, venue.id),
+      gallery: normalizeGallery(
+        reviewedGalleryRecord(enrichment, catalog.sources, venue.id),
+        venue.id,
+      ),
       sourceReferences: venue.sourceIds
         .map((id) => catalog.sources.find((source) => source.id === id))
         .filter(Boolean)

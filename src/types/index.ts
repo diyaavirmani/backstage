@@ -31,6 +31,34 @@ export type VenueContact = {
   sourceReferences: Array<Pick<SourceReference, "id" | "title" | "url" | "checkedAt">>;
 };
 
+/** A curated photo from an official page. Decorative context only: never capacity, layout, eligibility or availability evidence. */
+export type VenuePhoto = {
+  id: string;
+  thumbnailUrl: string;
+  thumbnailWidth: number;
+  thumbnailHeight: number;
+  imageUrl: string;
+  width: number;
+  height: number;
+  category: "event" | "event-space" | "meeting-space" | "workspace" | "outdoor-space" | "dining" | "exterior" | "accommodation";
+  caption: string;
+  alt: string;
+  locationEvidence: string;
+  credit: string;
+  reuse: string;
+  photoDate: string | null;
+  source: Pick<SourceReference, "id" | "title" | "url">;
+};
+
+export type VenueGallery = {
+  /** "link-only" when the owner's terms do not allow photos to be shown here. */
+  displayPolicy: "embed" | "link-only";
+  rightsNote: string;
+  checkedAt: string | null;
+  officialGallery: Pick<SourceReference, "id" | "title" | "url"> | null;
+  photos: VenuePhoto[];
+};
+
 export type VenueClaim = {
   id: string;
   venueId: string;
@@ -187,6 +215,7 @@ export type VenueRecommendation = {
   sourceReferences: Array<Pick<SourceReference, "id" | "title" | "url">>;
   /** Resolved server-side from published Sanity records for this exact venue identity. */
   contacts?: VenueContact[];
+  gallery?: VenueGallery | null;
   nextStep: string;
 };
 

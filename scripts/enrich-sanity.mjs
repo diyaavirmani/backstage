@@ -24,7 +24,8 @@ if (!configured) {
 }
 
 const client = createClient({projectId, dataset, token, apiVersion: "2025-02-19", useCdn: false});
-const referencedIds = [...new Set(docs.flatMap((doc) => [...(doc.venues || []), ...(doc.venue ? [doc.venue] : []), ...(doc.sourceReferences || [])].map((reference) => reference._ref)))];
+const references = (value) => Array.isArray(value) ? value.flatMap(references) : value && typeof value === "object" ? (value._type === "reference" ? [value._ref] : Object.values(value).flatMap(references)) : [];
+const referencedIds = [...new Set(docs.flatMap(references))];
 async function inspect() {
   const found = await client.getDocuments([...docs.map((doc) => doc._id), ...docs.map((doc) => `drafts.${doc._id}`), ...referencedIds]);
   return new Map(found.filter(Boolean).map((doc) => [doc._id, doc]));
@@ -61,7 +62,9 @@ try {
   const failures = docs.filter((doc) => !plan.conflicts.some((item) => item.doc._id === doc._id) && differingFields(doc, existing.get(doc._id)).length).map((doc) => doc._id);
   const resolved = await client.fetch(`*[_type == "venueContact" && _id in $ids]{_id, "venues": venues[]->{_id, relationshipStatus, isDemonstration}, "sources": sourceReferences[]->url}`, {ids: docs.filter((doc) => doc._type === "venueContact").map((doc) => doc._id)});
   for (const contact of resolved) if (contact.venues.some((venue) => !venue || venue.isDemonstration !== false || venue.relationshipStatus !== "research-lead") || !contact.sources.length || contact.sources.some((url) => !url)) failures.push(`${contact._id} (unresolved reference)`);
-  const counts = await client.fetch(`{"venueContact": count(*[_type == "venueContact" && !(_id in path("drafts.**"))]), "sourceReference": count(*[_type == "sourceReference" && !(_id in path("drafts.**"))]), "venue": count(*[_type == "venue" && !(_id in path("drafts.**"))])}`);
+  const galleries = await client.fetch(`*[_type == "venueGallery" && _id in $ids]{_id, "venue": venue->{_id, relationshipStatus, isDemonstration}, "gallery": officialGallerySource->url, "photoSources": photos[].sourceReference->url}`, {ids: docs.filter((doc) => doc._type === "venueGallery").map((doc) => doc._id)});
+  for (const gallery of galleries) if (!gallery.venue || gallery.venue.isDemonstration !== false || gallery.venue.relationshipStatus !== "research-lead" || !gallery.gallery || (gallery.photoSources || []).some((url) => !url)) failures.push(`${gallery._id} (unresolved reference)`);
+  const counts = await client.fetch(`{"venueContact": count(*[_type == "venueContact" && !(_id in path("drafts.**"))]), "venueGallery": count(*[_type == "venueGallery" && !(_id in path("drafts.**"))]), "sourceReference": count(*[_type == "sourceReference" && !(_id in path("drafts.**"))]), "venue": count(*[_type == "venue" && !(_id in path("drafts.**"))])}`);
   if (failures.length) {
     console.error(`Enrichment verification failed for: ${failures.join(", ")}`);
     process.exitCode = 1;

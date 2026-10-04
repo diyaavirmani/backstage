@@ -1,6 +1,7 @@
 import {suggestEventSetup} from "../../scripts/brief-controls.mjs";
 import {orderVenueLeads} from "../../scripts/evidence-presentation.mjs";
 import {contactProjection, normalizeContacts, type RawContactRecord} from "../../scripts/venue-contacts.mjs";
+import {galleryProjection, normalizeGallery, type RawGalleryRecord} from "../../scripts/venue-photos.mjs";
 import { generateText as defaultGenerateText, Output, stepCountIs, tool } from "ai";
 import type {LanguageModel} from "ai";
 import { createMCPClient as defaultCreateMCPClient } from "@ai-sdk/mcp";
@@ -39,6 +40,7 @@ type RetrievedVenue = {
   sources: Array<{_id: string; title: string; url: string}>;
   claims: Array<{_key: string; subject: string; claim: string; value: string; evidenceType: string; checkedAt?: string; historicalDate?: string; layout?: string; qualification?: string; appliesToSpaceId?: string; sources: Array<{_id: string; title: string; url: string; sourceType?: string}>}>;
   contacts?: RawContactRecord[];
+  gallery?: RawGalleryRecord | null;
   spaces: Array<{_id: string; name: string; layout?: string; capacity?: number}>;
 };
 
@@ -119,6 +121,7 @@ export function createVenueDiscoveryHandler(overrides: Partial<DiscoveryDependen
       "sources": sourceReferences[]->{_id, title, url},
       claims[]{_key, subject, claim, value, evidenceType, checkedAt, historicalDate, layout, qualification, appliesToSpaceId, "sources": sourceReferences[]->{_id, title, url, sourceType}},
       ${contactProjection},
+      ${galleryProjection},
       "spaces": spaces[]->{_id, name, layout, capacity}
     }`, {}, {signal, timeout: 12_000}), "Published venue knowledge", 12_000, signal);
     if (!venues.length || venues.some((venue) => !venue.sources?.length || !venue.claims?.length)) throw new Error("The published research catalog is empty or missing source-backed claims. Verify the Sanity seed before using discovery.");
@@ -253,8 +256,12 @@ First use readVenueKnowledge to read relevant outline entries for ${brief.city}.
     }));
     return Response.json({
       suggestedSetup: suggestEventSetup(brief),
-      // Contact routes come only from published records for the validated venue identity, never from model output.
-      recommendations: orderVenueLeads(validated.recommendations.map((item) => ({...Object.fromEntries(Object.entries(item as Record<string, unknown>).filter(([key]) => key !== "evidencePaths")), contacts: normalizeContacts(venues.find((venue) => venue._id === item.venueId)?.contacts, item.venueId)}) as VenueRecommendation), brief),
+      // Contacts and decorative photos come only from published records for the validated venue identity, never from
+      // model output, and are attached after evidence validation so they cannot influence requirement classification.
+      recommendations: orderVenueLeads(validated.recommendations.map((item) => {
+        const venue = venues.find((candidate) => candidate._id === item.venueId);
+        return {...Object.fromEntries(Object.entries(item as Record<string, unknown>).filter(([key]) => key !== "evidencePaths")), contacts: normalizeContacts(venue?.contacts, item.venueId), gallery: normalizeGallery(venue?.gallery, item.venueId)} as VenueRecommendation;
+      }), brief),
       requestedRequirements: validated.requestedRequirements,
       retrievalEvidence: validated.recommendations.map((item)=>({venueId:item.venueId,entryPaths:item.evidencePaths,sourceReferenceIds:item.sourceReferences.map((source)=>source.id)})),
       message: validated.recommendations.length

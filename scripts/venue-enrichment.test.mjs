@@ -4,6 +4,7 @@ import {buildDocuments, catalog} from "./catalog-lib.mjs";
 import {differingFields, enrichment, enrichmentDocuments, validateEnrichment} from "./venue-enrichment.mjs";
 import {normalizeContacts, reviewedContactRecords, formatContactValue, contactHref} from "./venue-contacts.mjs";
 import {composeEnquiry, confirmationQuestions, labelledSources, orderVenueFacts, orderVenueLeads} from "./evidence-presentation.mjs";
+import {isAllowedPhotoUrl, normalizeGallery, reviewedGalleryRecord} from "./venue-photos.mjs";
 
 const records = reviewedContactRecords(enrichment, catalog.sources);
 const contactsFor = (venueId) => normalizeContacts(records, venueId);
@@ -12,12 +13,11 @@ const noida = "venue-ofis-noida-sector-62", gurugram = "venue-ofis-gurugram-sohn
 test("reviewed enrichment validates and is additive to the research catalog", () => {
   assert.deepEqual(validateEnrichment(catalog), []);
   const docs = enrichmentDocuments();
-  assert.equal(docs.length, enrichment.sources.length + enrichment.contacts.length);
+  assert.equal(docs.length, enrichment.sources.length + enrichment.contacts.length + enrichment.galleries.length);
   const ids = new Set(buildDocuments().map((doc) => doc._id));
   for (const doc of docs) assert.ok(ids.has(doc._id), `${doc._id} is part of the expected seed documents`);
-  for (const contact of docs.filter((doc) => doc._type === "venueContact")) {
-    for (const reference of [...contact.venues, ...contact.sourceReferences]) assert.ok(ids.has(reference._ref), `${contact._id} → ${reference._ref} resolves`);
-  }
+  const references = (value) => Array.isArray(value) ? value.flatMap(references) : value && typeof value === "object" ? (value._type === "reference" ? [value._ref] : Object.values(value).flatMap(references)) : [];
+  for (const doc of docs) for (const id of references(doc)) assert.ok(ids.has(id), `${doc._id} → ${id} resolves`);
   assert.ok(docs.every((doc) => doc._type !== "venue"), "enrichment never rewrites venue claims");
 });
 
@@ -123,4 +123,60 @@ test("confirmation questions and enquiry text come from the brief and stay unsen
   assert.match(text, /- Projector/);
   assert.match(text, /not a booking request or confirmation/);
   assert.doesNotMatch(text, /\+91|@|available on|is available|confirmed/i, "no contact details or availability claims are inserted");
+});
+
+const galleryFor = (venueId) => normalizeGallery(reviewedGalleryRecord(enrichment, catalog.sources, venueId), venueId);
+
+test("galleries hold only verified official photos for the right venue and branch", () => {
+  const counts = Object.fromEntries(catalog.venues.map((venue) => [venue.id, galleryFor(venue.id)?.photos.length ?? null]));
+  assert.deepEqual(counts, {"venue-masters-union-gurugram": 0, [gurugram]: 4, [noida]: 6, "venue-paytm-office-noida": null, "venue-shifu-den-bengaluru": 4, "venue-saiacs-ceo-centre-bengaluru": 5});
+  const masters = galleryFor("venue-masters-union-gurugram");
+  assert.equal(masters.displayPolicy, "link-only");
+  assert.equal(masters.officialGallery.url, "https://mastersunion.org/book-a-campus-tour", "terms forbid republishing, so the official page is linked instead");
+  const sohna = galleryFor(gurugram).photos, sector62 = galleryFor(noida).photos;
+  assert.ok(sohna.every((photo) => photo.source.url !== "https://ofissquare.com/coworking-space-in-noida-sector-62/"));
+  assert.ok(sohna.every((photo) => !/sector-62|auditorium|theatre|conferenceroom|Rectangle52/i.test(photo.imageUrl)), "no Sector 62 images on Sohna Road");
+  assert.ok(sector62.every((photo) => !/sohna/i.test(`${photo.imageUrl} ${photo.source.url}`)), "no Sohna Road images on Sector 62");
+  assert.ok([...sohna, ...sector62].every((photo) => /Sohna|Sector 62|Vatika/i.test(photo.locationEvidence)), "Ofis photos state their branch evidence");
+  const allPhotos = catalog.venues.flatMap((venue) => galleryFor(venue.id)?.photos || []);
+  assert.ok(allPhotos.every((photo) => isAllowedPhotoUrl(photo.thumbnailUrl) && isAllowedPhotoUrl(photo.imageUrl)));
+  assert.ok(allPhotos.every((photo) => photo.photoDate === null), "no photo date is invented");
+  assert.equal(galleryFor("venue-saiacs-ceo-centre-bengaluru").photos.find((photo) => photo.category === "accommodation")?.caption.includes("not an event space"), true);
+  assert.ok(allPhotos.every((photo) => !/\bcapacity\b|\b\d+\s*(?:seats?|people|guests|attendees|pax)\b|sq\.? ?ft|square (?:feet|metres)/i.test(`${photo.caption} ${photo.alt}`)), "captions do not infer size or capacity");
+});
+
+test("the photo host allowlist rejects anything but curated official files", () => {
+  assert.ok(isAllowedPhotoUrl("https://ofissquare.com/wp-content/uploads/2026/06/auditorium-.png"));
+  assert.ok(isAllowedPhotoUrl("https://res.cloudinary.com/dkwqszhed/image/upload/c_limit,w_400,f_auto,q_auto/v1/x.png"));
+  for (const url of ["http://ofissquare.com/wp-content/uploads/a.png", "https://ofissquare.com/wp-admin/a.png", "https://ofissquare.com/wp-content/uploads/a.png?w=1", "https://res.cloudinary.com/another-account/image/upload/a.png", "https://ofissquare.com.example.test/wp-content/uploads/a.png", "https://user@ofissquare.com/wp-content/uploads/a.png", "javascript:alert(1)", "data:image/png;base64,AAAA", "/api/proxy?url=https://ofissquare.com/x.png"]) assert.equal(isAllowedPhotoUrl(url), false, url);
+});
+
+test("server-side gallery normalization drops unsafe or mismatched records", () => {
+  const record = reviewedGalleryRecord(enrichment, catalog.sources, noida);
+  assert.equal(normalizeGallery(record, gurugram), null, "a gallery never attaches to another venue");
+  const tampered = {...record, photos: [
+    {...record.photos[0], imageUrl: "https://example.test/photo.jpg"},
+    {...record.photos[1], thumbnailUrl: `${record.photos[1].thumbnailUrl}?track=1`},
+    {...record.photos[2], source: null},
+    {...record.photos[3], locationEvidence: ""},
+    {...record.photos[4], category: "capacity-proof"},
+    record.photos[5],
+  ]};
+  assert.deepEqual(normalizeGallery(tampered, noida).photos.map((photo) => photo.id), [record.photos[5]._key]);
+  const linkOnly = normalizeGallery({...record, displayPolicy: "link-only"}, noida);
+  assert.deepEqual(linkOnly.photos, [], "link-only galleries never embed photos");
+  assert.equal(normalizeGallery({...record, photos: [...record.photos, ...record.photos]}, noida).photos.length, 6);
+  assert.equal(normalizeGallery({...record, officialGallery: null, photos: []}, noida), null);
+});
+
+test("gallery validation blocks wrong-branch, unlisted and over-long galleries before any write", () => {
+  const variant = (change) => { const data = structuredClone(enrichment); change(data); return validateEnrichment(catalog, data).join(" "); };
+  const sohnaGallery = (data) => data.galleries.find((item) => item.venueId === gurugram);
+  const sector62Photo = (data) => data.galleries.find((item) => item.venueId === noida).photos.find((photo) => photo.sourceId === "source-ofis-noida-sector-62");
+  assert.match(variant((data) => { sohnaGallery(data).photos.push({...sector62Photo(data), key: "copied"}); }), /another venue or site/);
+  assert.match(variant((data) => { sohnaGallery(data).photos[0].imageUrl = "https://example.test/terrace.jpg"; }), /allowlisted official image host/);
+  assert.match(variant((data) => { sohnaGallery(data).photos[0].locationEvidence = ""; }), /location evidence/);
+  assert.match(variant((data) => { const gallery = sohnaGallery(data); gallery.photos = Array(7).fill(gallery.photos[0]).map((photo, index) => ({...photo, key: `p${index}`})); }), /1–6 photos/);
+  assert.match(variant((data) => { data.galleries.find((item) => item.displayPolicy === "link-only").photos = [structuredClone(sector62Photo(data))]; }), /link-only gallery must not embed/);
+  assert.match(variant((data) => { data.galleries.push({...structuredClone(sohnaGallery(data)), id: "gallery-duplicate"}); }), /only one gallery/);
 });

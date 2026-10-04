@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { routeOfficialPhotos } from "./photo-fixtures";
 
 const artifacts = ".playwright-artifacts/product-improvements";
 const noOverflow = (page: Page) =>
@@ -7,6 +8,7 @@ const noOverflow = (page: Page) =>
 test("catalog shows evidence first, direct sources and venue-scoped contact routes", async ({
   page,
 }) => {
+  await routeOfficialPhotos(page);
   await page.goto("/venues");
   // The catalog is either published Sanity content or the explicitly labelled reviewed preview.
   await expect(

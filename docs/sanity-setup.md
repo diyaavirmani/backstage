@@ -73,9 +73,9 @@ npm run dev
 
 Run `npm run sanity:dev` and open `http://localhost:3333/studio`. The Sanity Studio and schemas remain available through the local Sanity CLI, outside the public Next.js runtime. Schema validation is local; schema deployment requires an authenticated Sanity CLI account with suitable dataset access. The seed uses stable IDs, validates every relationship and source before connecting, publishes normal (non-draft) records, and skips existing records and drafts to preserve host edits. It writes cyclic venue/space relationships in an atomic Sanity transaction. Re-running is safe. Only source-backed research is seeded; demonstration inventory is excluded. The dry run validates and reports intended document counts without credentials or writes. `sanity:verify-seed` reads back the expected published IDs, checks reference resolution, unknown fields, and demonstration exclusion.
 
-### Reviewed enrichment (public enquiry routes)
+### Reviewed enrichment (enquiry routes and venue photos)
 
-Reviewed contact routes and their supporting sources live in `src/data/venue-enrichment.json`. They are separate `venueContact` and `sourceReference` documents, so they never edit venue claims or change Knowledge Base content.
+Reviewed contact routes, curated photo galleries and their supporting sources live in `src/data/venue-enrichment.json`. They are separate `venueContact`, `venueGallery` and `sourceReference` documents, so they never edit venue claims or change Knowledge Base content.
 
 ```bash
 npm run sanity:enrich:dry-run   # validates; with local credentials, reads Sanity and lists creates/differences without writing
@@ -83,7 +83,7 @@ npm run sanity:enrich           # creates only missing reviewed documents, then 
 npm run sanity:verify-seed
 ```
 
-Enrichment is additive and idempotent: an existing published document that differs from the reviewed version, or any pending draft, is reported and left untouched so editorial changes and existing provenance survive. Organization-wide routes may only span venues of one host organization; venue-specific routes belong to exactly one venue; an enquiry page must be the cited page itself. Record why a published route was or was not stored in the source `reviewNote`.
+Enrichment is additive and idempotent: an existing published document that differs from the reviewed version, or any pending draft, is reported and left untouched so editorial changes and existing provenance survive. Organization-wide routes may only span venues of one host organization; venue-specific routes belong to exactly one venue; an enquiry page must be the cited page itself. Record why a published route was or was not stored in the source `reviewNote`. Each photo must cite the venue's own page or a shared page the venue already cites (never another branch's page), state its location evidence, and use an allowlisted official image host (`scripts/venue-photos.mjs`). Use `displayPolicy: "link-only"` with no photos when the owner's terms do not allow display. Public availability is not a reuse licence; record what was found in `reuse` and `rightsNote`.
 
 Review the venue records, nested evidence claims, references, and `research-lead` status in Studio before creating a Knowledge Base. Research claims are checked on the dates recorded in the documents; review them again before relying on them.
 

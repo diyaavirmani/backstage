@@ -19,6 +19,15 @@ export const enrichment: {
     scope: string;
     checkedAt: string;
   }>;
+  galleries: Array<{
+    id: string;
+    venueId: string;
+    displayPolicy: string;
+    officialGallerySourceId: string;
+    rightsNote: string;
+    checkedAt: string;
+    photos: Array<Record<string, unknown> & { key: string; sourceId: string }>;
+  }>;
 };
 export function validateEnrichment(
   catalogData: { venues?: Array<{ id: string; hostOrganizationId?: string }>; sources?: Array<{ id: string; url: string }> },

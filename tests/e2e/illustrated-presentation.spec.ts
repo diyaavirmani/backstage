@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { routeOfficialPhotos } from "./photo-fixtures";
 
 // Presentation verification only. Existing suites exercise real operations and
 // explicitly mocked discovery; this test never calls a live model provider.
@@ -57,6 +58,7 @@ test("covered workspaces retain readable boundaries and mobile view labels", asy
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await routeOfficialPhotos(page);
   for (const [route, title, boundary] of [
     ["/organizer", "Plan your event", "Organizer workspace"],
     ["/venues", "Venue research", "Research leads · not onboarded"],

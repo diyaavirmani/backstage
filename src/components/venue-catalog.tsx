@@ -14,6 +14,7 @@ import {
   formatEvidenceDate,
 } from "@/components/ui";
 import { ContactRoutes, VenueEnquiry } from "@/components/venue-enquiry";
+import { VenuePhotos } from "@/components/venue-photos";
 import { setQueryValues, useQueryValues } from "@/lib/workspace-navigation";
 import {
   labelledSources,
@@ -123,10 +124,15 @@ export default function VenueCatalog({
                   (claim) => claim.evidenceType === "historical-event",
                 ) && <Badge tone="historical">Past event evidence</Badge>}
               </div>
-              <h2>{venue.name}</h2>
-              <p className="venue-locality">
-                {venue.city} · {venue.locality}
-              </p>
+              <div className="venue-card-heading">
+                <div>
+                  <h2>{venue.name}</h2>
+                  <p className="venue-locality">
+                    {venue.city} · {venue.locality}
+                  </p>
+                </div>
+                <VenuePhotos venueName={venue.name} gallery={venue.gallery} />
+              </div>
               <section className="lead-summary">
                 <h3>Why consider this venue</h3>
                 <p>{venue.summary}</p>

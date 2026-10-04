@@ -1294,6 +1294,8 @@ legend {
   margin-top: 6px;
 }
 .detail-dialog {
+  /* Tailwind preflight zeroes margins, which otherwise pins modal dialogs to the top-left corner. */
+  margin: auto;
   background: white;
   color: var(--text);
   border: 1px solid var(--border);
@@ -2324,4 +2326,215 @@ legend {
   resize: vertical;
   font-size: 14px;
   line-height: 1.5;
+}
+
+/* Compact official venue photos; fixed boxes prevent layout shift while images load. */
+.venue-card-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+.venue-card-heading > div:first-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.venue-photos {
+  position: relative;
+  flex: 0 0 104px;
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+}
+.venue-photo-trigger {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  width: 104px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--forest);
+}
+.venue-thumb {
+  display: grid;
+  place-items: center;
+  width: 104px;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--sage);
+}
+.venue-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.venue-thumb-fallback {
+  padding: 4px;
+  font-size: 11px;
+  line-height: 1.3;
+  text-align: center;
+  color: var(--muted);
+}
+.venue-photo-label {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 24px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.venue-photo-trigger:hover .venue-thumb {
+  border-color: var(--forest);
+}
+.venue-photo-trigger:focus-visible {
+  outline: 3px solid var(--forest);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+.photo-preview {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 5;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px #13281826;
+  pointer-events: none;
+}
+.photo-preview img {
+  width: 72px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: var(--sage);
+}
+.venue-photos-link {
+  justify-items: end;
+  text-align: right;
+}
+.venue-photos-link small {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--muted);
+  max-width: 120px;
+}
+.photo-gallery {
+  display: grid;
+  gap: 12px;
+}
+.photo-gallery figure {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+.gallery-frame {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  max-height: 52dvh;
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #10241a;
+  touch-action: pan-y;
+  user-select: none;
+}
+.gallery-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.gallery-error {
+  max-width: 320px;
+  padding: 24px;
+  color: white;
+  text-align: center;
+}
+.gallery-error .source-link {
+  color: var(--lime);
+}
+.photo-gallery figcaption {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+.photo-gallery figcaption p {
+  margin: 0;
+}
+.gallery-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.gallery-status {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.gallery-controls .button {
+  white-space: nowrap;
+}
+.dialog-heading .button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.gallery-thumbs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 2px 6px;
+}
+.gallery-thumbs button {
+  flex: 0 0 72px;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--sage);
+  cursor: pointer;
+}
+.gallery-thumbs button[aria-current="true"] {
+  border-color: var(--forest);
+}
+.gallery-thumbs img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+@media (max-width: 480px) {
+  .venue-photos {
+    flex-basis: 84px;
+  }
+  .venue-photo-trigger,
+  .venue-thumb {
+    width: 84px;
+  }
+  .gallery-controls .button {
+    flex: 1 1 40%;
+    padding-inline: 10px;
+  }
+  .gallery-status {
+    order: -1;
+    flex-basis: 100%;
+    text-align: center;
+  }
+}
+@media (hover: none) {
+  .photo-preview {
+    display: none;
+  }
 }
