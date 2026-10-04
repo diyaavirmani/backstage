@@ -11,6 +11,7 @@ export default function OrganizerPage() {
       <WorkspaceShell kind="organizer">
         <main id="main-content">
           <PageHeader
+            cover="/images/workshop-day.jpg"
             label="Organizer workspace"
             title="Plan your event"
             description="Create a brief, research venue leads, and review a private application draft."

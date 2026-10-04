@@ -7,6 +7,7 @@ import {
   type ButtonHTMLAttributes,
   type ReactNode,
 } from "react";
+import { PixelImage } from "@/components/pixel-image";
 
 export function Button({
   variant = "primary",
@@ -65,17 +66,24 @@ export function PageHeader({
   title,
   description,
   label,
+  cover,
   children,
 }: {
   title: string;
   description: string;
   label?: string;
+  cover?: string;
   children?: ReactNode;
 }) {
   return (
-    <header className="page-heading">
+    <header className={cover ? "page-heading has-cover" : "page-heading"}>
+      {cover && (
+        <div className="page-cover" aria-hidden="true">
+          <PixelImage src={cover} alt="" fill priority sizes="(max-width: 767px) 100vw, 1100px" />
+        </div>
+      )}
       <div>
-        {label && <p className="eyebrow">{label}</p>}
+        {label && <p className="page-context">{label}</p>}
         <h1>{title}</h1>
         <p>{description}</p>
       </div>

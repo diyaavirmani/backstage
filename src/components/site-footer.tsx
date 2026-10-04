@@ -37,6 +37,9 @@ export function SiteFooter() {
           fictional records.
         </span>
       </div>
+      <p className="footer-wordmark" aria-hidden="true">
+        backstage
+      </p>
     </footer>
   );
 }

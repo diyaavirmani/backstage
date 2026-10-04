@@ -1,39 +1,51 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { Badge, SourceLink } from "@/components/ui";
-import { Icon, LogoMark } from "@/components/icons";
+import { Badge } from "@/components/ui";
+import { Icon } from "@/components/icons";
+import { RevealWords, Rise } from "@/components/motion";
+import { PixelImage } from "@/components/pixel-image";
 import catalog from "@/data/research-catalog.json";
 
-const steps = [
+const features = [
   {
-    n: "01",
-    tag: "Brief",
     title: "Create a brief",
-    text: "Capture the audience, schedule, budget, rooms, and requirements that matter.",
+    text: "Capture the audience, schedule, budget, rooms, and requirements that matter. Mark what is essential and what can flex, so a host sees the whole setup, not just a headcount.",
     href: "/organizer",
     link: "Build your brief",
-    visual: "brief",
+    painting: "/images/workshop-day.jpg",
+    ui: "/images/ui/brief.png",
+    uiSize: [2192, 1470],
+    uiWidth: "94%",
+    uiAlt:
+      "The event brief editor with event details and a live summary of the event.",
   },
   {
-    n: "02",
-    tag: "Research",
     title: "Research venues",
-    text: "Read source-grounded leads with qualifications, unknowns, and original citations.",
+    text: "Read source-grounded leads with qualifications, unknowns, and original citations. Every claim links to the page it came from and the date it was checked.",
     href: "/venues",
     link: "Explore the catalog",
-    visual: "research",
+    painting: "/images/founders-lounge.jpg",
+    ui: "/images/ui/lead-card.png",
+    uiSize: [1080, 1174],
+    uiWidth: "54%",
+    uiAlt:
+      "A venue research card showing documented evidence, a qualification, open questions, and its source.",
   },
   {
-    n: "03",
-    tag: "Coordinate",
     title: "Coordinate next steps",
-    text: "Review a private research draft, or try approvals and resource planning with fictional hosts.",
+    text: "Review a private research draft, or try approvals and resource planning with fictional hosts. Two sample hosts demonstrate requests, shared resources, and preparation; role switching is a simulation.",
     href: "/host",
     link: "Try the host demo",
-    visual: "coordinate",
+    painting: "/images/terrace-mixer.jpg",
+    ui: "/images/ui/calendar.png",
+    uiSize: [2272, 668],
+    uiWidth: "100%",
+    uiAlt:
+      "The fictional host resource calendar with a confirmed reservation and its shared resources.",
   },
-] as const;
+];
 
 const evidenceTypes = [
   {
@@ -58,63 +70,7 @@ const evidenceTypes = [
   },
 ] as const;
 
-function StepVisual({ kind }: { kind: (typeof steps)[number]["visual"] }) {
-  if (kind === "brief")
-    return (
-      <div className="step-visual" aria-hidden="true">
-        <div className="mini-field">
-          <span>Headcount</span>
-          <strong>28 founders</strong>
-        </div>
-        <div className="mini-field">
-          <span>Room</span>
-          <strong>Gathering room</strong>
-        </div>
-        <div className="mini-chips">
-          <span className="mini-chip strong">Essential · Projector</span>
-          <span className="mini-chip">Flexible · Evening</span>
-        </div>
-      </div>
-    );
-  if (kind === "research")
-    return (
-      <div className="step-visual" aria-hidden="true">
-        {[
-          ["Hosting purpose", "supported", "Documented"],
-          ["Room capacity", "unknown", "Unknown"],
-          ["Past event", "historical", "Historical"],
-        ].map(([label, tone, status]) => (
-          <div className="mini-row" key={label}>
-            <span>{label}</span>
-            <span className={`status-chip ${tone}`}>{status}</span>
-          </div>
-        ))}
-      </div>
-    );
-  return (
-    <div className="step-visual" aria-hidden="true">
-      <div className="mini-slot hold">
-        <span>Temporary hold</span>
-        <strong>Sat · 17:00–19:00</strong>
-      </div>
-      <div className="mini-slot confirmed">
-        <span>Confirmed</span>
-        <strong>Projector · 1 of 1</strong>
-      </div>
-      <div className="mini-check">
-        <Icon name="check" size={14} /> Share AV checklist
-      </div>
-    </div>
-  );
-}
-
 export default function Home() {
-  const shifu = catalog.venues.find(
-    (venue) => venue.id === "venue-shifu-den-bengaluru",
-  )!;
-  const source = catalog.sources.find(
-    (item) => item.id === shifu.sourceIds[0],
-  )!;
   const claims = catalog.venues.flatMap((venue) => venue.claims);
   const cited = claims.filter((claim) => claim.sourceIds.length > 0).length;
   const cities = new Set(catalog.venues.map((venue) => venue.city)).size;
@@ -122,225 +78,173 @@ export default function Home() {
     [String(catalog.venues.length), "researched venue profiles"],
     [String(catalog.sources.length), "dated public sources"],
     [`${cited}/${claims.length}`, "claims linked to a source"],
-    [String(cities), "cities: Delhi NCR and Bengaluru"],
+    [String(cities), "cities, Delhi NCR and Bengaluru"],
   ];
   return (
-    <>
-      <SiteHeader />
+    <div className="landing">
+      <SiteHeader tone="dark" />
       <main id="main-content" className="home">
         <section className="home-hero">
-          <div className="hero-glow" aria-hidden="true" />
-          <div className="hero-copy">
-            <p className="hero-eyebrow">
-              <span className="eyebrow-dot" /> A clear starting point for your
-              next gathering
-            </p>
+          <div className="hero-art" aria-hidden="true">
+            <PixelImage
+              src="/images/hero-hackathon.jpg"
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+            />
+          </div>
+          <div className="hero-copy page-wrap">
             <h1>
-              Find the right space.
+              <RevealWords text="Find the right space." delay={0.15} step={0.075} />
               <br />
-              <span>Bring your event together.</span>
+              <span className="hero-title-muted">
+                <RevealWords text="Bring your event together." delay={0.42} step={0.075} />
+              </span>
             </h1>
-            <p className="hero-description">
+            <Rise as="p" delay={0.8} className="hero-description">
               Create an event brief, explore researched venue leads, and
               understand what still needs a host’s confirmation.
-            </p>
-            <div className="hero-actions">
-              <Link className="button button-accent" href="/organizer">
+            </Rise>
+            <Rise delay={0.92} className="hero-actions">
+              <Link className="button button-light-solid" href="/organizer">
                 Plan an event <Icon name="arrowRight" size={16} />
               </Link>
-              <Link className="button button-ghost" href="/venues">
+              <Link className="button button-glass" href="/venues">
                 Explore venues
               </Link>
-            </div>
-            <p className="city-note">
+            </Rise>
+            <Rise as="p" delay={1.04} className="city-note">
               Venue research in <strong>Delhi NCR</strong> and{" "}
-              <strong>Bengaluru</strong>.
-            </p>
-            <p className="hero-boundary">
-              Research leads support private drafts. Approvals and calendars use
-              clearly fictional hosts.
-            </p>
+              <strong>Bengaluru</strong>. Research leads support private
+              drafts; approvals and calendars use clearly fictional hosts.
+            </Rise>
           </div>
-          <aside
-            className="product-preview"
-            aria-label="Illustrative event research example"
-          >
-            <div className="preview-chrome">
-              <span className="chrome-dots" aria-hidden="true">
-                <i />
-                <i />
-                <i />
-              </span>
-              <span className="chrome-url">backstage / organizer / research</span>
-              <Badge>Illustrative example</Badge>
+          <Rise as="figure" delay={1.1} className="product-preview">
+            <div className="app-frame">
+              <PixelImage
+                src="/images/ui/app-venues.png"
+                alt="The Backstage venue research workspace listing researched venue leads with evidence badges and sources."
+                width={2880}
+                height={1800}
+                sizes="(max-width: 1280px) 100vw, 1200px"
+                priority
+              />
             </div>
-            <div className="preview-body">
-              <div className="preview-sidebar" aria-hidden="true">
-                <span className="preview-brand">
-                  <LogoMark size={18} /> backstage
-                </span>
-                <span className="preview-nav">
-                  <Icon name="brief" size={15} /> Event brief
-                </span>
-                <span className="preview-nav current">
-                  <Icon name="search" size={15} /> Venue research
-                </span>
-                <span className="preview-nav">
-                  <Icon name="drafts" size={15} /> Private drafts
-                </span>
-              </div>
-              <div className="preview-main">
-                <div className="preview-brief">
-                  <p className="eyebrow">Event brief</p>
-                  <h2>Bengaluru founder gathering</h2>
-                  <div className="preview-meta">
-                    <span>28 founders</span>
-                    <span>Gathering room</span>
-                    <span>Pro-bono access?</span>
-                  </div>
-                </div>
-                <div className="preview-lead">
-                  <div className="venue-card-top">
-                    <Badge>Research lead</Badge>
-                    <span className="venue-city">
-                      <Icon name="pin" size={13} /> Bengaluru
-                    </span>
-                  </div>
-                  <h3>{shifu.name}</h3>
-                  <p className="preview-summary">{shifu.summary}</p>
-                  <div className="preview-facts">
-                    <div className="preview-fact">
-                      <Badge tone="supported">Documented</Badge>
-                      <p>
-                        The source describes pro-bono access for its founder
-                        community.
-                      </p>
-                    </div>
-                    <p className="qualification-note">
-                      <strong>Qualification:</strong> Detailed eligibility
-                      requires confirmation. This does not establish access for
-                      every organizer.
-                    </p>
-                    <div className="preview-fact">
-                      <Badge tone="unknown">Needs confirmation</Badge>
-                      <p>
-                        Room/layout capacity, current availability, price terms,
-                        and booking authority.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="preview-source">
-                    <SourceLink url={source.url}>{source.title}</SourceLink>
-                    <small>
-                      Source checked {source.checkedAt}. Preview uses
-                      checked-in research; run discovery for live entry reads.
-                    </small>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </aside>
+            <figcaption>
+              Illustrative example: the venue catalog with checked-in research.
+            </figcaption>
+          </Rise>
         </section>
 
         <section className="stats-strip page-wrap" aria-label="Research coverage">
           {stats.map(([value, label]) => (
-            <div key={label}>
+            <div key={label} className="scroll-reveal">
               <strong>{value}</strong>
               <span>{label}</span>
             </div>
           ))}
         </section>
 
-        <section className="how-section page-wrap" aria-labelledby="how-heading">
-          <div className="section-heading">
-            <p className="eyebrow">From idea to a useful next step</p>
+        <section className="features page-wrap" aria-labelledby="how-heading">
+          <div className="section-heading scroll-reveal">
             <h2 id="how-heading">Keep the event setup in one place.</h2>
             <p>
               Start with what your event needs. Let the evidence guide the
               conversation.
             </p>
           </div>
-          <div className="steps-grid">
-            {steps.map((step) => (
-              <article className="step-card" key={step.n}>
-                <StepVisual kind={step.visual} />
-                <div className="step-body">
-                  <span className="step-number">
-                    {step.n} · {step.tag}
-                  </span>
-                  <h3>{step.title}</h3>
-                  <p>{step.text}</p>
-                  <Link className="text-link" href={step.href}>
-                    {step.link} <Icon name="arrowRight" size={14} />
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
+          {features.map((feature, index) => (
+            <article
+              className={`step-card feature-row${index % 2 ? " flipped" : ""}`}
+              key={feature.title}
+            >
+              <div className="feature-copy scroll-reveal">
+                <h3>{feature.title}</h3>
+                <p>{feature.text}</p>
+                <Link className="text-link" href={feature.href}>
+                  {feature.link} <Icon name="arrowRight" size={14} />
+                </Link>
+              </div>
+              <div className="feature-art scroll-reveal">
+                <PixelImage
+                  className="feature-painting"
+                  src={feature.painting}
+                  alt=""
+                  fill
+                  sizes="(max-width: 900px) 100vw, 640px"
+                />
+                <PixelImage
+                  className="feature-ui"
+                  src={feature.ui}
+                  alt={feature.uiAlt}
+                  width={feature.uiSize[0]}
+                  height={feature.uiSize[1]}
+                  sizes="(max-width: 900px) 90vw, 640px"
+                  style={{ "--ui-w": feature.uiWidth } as CSSProperties}
+                />
+              </div>
+            </article>
+          ))}
         </section>
 
         <section
-          className="research-boundary page-wrap"
+          className="evidence-showcase page-wrap"
           aria-labelledby="evidence-heading"
         >
-          <div className="evidence-intro">
-            <p className="eyebrow">How evidence is labelled</p>
+          <div className="section-heading centered scroll-reveal">
             <h2 id="evidence-heading">Evidence helps you ask better questions.</h2>
             <p>
               Public research can describe a venue and its hosting conditions.
               It cannot confirm today’s availability, a price, your eligibility,
               or permission for Backstage to book.
             </p>
-            <ul className="evidence-legend">
-              {evidenceTypes.map((type) => (
-                <li key={type.label}>
-                  <Badge tone={type.tone}>{type.label}</Badge>
-                  <span>{type.text}</span>
-                </li>
-              ))}
-            </ul>
           </div>
-          <div className="demo-card">
-            <div className="demo-card-head">
-              <Badge tone="demo">Fictional operations</Badge>
-              <Icon name="calendar" size={20} />
-            </div>
-            <h3>See the host side, safely.</h3>
-            <p>
-              Two sample hosts demonstrate requests, approvals, shared
-              resources, and preparation. Role switching is a simulation.
-            </p>
-            <ul className="demo-timeline" aria-hidden="true">
-              <li>
-                <span className="dot pending" /> Request received
-                <small>Organizer simulation</small>
+          <div className="showcase-art scroll-reveal">
+            <PixelImage
+              className="feature-painting"
+              src="/images/campus-centre.jpg"
+              alt=""
+              fill
+              sizes="100vw"
+            />
+            <PixelImage
+              className="showcase-ui"
+              src="/images/ui/evidence.png"
+              alt="The evidence dialog for a venue, listing each claim with its evidence type, check date, and original source."
+              width={1520}
+              height={1462}
+              sizes="(max-width: 1100px) 80vw, 560px"
+            />
+          </div>
+          <ul className="evidence-legend">
+            {evidenceTypes.map((type) => (
+              <li key={type.label} className="scroll-reveal">
+                <Badge tone={type.tone}>{type.label}</Badge>
+                <span>{type.text}</span>
               </li>
-              <li>
-                <span className="dot hold" /> Temporary hold placed
-                <small>Resource calendar</small>
-              </li>
-              <li>
-                <span className="dot confirmed" /> Approved · checklist shared
-                <small>Preparation</small>
-              </li>
-            </ul>
-            <Link className="text-link" href="/host">
-              Explore the demonstration <Icon name="arrowRight" size={14} />
+            ))}
+          </ul>
+        </section>
+
+        <section className="closing-banner">
+          <PixelImage
+            className="closing-painting"
+            src="/images/tech-talk-stage.jpg"
+            alt=""
+            fill
+            sizes="100vw"
+          />
+          <div className="closing-copy scroll-reveal">
+            <h2>Bring a plan. Find a place to explore.</h2>
+            <p>Start with your event brief.</p>
+            <Link className="button button-light-solid" href="/organizer">
+              Plan an event <Icon name="arrowRight" size={16} />
             </Link>
           </div>
         </section>
-
-        <section className="closing-banner page-wrap">
-          <div>
-            <h2>Bring a plan. Find a place to explore.</h2>
-            <p>Start with your event brief.</p>
-          </div>
-          <Link className="button button-accent" href="/organizer">
-            Plan an event <Icon name="arrowRight" size={16} />
-          </Link>
-        </section>
       </main>
       <SiteFooter />
-    </>
+    </div>
   );
 }

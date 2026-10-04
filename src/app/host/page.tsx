@@ -10,6 +10,7 @@ export default function HostPage() {
       <WorkspaceShell kind="host">
         <main id="main-content">
           <PageHeader
+            cover="/images/terrace-mixer.jpg"
             label="Fictional host demonstration"
             title="Host workspace"
             description="Review requests, coordinate resources, and prepare together in your private demo workspace."

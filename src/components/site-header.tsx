@@ -6,8 +6,10 @@ import { Icon, LogoMark } from "@/components/icons";
 
 export function SiteHeader({
   active,
+  tone = "light",
 }: {
   active?: "organizer" | "host" | "venues";
+  tone?: "light" | "dark";
 }) {
   const [menu, setMenu] = useState(false);
   const links = (
@@ -43,7 +45,9 @@ export function SiteHeader({
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
-      <header className={active ? "site-header site-header-app" : "site-header"}>
+      <header
+        className={`site-header${active ? " site-header-app" : ""}${tone === "dark" ? " site-header-dark" : ""}`}
+      >
         <div className="header-inner">
           <Link className="wordmark" href="/" aria-label="Backstage home">
             <LogoMark />

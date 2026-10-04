@@ -24,7 +24,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable}`}>
-      <body>{children}</body>
+      <body>
+        <noscript>
+          <style>{`.pixel-img{opacity:1!important}.pixel-canvas{display:none}`}</style>
+        </noscript>
+        {children}
+      </body>
     </html>
   );
 }

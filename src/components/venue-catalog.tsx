@@ -35,6 +35,7 @@ export default function VenueCatalog({
   return (
     <main id="main-content" className="venue-page">
       <PageHeader
+        cover="/images/campus-centre.jpg"
         title="Venue research"
         description="Published research in Delhi NCR and Bengaluru. Potential hosts to investigate, with evidence and open questions."
         label="Research leads · not onboarded"
