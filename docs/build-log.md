@@ -460,3 +460,9 @@ The OpenAI key and Sanity server configuration were present locally (only config
 ## Limitations
 
 - No new live OpenAI/Sanity agent scenario was run; the verified agent and evidence behavior was preserved, and deterministic discovery fixtures were used for the browser suite.
+
+## Push, CI, and Railway
+
+- UI implementation commit `41e1441bc19ade20fe46771870bbb7309f3640e4` is present on `origin/main`. GitHub Docker image smoke workflow [37183628475](https://github.com/diyaavirmani/backstage/actions/runs/37183628475) completed successfully for that exact SHA, including the mounted-volume restart check.
+- Railway deployment `4be454d4-310f-4922-989b-eb47f937c5bc` completed with status `SUCCESS` for that exact SHA, using the configured Dockerfile, `/api/health`, one replica, and `/data` volume. The public app is [https://backstage-production-0849.up.railway.app](https://backstage-production-0849.up.railway.app).
+- After rollout, HTTPS checks returned 200 for `/api/health`, `/`, `/venues`, `/organizer`, and `/host`. The homepage, organizer heading, host heading, and published-Sanity catalog marker for the intended UI revision were present. These were page/health checks only; no provider-driven discovery scenario was run as part of the visual pass.
