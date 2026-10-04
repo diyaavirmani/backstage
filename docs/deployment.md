@@ -103,6 +103,12 @@ There must be exactly one service replica while using this SQLite volume. Railwa
 
 ## Post-deploy verification
 
+On 4 October 2026, the original cream-and-teal presentation from `0c3b4c5fc8389ad85207bd5bc242eb128558c271` was restored in commit `f178eaf24ce3037790f5300ea1f62826e32b4dfe` and deployed successfully to the existing service. Docker CI passed its image and volume restart checks. The Railway volume, replica count, variables, quotas, and trial billing configuration were preserved.
+
+The reported reload problem was checked before and after restoration. Chromium direct navigation and refresh on `/`, `/organizer`, `/venues`, and `/host` succeeded at 1440px and 390px; the post-deployment check disabled browser caching. Each run had 16 HTTP 200 document responses, loaded CSS/JavaScript, no browser console/runtime errors, and no horizontal overflow. The published Sanity catalog remained visible. Canceled background Next.js RSC/prefetch requests were observed, but page loads and catalog navigation completed; no routing/cache configuration change was justified. The earlier/intermittent cause remains unconfirmed.
+
+The credential-free regression is included in `npm run test:e2e` as `tests/e2e/presentation-restoration.spec.ts`. It uses the suite's isolated temporary SQLite, checks page refresh and original design elements, and makes no discovery calls. Private screenshots and sanitized reload diagnostics are under the ignored `.playwright-artifacts/` directory. The actual deployment and CI identifiers are recorded in the build log.
+
 After applying credentials and a public domain:
 
 1. Check `/api/health`, `/`, `/venues`, `/organizer`, and `/host` over HTTPS. `/venues` must identify published Sanity content, not the fallback preview.
