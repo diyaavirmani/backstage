@@ -6,6 +6,8 @@ tags: devchallenge, sanitychallenge, sanity, ai
 
 # Backstage: venue discovery grounded in structured Sanity knowledge
 
+**Sanity Challenge Path One:** an agent querying a Sanity Context MCP endpoint backed by a Knowledge Base.
+
 ## What I Built
 
 I built Backstage for organizers in Delhi NCR and Bengaluru who are tired of stitching together venue details through repeated outreach and personal connections. An organizer describes an event once: its audience, date, headcount, rooms, equipment, timing, budget, and which requirements are essential. Backstage then finds potential hosts whose documented conditions may fit, explains what the evidence supports, and calls out what still needs confirmation.

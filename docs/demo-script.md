@@ -28,7 +28,7 @@ Use fictional organizer contact details in the demo. Do not show private environ
 
 **Navigate:** In **Ask a follow-up question**, enter: “What founder eligibility does the source establish, and what still needs confirmation?” Click **Refine leads**.
 
-**Say:** “The follow-up keeps the same 28-person brief and checks the source-backed qualification again. A recommendation is useful only if the organizer can see both the evidence and its limits.”
+**Say:** “The follow-up keeps the same 24-person brief and checks the source-backed qualification again. A recommendation is useful only if the organizer can see both the evidence and its limits.”
 
 ## 2:35–3:15 — Prepare and restore a research draft
 
