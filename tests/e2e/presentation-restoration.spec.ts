@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { mkdirSync } from "node:fs";
+import { routeOfficialPhotos } from "./photo-fixtures";
 
 // Local production checks use isolated SQLite. No discovery/provider calls.
 for (const width of [360, 390, 768, 1024, 1440])
@@ -7,6 +8,7 @@ for (const width of [360, 390, 768, 1024, 1440])
     page,
   }) => {
     await page.setViewportSize({ width, height: 1000 });
+    await routeOfficialPhotos(page);
     const errors: string[] = [],
       assets: string[] = [],
       consoleErrors: string[] = [];
@@ -99,6 +101,11 @@ for (const width of [360, 390, 768, 1024, 1440])
         path: `${output}/green-saas/${route === "/" ? "home" : route.slice(1)}-${width}.png`,
         fullPage: true,
       });
+      if (route === "/" && (width === 390 || width === 1440)) {
+        await page.screenshot({
+          path: `${output}/green-saas/home-viewport-${width}.png`,
+        });
+      }
     }
     expect(errors).toEqual([]);
     expect(consoleErrors).toEqual([]);

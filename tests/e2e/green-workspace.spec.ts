@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { routeOfficialPhotos } from "./photo-fixtures";
 
 const brief = {
   id: "compatible-saved-brief",
@@ -99,7 +100,12 @@ test("wizard validation, back navigation, compatible persistence and full review
   const saved = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("backstage.event-brief.v1")!),
   );
-  expect(saved.equipmentRequirements).toEqual(["2 projectors with HDMI"]);
+  expect(saved.equipmentRequirements).toEqual([
+    "Projector",
+    "microphones",
+    "reliable Wi-Fi",
+    "2 projectors with HDMI",
+  ]);
   expect(saved.currency).toBe("INR");
   expect(saved.headcount).toBe(80);
   await page.reload();
@@ -275,6 +281,7 @@ test("discovery failure preserves brief and retry is an explicit action", async 
 test("catalog URL filters and evidence panel survive history and refresh", async ({
   page,
 }) => {
+  await routeOfficialPhotos(page);
   await page.goto("/venues?city=Delhi+NCR&q=Ofis");
   await expect(page.locator(".venue-card")).toHaveCount(2);
   const card = page.locator(

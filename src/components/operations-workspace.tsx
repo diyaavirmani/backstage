@@ -8,8 +8,9 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import type { EventBrief } from "@/types";
+import type { EventBrief, VenueContact } from "@/types";
 import { Button, DetailDialog } from "@/components/ui";
+import { VenueEnquiry } from "@/components/venue-enquiry";
 import {
   setQueryValues,
   useQueryValues,
@@ -79,6 +80,9 @@ type AppPayload = {
     sourceReferences: SourceLink[];
   }>;
   researchEvidenceCapturedAt?: string | null;
+  venueKind?: string;
+  /** Published enquiry routes resolved server-side when the draft was saved. */
+  contacts?: VenueContact[];
   discoveryBriefSnapshot?: EventBrief | null;
   discoveryCreatedAt?: string | null;
   organizerReply?: string;
@@ -1853,6 +1857,14 @@ function ApplicationCard({
                   {s.title} ↗
                 </a>
               ))}
+              {app.payload.venueKind === "research" && (
+                <VenueEnquiry
+                  name={app.venue_name}
+                  contacts={app.payload.contacts}
+                  brief={app.brief}
+                  questions={app.payload.questions}
+                />
+              )}
               <small>
                 No Backstage submission or booking authority is verified for
                 this research lead.

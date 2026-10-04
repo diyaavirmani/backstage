@@ -101,6 +101,24 @@ These are npm's multiple affected-package rows and paths for one advisory, not t
 
 There must be exactly one service replica while using this SQLite volume. Railway volumes cannot be shared across replicas. Restarts and redeployments preserve the SQLite file, but a deployment with a mounted volume has a brief handoff downtime. Back up SQLite using an online SQLite backup operation or stop the app first; account for WAL/SHM state rather than copying an active main database file alone. Test restore into a separate volume before relying on backups. Never use a network-mounted shared SQLite file.
 
+## Current illustrated release — 4 October 2026
+
+At the user's explicit request, the clean, pushed source revision `c8ff4f190c59e86ebd174bbbce50527f3afb8784` was uploaded from `feat/green-saas-redesign` to the existing service with the installed Railway CLI 5.63.1:
+
+```bash
+railway up --detach \
+  --project 1b07915a-2d25-4e72-9d67-cf2ef7aa0136 \
+  --service 8a29edfb-5a23-45b2-9144-29ad4b53645d \
+  --environment bb8ea621-7244-457c-a8b4-2355fb887bf1 \
+  --message "Deploy verified illustrated UI c8ff4f190c59e86ebd174bbbce50527f3afb8784"
+```
+
+Deployment `4a4411db-6436-4821-b49b-647c399d80d2` reached `SUCCESS`. This was a CLI source upload; Railway metadata records the deployment message and image digest rather than a GitHub `commitHash`. The source SHA identifies the clean checkout that was uploaded. Docker image smoke CI [37223983906](https://github.com/diyaavirmani/backstage/actions/runs/37223983906) passed for that exact source commit before deployment.
+
+The existing service, HTTPS domain, one replica and volume `4fa56d2d-fb4a-4651-a2ad-0cc3cfe754a1` (500 MB at `/data`) were reused. No IaC apply, credentials transfer, quota reset, billing change or database manipulation was performed. Health, homepage, catalog, organizer, host and mural asset each returned HTTP 200. Catalog showed **Published Sanity content**. Cache-disabled Chromium at 1440px and 390px passed 16 direct-navigation/refresh document checks with no console/runtime/asset errors or horizontal overflow. The new illustrated landing was visibly verified and the public URL was opened in the user's default browser.
+
+No hosted provider calls, new applications or mutation tests were performed during this cosmetic release; the pre-release regression suite and Docker restart tests provide separate evidence. The previous intermittent reload complaint still has no reproduced cause. Browser evidence remains private/ignored under `.playwright-artifacts/railway-illustrated/`.
+
 ## Post-deploy verification
 
 On 4 October 2026, the original cream-and-teal presentation from `0c3b4c5fc8389ad85207bd5bc242eb128558c271` was restored in commit `f178eaf24ce3037790f5300ea1f62826e32b4dfe` and deployed successfully to the existing service. Docker CI passed its image and volume restart checks. The Railway volume, replica count, variables, quotas, and trial billing configuration were preserved.

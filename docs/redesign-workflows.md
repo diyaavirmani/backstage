@@ -1,6 +1,6 @@
 # Green workspace integration map
 
-This redesign is on `feat/green-saas-redesign`; it is not merged or deployed by this task. The published deployment keeps its existing revision until a separate release.
+This redesign is on `feat/green-saas-redesign`. Its illustrated UI source revision `c8ff4f1` was deployed directly to the existing Railway service on 4 October 2026 after explicit user authorization. No external PR was merged. The public app now supports the navigation below.
 
 | Control or journey | Data and persistence | Supported action and recovery |
 | --- | --- | --- |

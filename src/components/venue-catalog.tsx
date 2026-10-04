@@ -7,11 +7,19 @@ import {
   Button,
   DetailDialog,
   EmptyState,
+  FactBadge,
   Notice,
   PageHeader,
   SourceLink,
+  formatEvidenceDate,
 } from "@/components/ui";
+import { ContactRoutes, VenueEnquiry } from "@/components/venue-enquiry";
+import { VenuePhotos } from "@/components/venue-photos";
 import { setQueryValues, useQueryValues } from "@/lib/workspace-navigation";
+import {
+  labelledSources,
+  orderVenueFacts,
+} from "../../scripts/evidence-presentation.mjs";
 
 export default function VenueCatalog({
   venues,
@@ -35,6 +43,7 @@ export default function VenueCatalog({
   return (
     <main id="main-content" className="venue-page">
       <PageHeader
+        illustration="venues"
         title="Venue research"
         description="Published research in Delhi NCR and Bengaluru. Potential hosts to investigate, with evidence and open questions."
         label="Research leads · not onboarded"
@@ -93,18 +102,16 @@ export default function VenueCatalog({
       )}
       <div className="venue-grid">
         {visible.map((venue) => {
-          const documented = venue.claims.filter(
-            (claim) => !["unknown", "conflicting"].includes(claim.evidenceType),
+          const documented = orderVenueFacts(
+            venue.claims.filter(
+              (claim) =>
+                !["unknown", "conflicting"].includes(claim.evidenceType),
+            ),
           );
           const unknown = venue.claims.filter((claim) =>
             ["unknown", "conflicting"].includes(claim.evidenceType),
           );
-          const qualifications = documented.filter(
-            (claim) =>
-              claim.qualification ||
-              claim.evidenceType === "historical-event" ||
-              /eligib|access/i.test(claim.claim),
-          );
+          const sources = labelledSources(documented, venue.sourceReferences);
           return (
             <article
               className="venue-card"
@@ -117,44 +124,63 @@ export default function VenueCatalog({
                   (claim) => claim.evidenceType === "historical-event",
                 ) && <Badge tone="historical">Past event evidence</Badge>}
               </div>
-              <h2>{venue.name}</h2>
-              <p className="venue-locality">
-                {venue.city} · {venue.locality}
-              </p>
-              <p>{venue.summary}</p>
-              <div className="venue-statuses">
-                <Badge tone="supported">Documented evidence</Badge>
-                <Badge tone="unknown">Requirements need confirmation</Badge>
-              </div>
-              {qualifications.slice(0, 2).map((claim) => (
-                <p className="qualification-note" key={claim.id}>
-                  <strong>{claim.claim}:</strong> {claim.value}{" "}
-                  {claim.qualification}
-                </p>
-              ))}
-              {!qualifications.length &&
-                documented.slice(0, 1).map((claim) => (
-                  <p key={claim.id}>
-                    <strong>{claim.claim}:</strong> {claim.value}
+              <div className="venue-card-heading">
+                <div>
+                  <h2>{venue.name}</h2>
+                  <p className="venue-locality">
+                    {venue.city} · {venue.locality}
                   </p>
-                ))}
-              <p className="helper-text">
-                <strong>Needs confirmation:</strong>{" "}
-                {unknown
-                  .slice(0, 2)
-                  .map((claim) => claim.claim)
-                  .join("; ") ||
-                  "Current availability, price terms, and booking authority"}
-                .
-              </p>
-              <div className="venue-sources">
-                {venue.sourceReferences.slice(0, 1).map((source) => (
-                  <SourceLink key={source.id} url={source.url}>
+                </div>
+                <VenuePhotos venueName={venue.name} gallery={venue.gallery} />
+              </div>
+              <section className="lead-summary">
+                <h3>Why consider this venue</h3>
+                <p>{venue.summary}</p>
+                <ul className="evidence-highlights">
+                  {documented.slice(0, 2).map((claim) => (
+                    <li key={claim.id}>
+                      <FactBadge
+                        evidenceType={claim.evidenceType}
+                        historicalDate={claim.historicalDate}
+                      />
+                      <strong>{claim.claim}</strong>
+                      <span>
+                        {claim.value} {claim.qualification || ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+              <section className="venue-sources">
+                <h3>Original sources</h3>
+                {sources.map((source) => (
+                  <SourceLink key={source.id || source.url} url={source.url}>
+                    <span className="source-label">{source.label}</span>{" "}
                     {source.title}
-                    {source.checkedAt ? ` · checked ${source.checkedAt}` : ""}
+                    {source.checkedAt
+                      ? ` · checked ${formatEvidenceDate(source.checkedAt)}`
+                      : ""}
                   </SourceLink>
                 ))}
-              </div>
+              </section>
+              <section className="lead-unknowns">
+                <h3>Needs confirmation</h3>
+                <ul>
+                  {unknown.slice(0, 3).map((claim) => (
+                    <li key={claim.id}>{claim.claim.replace(/\.$/, "")}</li>
+                  ))}
+                  {!unknown.length && (
+                    <li>
+                      Current availability, price terms, and booking authority
+                    </li>
+                  )}
+                </ul>
+                <VenueEnquiry
+                  name={venue.name}
+                  contacts={venue.contacts}
+                  headingLevel="h4"
+                />
+              </section>
               <div className="card-actions">
                 <Button
                   variant="secondary"
@@ -186,6 +212,21 @@ export default function VenueCatalog({
               book.
             </Notice>
             <p>{selected.summary}</p>
+            <section>
+              <h3>Public enquiry routes</h3>
+              {selected.contacts.length ? (
+                <ContactRoutes contacts={selected.contacts} />
+              ) : (
+                <p>
+                  No public event-enquiry route was found in the reviewed
+                  sources.
+                </p>
+              )}
+              <p className="ops-muted">
+                A published contact does not confirm capacity, eligibility,
+                availability, or booking authority.
+              </p>
+            </section>
             <h3>Claims and their original sources</h3>
             <ul className="evidence-list">
               {selected.claims.map((claim) => (

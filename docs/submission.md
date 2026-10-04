@@ -32,6 +32,8 @@ The live organizer flow uses the deployed app and real Sanity Context retrieval.
 
 The project uses Next.js App Router and TypeScript. Published venue knowledge lives in Sanity. The organizer agent reads Sanity Context Knowledge Base entries and validates their claims and citations against published Sanity records. Operational applications and allocations are handled separately by the application’s SQLite backend.
 
+The illustrated presentation on the unmerged feature branch is inspired by the visual direction Vaibhav Pathak (`vkpdeveloper`) proposed in [PR #2](https://github.com/diyaavirmani/backstage/pull/2). That design assistance is acknowledged here. The feature branch implements its own presentation and original AI illustration without merging the PR or importing its code or assets. The user subsequently authorized the feature release, and the public app now serves that illustrated presentation (source revision `c8ff4f1`).
+
 ## How I Used Sanity
 
 I modeled venues, host organizations, spaces, shared resources, policies, hosting opportunities, claims, and source references in Sanity. A claim carries its value, evidence type, source, and date checked; room capacity also identifies its room and layout. The catalog query reads published research records and their related claims and sources. It excludes drafts, demonstration inventory, private organizer information, and operational bookings.
@@ -58,7 +60,7 @@ The project contains 37 published research documents. A verified outline path fo
 
 Backstage is deployed on Railway with a single 500 MB persistent SQLite volume. Hosted discovery uses separate server-side Sanity read and Context credentials plus an OpenAI key; the content-import token is not present in the runtime. Real venue availability, prices, partnerships, and booking permissions are not inferred from the public evidence.
 
-<!-- The green workspace branch is not yet merged/deployed. Update recording navigation after its separately authorized release; preserve the real recording placeholder until then. -->
+<!-- The illustrated feature revision is deployed. Preserve the real recording and public agent-session placeholders until their actual URLs exist. -->
 
 ## Agent Session
 

@@ -37,6 +37,8 @@ npm run sanity:validate       # validate source records and unknowns
 npm run sanity:seed:dry-run   # validate intended import without credentials/writes
 npm run sanity:seed           # publish records, skipping existing docs/drafts
 npm run sanity:verify-seed    # verify published records and reference integrity
+npm run sanity:enrich:dry-run # list reviewed contact/photo additions without writing
+npm run sanity:enrich         # create only missing reviewed contacts/galleries, then verify them
 npm run sanity:schema:validate # validate Sanity Studio schema locally
 npm run sanity:schema:deploy   # deploy schema with an authenticated Sanity CLI
 npm run sanity:dev             # run the editing Studio locally at localhost:3333/studio
@@ -57,6 +59,8 @@ DOTENV_CONFIG_PATH=.env.local BACKSTAGE_LIVE_BROWSER=1 node -r dotenv/config ./n
 ```
 It writes only bounded, non-secret retrieval evidence into ignored `.playwright-artifacts/`.
 
+`npm run test:live-journey` runs the organizer journey (brief, discovery, suggested setup, source, contact, gallery, private draft, locality and audience checks) with at most three sequential discovery calls; rehearse it first with `npm run test:live-journey:dry`, which uses a discovery fixture and makes no model calls.
+
 ## Next milestones
 
 1. Replace simulation workspaces with production organizer/host identity, authorization, and onboarding; connect verified hosts and their current policies.
@@ -70,4 +74,4 @@ To use organizer discovery locally, add `OPENAI_API_KEY` and a project-scoped `S
 
 ## Green workspace redesign
 
-`feat/green-saas-redesign` contains the presentation and workflow redesign for local review; it is not deployed by this task. Organizer views are Event brief, Venue research, and Private drafts. The brief editor has three steps with manual browser saving; examples fill the form only. Host simulation views are Requests, Resource calendar, and Preparation. [Control-to-backend mapping](docs/redesign-workflows.md) documents persistence and recovery. Research leads stay draft-only.
+`feat/green-saas-redesign` contains the presentation and workflow redesign. Its illustrated UI source revision `c8ff4f1` is now deployed at [the live app](https://backstage-production-0849.up.railway.app), using the existing Railway service and volume. Organizer views are Event brief, Venue research, and Private drafts. The brief editor has three steps with manual browser saving; examples fill the form only. Host simulation views are Requests, Resource calendar, and Preparation. [Control-to-backend mapping](docs/redesign-workflows.md) documents persistence and recovery. Research leads stay draft-only.

@@ -330,6 +330,7 @@ async function moveCalendarTo(page: Page, date: string) {
 async function fillEventBrief(page: Page, date: string) {
   await page.getByLabel(/Event name/).fill("Organizer browser journey");
   await page.getByLabel("Gathering type").selectOption({ label: "Workshop" });
+  await page.locator("#brief-audience").selectOption("Other");
   await page.getByLabel(/Audience or community/).fill("Local community makers");
   await page.getByLabel(/Event date/).fill(date);
   await page.getByLabel(/Attendees/).fill("20");

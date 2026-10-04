@@ -32,6 +32,30 @@ export function Badge({
 }) {
   return <span className={`status-chip ${tone}`}>{children}</span>;
 }
+const months = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ");
+/** Deterministic date text; locale month abbreviations differ between runtimes. */
+export function formatEvidenceDate(value?: string | null) {
+  const match = value?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return match
+    ? `${Number(match[3])} ${months[Number(match[2]) - 1]} ${match[1]}`
+    : value || "";
+}
+export function FactBadge({
+  evidenceType,
+  historicalDate,
+}: {
+  evidenceType: string;
+  historicalDate?: string | null;
+}) {
+  return evidenceType === "historical-event" ? (
+    <Badge tone="historical">
+      Historical event
+      {historicalDate ? ` · ${formatEvidenceDate(historicalDate)}` : ""}
+    </Badge>
+  ) : (
+    <Badge tone="supported">Documented</Badge>
+  );
+}
 export function Notice({
   children,
   tone = "info",
@@ -66,18 +90,22 @@ export function PageHeader({
   description,
   label,
   children,
+  illustration,
 }: {
   title: string;
   description: string;
   label?: string;
   children?: ReactNode;
+  illustration?: "organizer" | "venues" | "host";
 }) {
   return (
-    <header className="page-heading">
+    <header
+      className={`page-heading${illustration ? ` page-heading-cover cover-${illustration}` : ""}`}
+    >
       <div>
-        {label && <p className="eyebrow">{label}</p>}
         <h1>{title}</h1>
         <p>{description}</p>
+        {label && <p className="page-context">{label}</p>}
       </div>
       {children}
     </header>

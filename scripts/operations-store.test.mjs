@@ -57,6 +57,21 @@ test('real research venue applications can save drafts but cannot be submitted',
   assert.throws(()=>mutate(x.db,x.session.workspaceId,'organizer',{type:'submit-application',payload}),/no verified Backstage booking authority/);
 });
 
+test('research drafts keep server-resolved contact routes and ignore client-supplied contacts',t=>{
+  const x=setup();t.after(()=>x.close());
+  const venue=getOverview(x.db,x.session.workspaceId,'organizer').venues.find((v)=>v.name==='SAIACS CEO Centre');
+  const contacts=[{id:'contact-saiacs-events-email',venueIds:['venue-saiacs-ceo-centre-bengaluru'],type:'email',value:'ceoenquiry@saiacs-ceocenter.com',purpose:'Booking requests and event requirements.',scope:'venue-specific',checkedAt:'2026-10-05',sourceReferences:[{id:'source-saiacs-contact',title:'Contact SAIACS CEO Centre',url:'https://saiacs-ceocenter.com/contact-hotel-in-bengaluru.html',checkedAt:'2026-10-05'}]}];
+  const trusted={venueId:'venue-saiacs-ceo-centre-bengaluru',name:venue.name,city:venue.city,locality:venue.locality,summary:'Published summary',capturedAt:new Date().toISOString(),contacts,sources:[{id:'source-saiacs-ceo-centre',title:'SAIACS',url:'https://saiacs-ceocenter.com/'}],evidence:[{claim:'Hosts events',value:'Documented',evidenceType:'public-documentation',qualification:null,checkedAt:'2026-10-02',sourceReferences:[]}]};
+  const payload={...appPayload(venue.id,[],{city:'Bengaluru'}),contacts:[{type:'phone',value:'+910000000000'}]};
+  mutate(x.db,x.session.workspaceId,'organizer',{type:'save-application',payload},trusted);
+  const saved=getOverview(x.db,x.session.workspaceId,'organizer').applications[0];
+  assert.deepEqual(saved.payload.contacts,contacts);
+  assert.equal(saved.payload.venueKind,'research');
+  const untrusted=getOverview(x.db,x.session.workspaceId,'organizer').venues.find((v)=>v.name.startsWith('Paytm Office, Noida'));
+  mutate(x.db,x.session.workspaceId,'organizer',{type:'save-application',payload:{...appPayload(untrusted.id,[],{city:'Delhi NCR'}),contacts:[{type:'phone',value:'+910000000000'}]}},trusted);
+  assert.deepEqual(getOverview(x.db,x.session.workspaceId,'organizer').applications.find((app)=>app.venue_id===untrusted.id).payload.contacts,[],'evidence for another venue identity is never attached');
+});
+
 test('review is required and idempotency prevents duplicate submissions',t=>{
   const x=setup();t.after(()=>x.close());
   const payload=appPayload(getOverview(x.db,x.session.workspaceId,'organizer').venues.find((v)=>v.kind==='demo'&&v.city==='Delhi NCR').id,[room(x)]);payload.reviewed=false;

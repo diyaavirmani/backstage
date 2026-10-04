@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { PresentationIcon } from "@/components/presentation-icon";
 import { setQueryValues, useWorkspaceView } from "@/lib/workspace-navigation";
 
 const views = {
@@ -55,8 +56,11 @@ export function WorkspaceShell({
                 setQueryValues({ view: id });
               }}
             >
-              <span aria-hidden="true">{number}</span>
-              {label}
+              <PresentationIcon name={id} />
+              <span className="sidebar-view-title">{label}</span>
+              <span className="sidebar-view-number" aria-hidden="true">
+                {number}
+              </span>
             </a>
           ))}
         </nav>

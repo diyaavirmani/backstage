@@ -99,6 +99,7 @@ test("Gurugram Ofis stays distinct when its shared source title names Noida (det
   await page.getByLabel(/Event name/).fill("Locality fixture event");
   await page.getByLabel("City").selectOption("Delhi NCR");
   await page.getByLabel("Gathering type").selectOption({ label: "Workshop" });
+  await page.locator("#brief-audience").selectOption("Other");
   await page
     .getByLabel(/Audience or community/)
     .fill("Local community members");
