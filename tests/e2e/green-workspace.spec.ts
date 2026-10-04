@@ -99,7 +99,12 @@ test("wizard validation, back navigation, compatible persistence and full review
   const saved = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("backstage.event-brief.v1")!),
   );
-  expect(saved.equipmentRequirements).toEqual(["2 projectors with HDMI"]);
+  expect(saved.equipmentRequirements).toEqual([
+    "Projector",
+    "microphones",
+    "reliable Wi-Fi",
+    "2 projectors with HDMI",
+  ]);
   expect(saved.currency).toBe("INR");
   expect(saved.headcount).toBe(80);
   await page.reload();

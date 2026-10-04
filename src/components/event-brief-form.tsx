@@ -19,6 +19,11 @@ import {
   useWorkspaceView,
 } from "@/lib/workspace-navigation";
 import { Badge, Button, EmptyState, Notice } from "@/components/ui";
+import {
+  AudienceInput,
+  RequirementPicker,
+} from "@/components/brief-input-controls";
+import { suggestEventSetup } from "../../scripts/brief-controls.mjs";
 import { ResearchLeadCard } from "@/components/research-lead-card";
 
 type Turn = { role: "user" | "assistant"; content: string };
@@ -46,7 +51,7 @@ const labels: Record<BriefField, string> = {
   rooms: "Required rooms or areas",
   equipment: "Equipment and setup",
   essential: "Essential requirements",
-  flexible: "Flexible requirements",
+  flexible: "Nice to have — optional",
   setupMinutes: "Setup time (minutes)",
   cleanupMinutes: "Clear-up time (minutes)",
 };
@@ -83,6 +88,12 @@ export function EventBriefForm() {
   const [agentError, setAgentError] = useState("");
   const [loading, setLoading] = useState(false);
   const [lastBrief, setLastBrief] = useState<EventBrief | null>(null);
+  const [manualRooms, setManualRooms] = useState(false);
+  const [setup, setSetup] = useState<ReturnType<
+    typeof suggestEventSetup
+  > | null>(null);
+  const [setupRooms, setSetupRooms] = useState("");
+  const [setupMessage, setSetupMessage] = useState("");
   const [handoffMessage, setHandoffMessage] = useState("");
   const [retrySeconds, setRetrySeconds] = useState<number | null>(null);
   const requestId = useRef(0);
@@ -278,6 +289,7 @@ export function EventBriefForm() {
         message?: string;
         recommendations?: VenueRecommendation[];
         retryAfterSeconds?: number;
+        suggestedSetup?: ReturnType<typeof suggestEventSetup>;
       };
       if (id !== requestId.current) return;
       if (!response.ok) {
@@ -292,6 +304,10 @@ export function EventBriefForm() {
           "The venue response could not be read. No new leads were published.",
         );
       setRecommendations(payload.recommendations);
+      const proposed = payload.suggestedSetup || suggestEventSetup(draft);
+      setSetup(proposed);
+      setSetupRooms(proposed.rooms.join(", "));
+      setSetupMessage("");
       setAgentMessage(
         payload.message || "Source-verified research leads for your event.",
       );
@@ -573,12 +589,11 @@ export function EventBriefForm() {
                     "Other",
                   ])}
                 </div>
-                {field("audience", {
-                  required: true,
-                  maxLength: 120,
-                  helper:
-                    "Audience details matter for qualified community access.",
-                })}
+                <AudienceInput
+                  value={values.audience}
+                  onChange={(value) => update("audience", value)}
+                  error={errors.audience}
+                />
                 <div className="field-row">
                   {field("date", { type: "date", required: true })}
                   {field("headcount", {
@@ -606,19 +621,38 @@ export function EventBriefForm() {
                   helper:
                     "Use 0 when exploring sponsored or pro-bono access; access conditions still require evidence.",
                 })}
-                {field("rooms", {
-                  helper: "Separate required rooms or areas with commas.",
-                })}
-                {field("equipment", {
-                  helper:
-                    "Include quantities and qualifications such as connections or layout.",
-                })}
+                <label className="choice-control">
+                  <input
+                    type="checkbox"
+                    checked={manualRooms || Boolean(values.rooms)}
+                    onChange={(e) => {
+                      setManualRooms(e.target.checked);
+                      if (!e.target.checked) update("rooms", "");
+                    }}
+                  />
+                  I already know the spaces I need
+                </label>
+                {(manualRooms || Boolean(values.rooms)) &&
+                  field("rooms", {
+                    helper:
+                      "Optional. Separate explicit spaces with commas. Existing requirements are retained.",
+                  })}
+                <RequirementPicker
+                  equipmentValue={values.equipment}
+                  essentialValue={values.essential}
+                  onEquipment={(v) => update("equipment", v)}
+                  onEssential={(v) => update("essential", v)}
+                />
+                {errors.equipment && (
+                  <small className="field-error">{errors.equipment}</small>
+                )}
                 {field("essential", {
                   helper:
                     "Comma-separated must-haves; unknowns will remain unknown.",
                 })}
                 {field("flexible", {
-                  helper: "Comma-separated conditions you could adjust.",
+                  helper:
+                    "Helpful extras. Missing these will not automatically rule out a venue.",
                 })}
                 <div className="field-row">
                   {field("setupMinutes", { type: "number", min: 0, max: 1440 })}
@@ -854,6 +888,48 @@ export function EventBriefForm() {
             <p role="status" className="agent-message">
               {agentMessage}
             </p>
+            {setup && (
+              <section
+                className="review-section"
+                aria-labelledby="suggested-setup-heading"
+              >
+                <h3 id="suggested-setup-heading">Suggested event setup</h3>
+                <p>{setup.reason}</p>
+                <p>{setup.equipmentPlacement}</p>
+                <ul>
+                  {setup.assumptions.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+                <label className="field">
+                  <span>Adjust proposed spaces</span>
+                  <input
+                    value={setupRooms}
+                    onChange={(e) => setSetupRooms(e.target.value)}
+                  />
+                </label>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    const next = { ...values, rooms: setupRooms };
+                    const found = validateBriefForm(next, 2);
+                    if (found.rooms) {
+                      setSetupMessage(found.rooms);
+                      return;
+                    }
+                    update("rooms", setupRooms);
+                    setManualRooms(true);
+                    setSetupMessage(
+                      "Setup applied to the editable form only. Review and save it explicitly; these discovery results and existing drafts keep their original brief.",
+                    );
+                  }}
+                >
+                  Use this setup in my brief
+                </Button>
+                {setupMessage && <p role="status">{setupMessage}</p>}
+              </section>
+            )}
             {recommendations.length === 0 ? (
               <EmptyState title="No verified leads returned">
                 Refine your requirements with a follow-up or review your brief.

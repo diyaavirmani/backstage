@@ -2150,3 +2150,29 @@ legend {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Brief selection controls share the existing green workspace tokens. */
+.requirement-picker {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.requirement-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+.requirement-options label,
+.choice-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+.requirement-options input,
+.choice-control input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: #163c2c;
+}

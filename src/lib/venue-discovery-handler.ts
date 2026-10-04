@@ -1,3 +1,4 @@
+import {suggestEventSetup} from "../../scripts/brief-controls.mjs";
 import { generateText as defaultGenerateText, Output, stepCountIs, tool } from "ai";
 import type {LanguageModel} from "ai";
 import { createMCPClient as defaultCreateMCPClient } from "@ai-sdk/mcp";
@@ -247,6 +248,7 @@ First use readVenueKnowledge to read relevant outline entries for ${brief.city}.
       })),
     }));
     return Response.json({
+      suggestedSetup: suggestEventSetup(brief),
       recommendations: validated.recommendations.map((item) => Object.fromEntries(Object.entries(item as Record<string, unknown>).filter(([key]) => key !== "evidencePaths"))),
       requestedRequirements: validated.requestedRequirements,
       retrievalEvidence: validated.recommendations.map((item)=>({venueId:item.venueId,entryPaths:item.evidencePaths,sourceReferenceIds:item.sourceReferences.map((source)=>source.id)})),

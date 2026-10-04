@@ -184,6 +184,7 @@ test("live Sanity/OpenAI discovery, follow-up, source link, and research draft",
   await page
     .getByLabel("Gathering type")
     .selectOption({ label: "Community meetup" });
+  await page.locator("#brief-audience").selectOption("Other");
   await page
     .getByLabel(/Audience or community/)
     .fill("Bengaluru founders and startup operators");
@@ -191,6 +192,7 @@ test("live Sanity/OpenAI discovery, follow-up, source link, and research draft",
   await page.getByLabel(/Attendees/).fill("24");
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByLabel(/Venue budget/).fill("0");
+  await page.getByLabel("I already know the spaces I need").check();
   await page.getByLabel("Required rooms or areas").fill("Gathering room");
   await page.getByLabel("Equipment and setup").fill("Projector");
   await page
