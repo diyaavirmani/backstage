@@ -37,6 +37,8 @@ npm run sanity:validate       # validate source records and unknowns
 npm run sanity:seed:dry-run   # validate intended import without credentials/writes
 npm run sanity:seed           # publish records, skipping existing docs/drafts
 npm run sanity:verify-seed    # verify published records and reference integrity
+npm run sanity:enrich:dry-run # list reviewed contact/photo additions without writing
+npm run sanity:enrich         # create only missing reviewed contacts/galleries, then verify them
 npm run sanity:schema:validate # validate Sanity Studio schema locally
 npm run sanity:schema:deploy   # deploy schema with an authenticated Sanity CLI
 npm run sanity:dev             # run the editing Studio locally at localhost:3333/studio
@@ -56,6 +58,8 @@ The opt-in live browser walkthrough requires configured server-side Sanity and O
 DOTENV_CONFIG_PATH=.env.local BACKSTAGE_LIVE_BROWSER=1 node -r dotenv/config ./node_modules/@playwright/test/cli.js test tests/e2e/live-discovery.spec.ts
 ```
 It writes only bounded, non-secret retrieval evidence into ignored `.playwright-artifacts/`.
+
+`npm run test:live-journey` runs the organizer journey (brief, discovery, suggested setup, source, contact, gallery, private draft, locality and audience checks) with at most three sequential discovery calls; rehearse it first with `npm run test:live-journey:dry`, which uses a discovery fixture and makes no model calls.
 
 ## Next milestones
 

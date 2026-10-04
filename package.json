@@ -23,6 +23,8 @@
     "test:provider-failures": "node --experimental-strip-types --test scripts/provider-failure-qa.test.mjs",
     "test:backend-startup-diagnostic": "node --test scripts/backend-startup-race.diagnostic.test.mjs",
     "test:backend-live-locality-diagnostic": "APP_ORIGIN=http://127.0.0.1:3107 BACKSTAGE_LIVE_LOCALITY_DIAGNOSTIC=1 node --import ./scripts/load-env.mjs ./node_modules/playwright/cli.js test tests/e2e/live-locality-diagnostic.spec.ts",
+    "test:live-journey:dry": "BACKSTAGE_LIVE_JOURNEY=dry node --import ./scripts/load-env.mjs ./node_modules/playwright/cli.js test tests/e2e/live-product-journey.spec.ts",
+    "test:live-journey": "BACKSTAGE_LIVE_JOURNEY=1 node --import ./scripts/load-env.mjs ./node_modules/playwright/cli.js test tests/e2e/live-product-journey.spec.ts",
     "verify:standalone": "node scripts/verify-standalone.mjs",
     "verify:docker-image": "node scripts/verify-docker-image.mjs",
     "test:e2e": "npm run build && playwright test",
