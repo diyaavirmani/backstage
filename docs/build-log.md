@@ -436,3 +436,27 @@ The OpenAI key and Sanity server configuration were present locally (only config
 - Added `docs/demo-script.md` with a timed 4–5 minute walkthrough that uses two discovery calls and does not reset or raise the persisted demo limits.
 - Updated `docs/session-capture.md` against the current official Codex CLI page. The active Codex session ID matched the session metadata and this repository's working directory; metadata-only scanning found one matching local recording. A redacted JSONL copy was prepared outside the repository with private directory/file permissions and every record parses in the original JSONL format. It has not been uploaded. The copy redacts credentials, private endpoints, cookies, contact details, and local account paths. Useful turn anchors for curation are the Milestone 6 prompt at ordinal 10402, Milestone 6B and Railway continuation prompts at ordinals 11579–14294, and this submission request from ordinal 14295 onward. Preserve surrounding authentic responses and tool activity when curating.
 - No application code, discovery counters, or provider configuration changed for this package. No DEV article was published and no session transcript was uploaded.
+
+# UI presentation and usability pass — 4 October 2026
+
+## Changes
+
+- Reworked the shared design tokens to the requested slate/white palette with blue `#2563eb` accents, readable system sans-serif typography, consistent borders, 10–12 px card corners, and visible focus, hover, disabled, loading, and error states.
+- Replaced the homepage orbit illustration with a concise product preview explaining venue identity/locality, room and requirement fit, and why unknowns remain visible. The headline now reads “Find a space that fits your event.” and the page has one primary organizer action plus a venue exploration link and explicit Delhi NCR/Bengaluru coverage.
+- Simplified the organizer introduction to “Plan your event”, added Event brief / Venue leads / Application workspace navigation, moved example briefs near the top of the form, and made “Find suitable venues” the primary action. Existing validation, local brief saving, discovery, and recommendation-to-application handoff remain in place.
+- Reorganized venue cards around identity, locality, summary, evidence status, visible unknowns, original source links, and expandable detailed evidence. Research leads and fictional demo inventory remain clearly distinguished.
+- Replaced the host hero with a compact “Host workspace” heading and restyled the fictional simulation banner, request cards, forms, checklists, resource calendar, and status labels for better scanning.
+- Updated Playwright selectors to use the accessible City and Kind of gathering labels after the example control moved to the top of the form.
+
+## Verification
+
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm run test:e2e` — production build passed; 3 deterministic browser tests passed; the opt-in live provider test was skipped. This verifies the brief/draft handoff, examples, and operational workflow with test fixtures; it does not claim a new OpenAI or Sanity discovery run.
+- Captured and visually inspected all four pages at 1365 px desktop and 390 px mobile widths. Screenshots are local and ignored under `.playwright-artifacts/ui-before/` and `.playwright-artifacts/ui-after/`.
+- Browser measurements reported no horizontal overflow at either width for any page. Keyboard focus showed a 3 px visible outline, and organizer section navigation moved to `#venue-leads`.
+- The local `/venues` screenshot accurately showed its explicitly labeled local research preview because the local runtime did not return published Sanity content in this check. No recommendation or booking was fabricated; hosted Sanity retrieval was not re-run for this visual-only change.
+
+## Limitations
+
+- No new live OpenAI/Sanity agent scenario was run; the verified agent and evidence behavior was preserved, and deterministic discovery fixtures were used for the browser suite.

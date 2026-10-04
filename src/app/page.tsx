@@ -12,28 +12,25 @@ export default function Home() {
       <main>
         <section className="home-hero page-wrap">
           <div className="hero-copy">
-            <p className="eyebrow"><span className="eyebrow-dot" /> THE SPACE BEHIND YOUR NEXT GATHERING</p>
-            <h1>Make room<br />for <em>what matters.</em></h1>
+            <p className="eyebrow"><span className="eyebrow-dot" /> SOURCE-BACKED VENUE DISCOVERY</p>
+            <h1>Find a space that fits your event.</h1>
             <p className="hero-description">Tell Backstage what you’re hosting. We’ll find a place where your event can actually work.</p>
             <div className="hero-actions">
               <Link className="button button-dark" href="/organizer">Build an event brief <Arrow /></Link>
-              <Link className="text-link" href="/host">I have a space <span aria-hidden="true">→</span></Link>
+              <Link className="text-link" href="/venues">Explore venue leads <span aria-hidden="true">→</span></Link>
             </div>
             <p className="milestone-note"><span aria-hidden="true">↳</span> Explore live, source-grounded venue leads, then keep a private draft for researched hosts. Approval and resource calendars are demonstrated with fictional hosts.</p>
             <div className="city-note"><span className="city-mark" aria-hidden="true">✳</span><span>Starting in <strong>Delhi NCR</strong> and <strong>Bengaluru</strong></span></div>
           </div>
-          <div className="hero-visual" aria-label="An event brief takes shape into a considered gathering" role="img">
-            <div className="visual-topline"><span>GOOD THINGS, IN GOOD COMPANY</span><span>01 — 03</span></div>
-            <div className="orbit orbit-one" /><div className="orbit orbit-two" />
-            <div className="visual-center">
-              <div className="visual-spark" aria-hidden="true">✳</div>
-              <p className="visual-kicker">A PLACE TO</p>
-              <p className="visual-title">bring it<br /><i>together</i></p>
-              <div className="visual-meta"><span>PEOPLE</span><b>+</b><span>IDEAS</span><b>+</b><span>SPACE</span></div>
+          <div className="product-preview" aria-label="What Backstage checks when exploring a venue">
+            <div className="preview-topline"><span>WHAT MAKES A SPACE FIT?</span><span>BACKSTAGE CHECKLIST</span></div>
+            <h2>A clear brief.<br /><span>Evidence you can follow.</span></h2>
+            <div className="preview-list">
+              <div><span className="preview-number">01</span><p><strong>Venue and locality</strong><span>Keep each place distinct and grounded in its source.</span></p><span className="preview-check" aria-hidden="true">✓</span></div>
+              <div><span className="preview-number">02</span><p><strong>Rooms and requirements</strong><span>Compare the whole event setup, not a venue name alone.</span></p><span className="preview-check" aria-hidden="true">✓</span></div>
+              <div><span className="preview-number">03</span><p><strong>Unknowns stay visible</strong><span>Availability, pricing, and booking authority are not assumed.</span></p><span className="preview-check" aria-hidden="true">✓</span></div>
             </div>
-            <div className="orbit-tag tag-people"><span className="tag-icon">◌</span><span>the right<br />people</span></div>
-            <div className="orbit-tag tag-place"><span className="tag-icon">⌂</span><span>a space that<br />fits the plan</span></div>
-            <div className="visual-caption"><span>THOUGHTFUL BY DESIGN</span><span>DELHI NCR · BENGALURU</span></div>
+            <div className="preview-coverage"><span>EXPLORE COVERAGE</span><strong>Delhi NCR</strong><i aria-hidden="true">·</i><strong>Bengaluru</strong></div>
           </div>
         </section>
 

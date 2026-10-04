@@ -210,10 +210,16 @@ export function EventBriefForm() {
 
   return (
     <>
-    <form className="brief-form" ref={(element) => { formRef.current = element; }} onSubmit={saveDraft}>
+    <form id="event-brief" className="brief-form" ref={(element) => { formRef.current = element; }} onSubmit={saveDraft}>
       <div className="form-progress"><span className="progress-step current"><b>01</b><span>Event basics</span></span><span className="progress-line" /><span className="progress-step"><b>02</b><span>Space &amp; needs</span></span><span className="progress-later">SOURCE-BACKED LEADS</span></div>
       {error && <p className="form-message error-message" role="alert">{error}</p>}
       {saved && <p className="form-message success-message" role="status">Your event brief is saved in this browser. You can come back and edit it any time.</p>}
+
+      <div className="example-brief-row">
+        <label className="field example-control"><span>Try an example <i>Optional</i></span><select aria-label="Try an example" value={example} onChange={(event)=>setExample(event.target.value as ExampleKey)}><option value="delhi-hackathon">Delhi NCR hackathon · research unknowns</option><option value="bengaluru-founders">Bengaluru founders · qualified eligibility</option><option value="demo-workshop">Fictional host workshop · operations demo</option></select></label>
+        <button className="button button-light" type="button" onClick={loadExample} disabled={!ready}>Load example</button>
+        <p>Examples fill the brief only. They never create an application or reservation.</p>
+      </div>
 
       <div className="form-columns">
         <section className="form-section" aria-labelledby="event-basics-title">
@@ -252,9 +258,9 @@ export function EventBriefForm() {
           </div>
         </section>
       </div>
-      <div className="form-submit"><div><label className="field example-control"><span>Try an example <i>Optional</i></span><select aria-label="Try an example" value={example} onChange={(event)=>setExample(event.target.value as ExampleKey)}><option value="delhi-hackathon">Delhi NCR hackathon · research unknowns</option><option value="bengaluru-founders">Bengaluru founders · qualified eligibility</option><option value="demo-workshop">Fictional host workshop · operations demo</option></select></label><p>Loading replaces this brief form and its saved local brief only. It does not create an application or reservation.</p></div><div className="form-action-group"><button className="button button-light" type="button" onClick={loadExample} disabled={!ready}>Load example</button><button className="button button-light" type="submit" disabled={!ready}>Save event brief</button><button className="button button-dark" type="button" onClick={findVenues} disabled={!ready || loading}>{loading ? "Looking into venues…" : "Find suitable venues"} <span className="arrow-circle" aria-hidden="true">↗</span></button></div></div>
+      <div className="form-submit"><p>Your brief stays saved in this browser. Venue leads are evidence to investigate, not booking confirmations.</p><div className="form-action-group"><button className="button button-light" type="submit" disabled={!ready}>Save event brief</button><button className="button button-dark" type="button" onClick={findVenues} disabled={!ready || loading}>{loading ? "Looking into venues…" : "Find suitable venues"} <span className="arrow-circle" aria-hidden="true">↗</span></button></div></div>
     </form>
-    <section className="discovery-panel" aria-live="polite" aria-busy={loading} aria-labelledby="discovery-heading">
+    <section id="venue-leads" className="discovery-panel" aria-live="polite" aria-busy={loading} aria-labelledby="discovery-heading">
       <div className="discovery-heading"><p className="eyebrow"><span className="eyebrow-dot" /> SOURCE-BACKED VENUE LEADS</p><h2 id="discovery-heading">A place to begin the conversation.</h2><p>Backstage reads published venue knowledge and links each lead to its original sources. It does not check live availability or submit booking requests.</p></div>
       {loading && <p className="discovery-state" role="status">Checking the event brief against published venue knowledge…</p>}
       {agentError && <div className="discovery-state error-message" role="alert"><p>{agentError}</p><button className="button button-light" type="button" onClick={() => lastBrief && void runDiscovery(lastBrief, conversation)} disabled={!lastBrief || loading}>Retry venue search</button></div>}
@@ -268,7 +274,7 @@ export function EventBriefForm() {
           {venue.historical && <p className="historical-note">The cited record includes past event hosting. It does not establish current access or permission to book.</p>}
           {venue.documentedFacts.length > 0 && <section className="coverage-section"><h4>Published venue notes</h4><ul>{venue.documentedFacts.map((fact, index) => <li key={index}><span className="coverage-status supported">{fact.evidenceType === "historical-event" ? `Historical${fact.historicalDate ? ` · ${fact.historicalDate}` : ""}` : fact.evidenceType === "host-confirmed" ? "Host confirmed" : "Publicly documented"}</span><strong>{fact.claim}</strong><small>{fact.value}{fact.qualification ? ` ${fact.qualification}` : ""}</small></li>)}</ul></section>}
           {venue.importantUnknowns.length > 0 && <section className="coverage-section"><h4>Important unknowns</h4><ul>{venue.importantUnknowns.map((item, index) => <li key={index}><strong>{item.claim}</strong><small>{item.value}</small></li>)}</ul></section>}
-          <section className="coverage-section" aria-label="Event requirement coverage"><h4>How it relates to your brief</h4><ul>{venue.requirementCoverage.map((item) => <li key={item.requirement}><span className={`coverage-status ${item.status}`}>{item.status === "supported" ? "Documented" : item.status === "contradicted" ? "Conflict" : "Needs confirmation"}</span><strong>{item.requirement}</strong>{item.evidence.map((claim, index) => <small key={`${item.requirement}-${index}`}>{claim.claim} {claim.qualification ? claim.qualification : claim.value}</small>)}</li>)}</ul></section>
+          <section className="coverage-section" aria-label="Event requirement coverage"><h4>How it relates to your brief</h4><ul>{venue.requirementCoverage.map((item) => <li key={item.requirement}><span className={`coverage-status ${item.status}`}>{item.status === "supported" ? "Supported" : item.status === "contradicted" ? "Conflicting evidence" : "Unknown"}</span><strong>{item.requirement}</strong>{item.evidence.map((claim, index) => <small key={`${item.requirement}-${index}`}>{claim.claim} {claim.qualification ? claim.qualification : claim.value}</small>)}</li>)}</ul></section>
           {venue.documentedConflicts.length > 0 && <section className="coverage-section"><h4>Documented conflicts</h4><ul>{venue.documentedConflicts.map((conflict, index) => <li key={index}><strong>{conflict.claim}</strong><small>{conflict.value}</small></li>)}</ul></section>}
           <p className="recommendation-next"><strong>Suggested next step</strong>{venue.nextStep}</p>
           <section className="recommendation-sources"><h4>Original sources</h4>{venue.sourceReferences.map((source) => <a key={source.id} href={source.url} target="_blank" rel="noreferrer">{source.title}<span aria-hidden="true"> ↗</span></a>)}</section>

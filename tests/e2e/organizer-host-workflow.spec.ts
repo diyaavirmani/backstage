@@ -32,7 +32,7 @@ test("source-backed discovery handoff opens the matching private draft (determin
 test("example briefs are explicit and do not create applications or reservations",async({page})=>{
   await page.goto("/organizer");const example=page.getByLabel("Try an example");const load=page.getByRole("button",{name:"Load example"});
   await example.selectOption("delhi-hackathon");await load.click();await expect(page.getByLabel(/What are you calling it/)).toHaveValue("Delhi NCR community hackathon");await expect(page.getByLabel(/Expected guests/)).toHaveValue("80");await expect(page.getByLabel("Rooms or areas")).toHaveValue("Main event room, breakout rooms");
-  await example.selectOption("bengaluru-founders");await load.click();await expect(page.locator(".brief-form select").first()).toHaveValue("Bengaluru");await expect(page.getByLabel(/Who’s coming/)).toHaveValue("Early-stage founders and startup operators");
+  await example.selectOption("bengaluru-founders");await load.click();await expect(page.getByLabel("City")).toHaveValue("Bengaluru");await expect(page.getByLabel(/Who’s coming/)).toHaveValue("Early-stage founders and startup operators");
   await example.selectOption("demo-workshop");await load.click();await expect(page.getByLabel(/What are you calling it/)).toHaveValue("Fictional host workshop demo");await expect(page.getByLabel("Rooms or areas")).toHaveValue("Workshop Studio");
   const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem("backstage.event-brief.v1")||"null") as {date:string;startTime:string;endTime:string;setupMinutes:number;cleanupMinutes:number}|null);expect(stored?.date).toBeTruthy();const eventDate=new Date(`${stored!.date}T12:00:00+05:30`);expect(eventDate.getTime()).toBeGreaterThan(Date.now());expect(eventDate.getTime()-Date.now()).toBeLessThan(100*86400000);expect(new Intl.DateTimeFormat("en-US",{weekday:"long",timeZone:"Asia/Kolkata"}).format(eventDate)).not.toBe("Sunday");expect(stored!.startTime).toBe("11:00");expect(stored!.endTime).toBe("13:00");expect(stored!.setupMinutes).toBe(30);expect(stored!.cleanupMinutes).toBe(30);await expect(page.locator(".application-card")).toHaveCount(0);await expect(page.locator(".calendar-item")).toHaveCount(0);
 });
@@ -51,7 +51,7 @@ async function moveCalendarTo(page:Page,date:string) {
 }
 async function fillEventBrief(page:Page,date:string) {
   await page.getByLabel(/What are you calling it/).fill("Organizer browser journey");
-  await page.locator(".brief-form select").nth(1).selectOption({label:"Workshop"});
+  await page.getByLabel("Kind of gathering").selectOption({label:"Workshop"});
   await page.getByLabel(/Who’s coming/).fill("Local community makers");
   await page.getByLabel(/Event date/).fill(date);
   await page.getByLabel(/Expected guests/).fill("20");
@@ -84,7 +84,7 @@ test("organizer brief, host review, shared resources, cancellation, and mobile c
   let hostContext:BrowserContext|undefined;
   try {
     const organizer=await organizerContext.newPage();await organizer.goto("/organizer");
-    await expect(organizer.getByRole("heading",{name:/Let’s make a little room/})).toBeVisible();
+    await expect(organizer.getByRole("heading",{name:"Plan your event"})).toBeVisible();
     const briefForm=organizer.locator(".brief-form");
     await briefForm.getByRole("button",{name:/Save event brief/}).click();
     expect(await briefForm.locator("input[required]").first().evaluate((element:HTMLInputElement)=>element.validity.valueMissing)).toBe(true);

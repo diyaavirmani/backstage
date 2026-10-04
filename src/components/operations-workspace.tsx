@@ -75,7 +75,7 @@ export function OperationsWorkspace({mode}:{mode:"organizer"|"host"}) {
     return rows.filter((r)=>!r.resource_id||ids.includes(r.resource_id)).sort((a,b)=>a.starts_at.localeCompare(b.starts_at));
   },[data,resourceFilter]);
 
-  return <section className="ops-shell" aria-busy={busy}>
+  return <section id={mode==="organizer"?"application-workspace":"host-workspace"} className="ops-shell" aria-busy={busy}>
     <div className="ops-banner"><div><p className="eyebrow"><span className="eyebrow-dot"/> FICTIONAL DEMONSTRATION WORKSPACE</p><strong>Simulation only · No real host is connected</strong><p>Role switching is a local workflow simulation, not production account authentication. Messages stay inside this application.</p></div><label>Simulation role<select aria-label="Simulation role" value={data?.workspace.role||mode} onChange={(e)=>void switchRole(e.target.value as "organizer"|"host")}><option value="organizer">Organizer</option><option value="host">Host</option></select></label></div>
     {error&&<p role="alert" className="ops-feedback error-message">{error}</p>}{message&&<p role="status" className="ops-feedback success-message">{message}</p>}
     {activeMode==="organizer"?<>
