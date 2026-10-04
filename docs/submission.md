@@ -58,6 +58,8 @@ The project contains 37 published research documents. A verified outline path fo
 
 Backstage is deployed on Railway with a single 500 MB persistent SQLite volume. Hosted discovery uses separate server-side Sanity read and Context credentials plus an OpenAI key; the content-import token is not present in the runtime. Real venue availability, prices, partnerships, and booking permissions are not inferred from the public evidence.
 
+<!-- The green workspace branch is not yet merged/deployed. Update recording navigation after its separately authorized release; preserve the real recording placeholder until then. -->
+
 ## Agent Session
 
 <!-- PLACEHOLDER: upload and review the redacted native Codex recording in DEV Agent Sessions, make the session public, then insert its public embed here. -->

@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Backstage — make room for what matters",
-  description: "A thoughtful way to find a place where your event can actually work.",
+  title: "Backstage — find the right space for your event",
+  description:
+    "Source-backed venue research, private application drafts, and fictional host coordination demonstrations.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

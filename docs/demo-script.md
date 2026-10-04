@@ -1,6 +1,6 @@
 # Backstage recording script (4–5 minutes)
 
-Use the live deployment and the same browser tab throughout the recording. The browser receives its own demo workspace cookie. The public demo has persisted discovery limits of five requests per session and fifty requests total per day; this script uses two discovery calls. Do not reset counters or raise those limits for a recording. If the shared limit has already been reached, record the non-live walkthrough and label discovery as unavailable rather than retrying repeatedly.
+The redesigned workflow is on `feat/green-saas-redesign` and is not deployed by this task. Rehearse on localhost; record this navigation on the public app only after a separately authorized release. Use the same browser tab throughout. The browser receives its own demo workspace cookie. The public demo has persisted discovery limits of five requests per session and fifty requests total per day; this script uses two discovery calls. Do not reset counters or raise those limits for a recording. If the shared limit has already been reached, record the non-live walkthrough and label discovery as unavailable rather than retrying repeatedly.
 
 Use fictional organizer contact details in the demo. Do not show private environment settings, browser storage, cookies, database contents, or raw provider output.
 
@@ -14,7 +14,7 @@ Use fictional organizer contact details in the demo. Do not show private environ
 
 ## 0:35–1:15 — Example brief and real discovery
 
-**Navigate:** In **Try an example**, select **Bengaluru founders · qualified eligibility**. Click **Load example**, then **Find suitable venues**.
+**Navigate:** In **Try an example**, select **Bengaluru founders · qualified eligibility**. Click **Load example**, then **Continue** through Event details and Space and requirements. In Review, click **Find suitable venues**.
 
 **Say while results load:** “The sample asks about a founder gathering, a room, a projector, a zero budget, and pro-bono access. Loading the example is explicit and does not create a booking. This request is now retrieving a current Knowledge Base outline and reading its selected venue entry.”
 
@@ -28,19 +28,19 @@ Use fictional organizer contact details in the demo. Do not show private environ
 
 **Navigate:** In **Ask a follow-up question**, enter: “What founder eligibility does the source establish, and what still needs confirmation?” Click **Refine leads**.
 
-**Say:** “The follow-up keeps the same 24-person brief and checks the source-backed qualification again. A recommendation is useful only if the organizer can see both the evidence and its limits.”
+**Say:** “The follow-up keeps the same 28-person example brief and checks the source-backed qualification again. A recommendation is useful only if the organizer can see both the evidence and its limits.”
 
 ## 2:35–3:15 — Prepare and restore a research draft
 
-**Navigate:** On Shifu’s card click **Prepare application draft**. Point out the selected venue, copied brief, unanswered questions, evidence, and source link. Enter fictional organizer details, check the review acknowledgement, and click **Save application draft**. Reload `/organizer` and show the restored **DRAFT ONLY** card.
+**Navigate:** On Shifu’s card click **Create private draft**. Point out the selected venue, copied brief, unanswered questions, evidence, and source link. Enter fictional organizer details, check the review acknowledgement, and click **Save application draft**. Reload the **Private drafts** view and show the restored **DRAFT ONLY** card.
 
 **Say:** “The server re-resolves the venue evidence from published Sanity records when it saves. The draft preserves the evidence snapshot and its capture date. Submission remains disabled because there is no verified booking authority for this real research lead.”
 
 ## 3:15–4:25 — Fictional approval, allocation, and checklist
 
-**Navigate:** In the event brief choose **Fictional host workshop · operations demo**. Click **Load example**, then **Save event brief**. In **Application workspace**, click **Load saved event brief**. Select **[FICTIONAL DEMO] Backstage Demo House**, choose **Workshop Studio** and **Projector**, enter fictional organizer details, review the snapshot, and click **Submit demo request**.
+**Navigate:** In the event brief choose **Fictional host workshop · operations demo**. Click **Load example**, **Continue** twice, then **Save event brief**. In **Private drafts**, click **Load saved event brief**. Select **[FICTIONAL DEMO] Backstage Demo House**, choose **Workshop Studio** and **Projector**, enter fictional organizer details, review the snapshot, and click **Submit demo request**.
 
-Open `/host`. Set **Simulation role** to **Host**, then click **Approve & allocate** on the request. Show the **Confirmed events** section, the room/projector allocation, and the shared preparation checklist. Complete one host-owned item; switch to **Organizer** simulation and complete an organizer-owned item.
+Open `/host`. Set **Simulation role** to **Host**, open **View application details** in Requests, then click **Approve & allocate** on the request. Show **Confirmed events** and its accepted brief. Open **Resource calendar** to see allocations, then **Preparation** for the shared checklist. Complete one host-owned item; switch to **Organizer** simulation and complete an organizer-owned item.
 
 **Say:** “This workflow uses fictional inventory and availability stored in the application’s SQLite database. Approval checks resource availability and allocates selected resources together. Both role views share the same checklist. The role selector simulates a workflow; it does not authenticate a real host or organizer.”
 

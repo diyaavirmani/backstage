@@ -1,287 +1,898 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import type { City, EventBrief, VenueRecommendation } from "@/types";
-import {publishResearchApplicationHandoff} from "@/lib/application-handoff";
+import type { EventBrief, VenueRecommendation } from "@/types";
+import { publishResearchApplicationHandoff } from "@/lib/application-handoff";
+import {
+  BRIEF_STORAGE_KEY,
+  emptyBriefForm,
+  briefFromValues,
+  valuesFromStoredBrief,
+  validateBriefForm,
+  sameBriefContents,
+  type BriefField,
+  type BriefFormValues,
+} from "@/lib/brief-draft";
+import {
+  setQueryValues,
+  useQueryValues,
+  useWorkspaceView,
+} from "@/lib/workspace-navigation";
+import { Badge, Button, EmptyState, Notice } from "@/components/ui";
+import { ResearchLeadCard } from "@/components/research-lead-card";
 
-const STORAGE_KEY = "backstage.event-brief.v1";
-const emptyForm = {
-  title: "",
-  city: "Delhi NCR" as City,
-  eventType: "",
-  date: "",
-  startTime: "10:00",
-  endTime: "12:00",
-  audience: "",
-  headcount: "",
-  budgetAmount: "",
-  rooms: "",
-  equipment: "",
-  essential: "",
-  flexible: "",
-  setupMinutes: "30",
-  cleanupMinutes: "30",
+type Turn = { role: "user" | "assistant"; content: string };
+type Example = "delhi-hackathon" | "bengaluru-founders" | "demo-workshop";
+const basics: BriefField[] = [
+  "title",
+  "city",
+  "eventType",
+  "audience",
+  "date",
+  "headcount",
+  "startTime",
+  "endTime",
+];
+const labels: Record<BriefField, string> = {
+  title: "Event name",
+  city: "City",
+  eventType: "Gathering type",
+  audience: "Audience or community",
+  date: "Event date",
+  headcount: "Attendees",
+  startTime: "Start time",
+  endTime: "End time",
+  budgetAmount: "Venue budget (INR)",
+  rooms: "Required rooms or areas",
+  equipment: "Equipment and setup",
+  essential: "Essential requirements",
+  flexible: "Flexible requirements",
+  setupMinutes: "Setup time (minutes)",
+  cleanupMinutes: "Clear-up time (minutes)",
 };
-
-type FormValues = typeof emptyForm;
-type Recommendation = VenueRecommendation;
-type ConversationTurn = {role: "user" | "assistant"; content: string};
-type ExampleKey="delhi-hackathon"|"bengaluru-founders"|"demo-workshop";
-
-function csv(value: string) {
-  return value.split(",").map((item) => item.trim()).filter(Boolean);
+function futureDate(days: number, weekday = false) {
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const date = new Date(`${today}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  if (weekday)
+    while (date.getUTCDay() === 0) date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10);
 }
 
 export function EventBriefForm() {
-  const [values, setValues] = useState<FormValues>(emptyForm);
+  const [values, setValues] = useState<BriefFormValues>(emptyBriefForm);
   const [ready, setReady] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [savedBrief, setSavedBrief] = useState<EventBrief | null>(null);
+  const [errors, setErrors] = useState<Partial<Record<BriefField, string>>>({});
   const [error, setError] = useState("");
-  const formRef = useRef<HTMLFormElement | null>(null);
-  const [conversation, setConversation] = useState<ConversationTurn[]>([]);
+  const [recovery, setRecovery] = useState("");
+  const [rawRecovery, setRawRecovery] = useState("");
+  const [example, setExample] = useState<Example>("delhi-hackathon");
+  const [exampleMessage, setExampleMessage] = useState("");
+  const [conversation, setConversation] = useState<Turn[]>([]);
   const [followUp, setFollowUp] = useState("");
-  const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null);
+  const [recommendations, setRecommendations] = useState<
+    VenueRecommendation[] | null
+  >(null);
   const [agentMessage, setAgentMessage] = useState("");
   const [agentError, setAgentError] = useState("");
   const [loading, setLoading] = useState(false);
   const [lastBrief, setLastBrief] = useState<EventBrief | null>(null);
-  const [handoffMessage,setHandoffMessage]=useState("");
-  const [example,setExample]=useState<ExampleKey>("delhi-hackathon");
-
+  const [handoffMessage, setHandoffMessage] = useState("");
+  const [retrySeconds, setRetrySeconds] = useState<number | null>(null);
+  const requestId = useRef(0);
+  const request = useRef<AbortController | null>(null);
+  const requestBusy = useRef(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const view = useWorkspaceView("organizer");
+  const params = useQueryValues();
+  const step =
+    Number(params.get("step")) === 2
+      ? 2
+      : Number(params.get("step")) === 3
+        ? 3
+        : 1;
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
-        const rawDraft = window.localStorage.getItem(STORAGE_KEY);
-        if (rawDraft) {
-          const draft = JSON.parse(rawDraft) as EventBrief;
-          setValues({
-            title: draft.title,
-            city: draft.city,
-            eventType: draft.eventType,
-            date: draft.date,
-            startTime: draft.startTime,
-            endTime: draft.endTime,
-            audience: draft.audience,
-            headcount: String(draft.headcount),
-            budgetAmount: String(draft.budgetAmount),
-            rooms: draft.roomRequirements.join(", "),
-            equipment: draft.equipmentRequirements.join(", "),
-            essential: draft.essentialRequirements.join(", "),
-            flexible: draft.flexibleRequirements.join(", "),
-            setupMinutes: String(draft.setupMinutes),
-            cleanupMinutes: String(draft.cleanupMinutes),
-          });
-          setSaved(true);
+        const raw = localStorage.getItem(BRIEF_STORAGE_KEY);
+        if (raw) {
+          setRawRecovery(raw);
+          const stored = JSON.parse(raw);
+          const restored = valuesFromStoredBrief(stored);
+          setValues(restored.values);
+          if (restored.complete) setSavedBrief(stored as EventBrief);
+          else
+            setRecovery(
+              "We recovered fields from an older or incomplete brief. Review them before saving. The original stored data has been retained.",
+            );
         }
       } catch {
-        setError("We couldn’t read the saved draft in this browser. You can start a new one below.");
+        setRecovery(
+          "The stored brief could not be read. Its original data is still in this browser; download it before replacing it.",
+        );
       } finally {
         setReady(true);
       }
     }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  function update(field: keyof FormValues, value: string) {
-    setValues((current) => ({ ...current, [field]: value }));
-    setSaved(false);
-    setError("");
-    setLastBrief(null);
-    setConversation([]);
-    setRecommendations(null);
-    setAgentMessage("");
-    setAgentError("");
-  }
-
-  function createDraft(source:FormValues=values): EventBrief | null {
-    if (source.endTime <= source.startTime) {
-      setError("Choose an end time that comes after the start time.");
-      return null;
-    }
-
-    const draft: EventBrief = {
-      id: crypto.randomUUID(),
-      title: source.title.trim(),
-      city: source.city,
-      eventType: source.eventType,
-      date: source.date,
-      startTime: source.startTime,
-      endTime: source.endTime,
-      audience: source.audience.trim(),
-      headcount: Number(source.headcount),
-      budgetAmount: Number(source.budgetAmount),
-      currency: "INR",
-      roomRequirements: csv(source.rooms),
-      equipmentRequirements: csv(source.equipment),
-      essentialRequirements: csv(source.essential),
-      flexibleRequirements: csv(source.flexible),
-      setupMinutes: Number(source.setupMinutes) || 0,
-      cleanupMinutes: Number(source.cleanupMinutes) || 0,
-      savedAt: new Date().toISOString(),
+    return () => {
+      window.clearTimeout(timer);
+      request.current?.abort();
     };
-
+  }, []);
+  const current = briefFromValues(values, "preview", "");
+  const saved = Boolean(savedBrief && sameBriefContents(savedBrief, current));
+  const changedSinceDiscovery = Boolean(
+    lastBrief && !sameBriefContents(lastBrief, current),
+  );
+  function update(name: BriefField, value: string) {
+    setValues((old) => ({ ...old, [name]: value }));
+    setErrors((old) => ({ ...old, [name]: undefined }));
+    setError("");
+    setExampleMessage("");
+  }
+  function focusInvalid(found: Partial<Record<BriefField, string>>) {
+    const field = Object.keys(found)[0] as BriefField | undefined;
+    if (!field) return;
+    setQueryValues({ view: "brief", step: basics.includes(field) ? "1" : "2" });
+    window.setTimeout(
+      () => document.getElementById(`brief-${field}`)?.focus(),
+      0,
+    );
+  }
+  function validate(which: 1 | 2 | 3) {
+    const found = validateBriefForm(values, which);
+    setErrors(found);
+    if (Object.keys(found).length) {
+      focusInvalid(found);
+      return false;
+    }
+    return true;
+  }
+  function goStep(next: 1 | 2 | 3) {
+    if (next > step && !validate(next === 3 ? 3 : 1)) return;
+    setQueryValues({ view: "brief", step: String(next) });
+    window.setTimeout(
+      () => document.getElementById("wizard-heading")?.focus(),
+      0,
+    );
+  }
+  function saveBrief(): EventBrief | null {
+    if (!validate(3)) return null;
+    const draft = briefFromValues(
+      values,
+      savedBrief?.id || crypto.randomUUID(),
+      new Date().toISOString(),
+    );
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-      setSaved(true);
+      localStorage.setItem(BRIEF_STORAGE_KEY, JSON.stringify(draft));
+      setSavedBrief(draft);
       setError("");
-      setLastBrief(draft);
+      setRecovery("");
+      window.dispatchEvent(new Event("backstage:brief-saved"));
       return draft;
     } catch {
-      setSaved(false);
-      setError("This browser couldn’t save your draft. Check its storage settings and try again.");
+      setError(
+        "This browser could not save the brief. Check its storage settings and try again.",
+      );
       return null;
     }
   }
-
-  function exampleDate(days:number,weekday=false) {
-    const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
-    const date=new Date(`${today}T12:00:00Z`);date.setUTCDate(date.getUTCDate()+days);
-    if(weekday)while(date.getUTCDay()===0)date.setUTCDate(date.getUTCDate()+1);
-    return date.toISOString().slice(0,10);
-  }
   function loadExample() {
-    const examples:Record<ExampleKey,FormValues>={
-      "delhi-hackathon":{...emptyForm,title:"Delhi NCR community hackathon",city:"Delhi NCR",eventType:"Other",date:exampleDate(12),startTime:"09:00",endTime:"18:00",audience:"Student and independent builder teams",headcount:"80",budgetAmount:"15000",rooms:"Main event room, breakout rooms",equipment:"Projector, microphones, reliable Wi-Fi",essential:"Capacity for 80 in a documented room layout, suitable equipment, within budget",flexible:"Room arrangement",setupMinutes:"60",cleanupMinutes:"45"},
-      "bengaluru-founders":{...emptyForm,title:"Bengaluru founder gathering",city:"Bengaluru",eventType:"Community meetup",date:exampleDate(14),startTime:"17:00",endTime:"20:00",audience:"Early-stage founders and startup operators",headcount:"28",budgetAmount:"0",rooms:"Gathering room",equipment:"Projector",essential:"Explore pro-bono access and founder-community eligibility",flexible:"Weekday evening",setupMinutes:"30",cleanupMinutes:"30"},
-      "demo-workshop":{...emptyForm,title:"Fictional host workshop demo",city:"Delhi NCR",eventType:"Workshop",date:exampleDate(14,true),startTime:"11:00",endTime:"13:00",audience:"Local community makers",headcount:"20",budgetAmount:"0",rooms:"Workshop Studio",equipment:"Projector",essential:"Workshop Studio and projector",flexible:"Start time",setupMinutes:"30",cleanupMinutes:"30"},
+    const examples: Record<Example, BriefFormValues> = {
+      "delhi-hackathon": {
+        ...emptyBriefForm,
+        title: "Delhi NCR community hackathon",
+        city: "Delhi NCR",
+        eventType: "Other",
+        date: futureDate(12),
+        startTime: "09:00",
+        endTime: "18:00",
+        audience: "Student and independent builder teams",
+        headcount: "80",
+        budgetAmount: "15000",
+        rooms: "Main event room, breakout rooms",
+        equipment: "Projector, microphones, reliable Wi-Fi",
+        essential:
+          "Capacity for 80 in a documented room layout, suitable equipment, within budget",
+        flexible: "Room arrangement",
+        setupMinutes: "60",
+        cleanupMinutes: "45",
+      },
+      "bengaluru-founders": {
+        ...emptyBriefForm,
+        title: "Bengaluru founder gathering",
+        city: "Bengaluru",
+        eventType: "Community meetup",
+        date: futureDate(14),
+        startTime: "17:00",
+        endTime: "20:00",
+        audience: "Early-stage founders and startup operators",
+        headcount: "28",
+        budgetAmount: "0",
+        rooms: "Gathering room",
+        equipment: "Projector",
+        essential: "Explore pro-bono access and founder-community eligibility",
+        flexible: "Weekday evening",
+        setupMinutes: "30",
+        cleanupMinutes: "30",
+      },
+      "demo-workshop": {
+        ...emptyBriefForm,
+        title: "Fictional host workshop demo",
+        city: "Delhi NCR",
+        eventType: "Workshop",
+        date: futureDate(14, true),
+        startTime: "11:00",
+        endTime: "13:00",
+        audience: "Local community makers",
+        headcount: "20",
+        budgetAmount: "0",
+        rooms: "Workshop Studio",
+        equipment: "Projector",
+        essential: "Workshop Studio and projector",
+        flexible: "Start time",
+        setupMinutes: "30",
+        cleanupMinutes: "30",
+      },
     };
-    const next=examples[example];setValues(next);setConversation([]);setRecommendations(null);setLastBrief(null);setAgentError("");setAgentMessage("");setHandoffMessage("");
-    const brief=createDraft(next);if(brief){setSaved(true);setAgentMessage("Example brief loaded. No application or reservation was created.");}
+    setValues(examples[example]);
+    setErrors({});
+    setError("");
+    setQueryValues({ view: "brief", step: "1" });
+    setExampleMessage(
+      "Example loaded into the form. Save it when ready; no application or reservation was created.",
+    );
   }
-
-  function saveDraft(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    createDraft();
-  }
-
-  async function runDiscovery(draft: EventBrief, turns: ConversationTurn[]) {
+  async function runDiscovery(draft: EventBrief, turns: Turn[]) {
+    if (requestBusy.current) return;
+    requestBusy.current = true;
+    const id = ++requestId.current;
+    const controller = new AbortController();
+    request.current = controller;
+    const timeout = window.setTimeout(() => controller.abort(), 65_000);
+    if (lastBrief && !sameBriefContents(lastBrief, draft)) {
+      setRecommendations(null);
+      setAgentMessage("");
+    }
     setLoading(true);
     setAgentError("");
-    setRecommendations(null);
+    setRetrySeconds(null);
+    setLastBrief(draft);
+    setConversation(turns);
+    setQueryValues({ view: "research" });
     try {
       const response = await fetch("/api/venue-discovery", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({brief: draft, conversation: turns.slice(-8)}),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brief: draft, conversation: turns.slice(-8) }),
+        signal: controller.signal,
       });
-      const payload = await response.json() as {error?: string; message?: string; recommendations?: Recommendation[]};
-      if (!response.ok) throw new Error(payload.error || "Venue discovery could not be completed. Please retry.");
-      setRecommendations(payload.recommendations || []);
-      setAgentMessage(payload.message || "Here are the researched venue leads I could verify.");
-      if (payload.message) setConversation((current) => [...current, {role: "assistant" as const, content: payload.message!}].slice(-8));
+      const payload = (await response.json()) as {
+        error?: string;
+        message?: string;
+        recommendations?: VenueRecommendation[];
+        retryAfterSeconds?: number;
+      };
+      if (id !== requestId.current) return;
+      if (!response.ok) {
+        setRetrySeconds(payload.retryAfterSeconds || null);
+        throw new Error(
+          payload.error ||
+            "Venue discovery could not be completed. Your brief is preserved.",
+        );
+      }
+      if (!Array.isArray(payload.recommendations))
+        throw new Error(
+          "The venue response could not be read. No new leads were published.",
+        );
+      setRecommendations(payload.recommendations);
+      setAgentMessage(
+        payload.message || "Source-verified research leads for your event.",
+      );
+      if (payload.message)
+        setConversation(
+          [
+            ...turns,
+            { role: "assistant" as const, content: payload.message },
+          ].slice(-8),
+        );
+      setFollowUp("");
     } catch (caught) {
-      setAgentError(caught instanceof Error ? caught.message : "Venue discovery could not be completed. Please retry.");
+      if (id === requestId.current)
+        setAgentError(
+          caught instanceof Error && caught.name === "AbortError"
+            ? "The search was cancelled or timed out. Your brief is preserved; try again when ready."
+            : caught instanceof Error
+              ? caught.message
+              : "Discovery is unavailable. Your brief is preserved.",
+        );
     } finally {
-      setLoading(false);
+      window.clearTimeout(timeout);
+      if (id === requestId.current) {
+        requestBusy.current = false;
+        setLoading(false);
+      }
     }
   }
-
   function findVenues() {
-    if (!formRef.current?.reportValidity()) return;
-    const draft = createDraft();
-    if (!draft) return;
-    setConversation([]);
-    const turns = [{role: "user" as const, content: "Find suitable venue leads for my saved event brief."}];
-    setConversation(turns);
-    setLastBrief(draft);
-    void runDiscovery(draft, turns);
+    if (requestBusy.current) return;
+    const draft = saveBrief();
+    if (draft)
+      void runDiscovery(draft, [
+        {
+          role: "user",
+          content: "Find suitable venue leads for my saved event brief.",
+        },
+      ]);
   }
-
-  function sendFollowUp(event: FormEvent<HTMLFormElement>) {
+  function sendFollowUp(event: FormEvent) {
     event.preventDefault();
-    if (!followUp.trim() || !lastBrief || loading) return;
-    const turns = [...conversation, {role: "user" as const, content: followUp.trim()}].slice(-8);
-    setConversation(turns);
-    setFollowUp("");
-    void runDiscovery(lastBrief, turns);
+    if (!lastBrief || !followUp.trim() || requestBusy.current) return;
+    void runDiscovery(
+      lastBrief,
+      [
+        ...conversation,
+        { role: "user" as const, content: followUp.trim() },
+      ].slice(-8),
+    );
   }
-
-  function prepareApplication(venue:Recommendation) {
-    if(!lastBrief) return;
-    const questions=venue.requirementCoverage.filter((item)=>item.status!=="supported").map((item)=>`${item.requirement}: ${item.status==="contradicted"?"sources conflict or document a mismatch":"needs confirmation"}`);
-    for(const item of venue.importantUnknowns) questions.push(`${item.claim}: ${item.value}`);
-    publishResearchApplicationHandoff({venueId:venue.venueId,venueName:venue.name,brief:lastBrief,questions:[...new Set(questions)],recommendation:venue,createdAt:new Date().toISOString()});
-    setHandoffMessage(`Application builder prepared for ${venue.name} using “${lastBrief.title}”. Review the discovery snapshot and current application before saving.`);
-    document.getElementById("application-builder")?.scrollIntoView({behavior:"smooth",block:"start"});
+  function prepare(venue: VenueRecommendation) {
+    if (!lastBrief) return;
+    const questions = venue.requirementCoverage
+      .filter((item) => item.status !== "supported")
+      .map(
+        (item) =>
+          `${item.requirement}: ${item.status === "contradicted" ? "documented mismatch or conflicting evidence" : "needs confirmation"}`,
+      );
+    questions.push(
+      ...venue.importantUnknowns.map((item) => `${item.claim}: ${item.value}`),
+    );
+    publishResearchApplicationHandoff({
+      venueId: venue.venueId,
+      venueName: venue.name,
+      brief: lastBrief,
+      questions: [...new Set(questions)],
+      recommendation: venue,
+      createdAt: new Date().toISOString(),
+    });
+    setHandoffMessage(
+      `Private draft prepared for ${venue.name} using “${lastBrief.title}”. Review before saving.`,
+    );
+    setQueryValues({ view: "drafts" });
   }
-
-  const field = (name: keyof FormValues, value: string) => update(name, value);
-
+  const field = (
+    name: BriefField,
+    options: {
+      type?: string;
+      required?: boolean;
+      min?: number;
+      max?: number;
+      maxLength?: number;
+      helper?: string;
+    } = {},
+  ) => (
+    <label className="field" key={name} htmlFor={`brief-${name}`}>
+      <span>
+        {labels[name]}
+        {options.required && <span className="required-label">Required</span>}
+      </span>
+      <input
+        id={`brief-${name}`}
+        name={name}
+        type={options.type || "text"}
+        required={options.required}
+        min={options.min}
+        max={options.max}
+        maxLength={options.maxLength}
+        step={
+          options.type === "number"
+            ? name === "budgetAmount"
+              ? "any"
+              : "1"
+            : undefined
+        }
+        value={values[name]}
+        onChange={(event) => update(name, event.target.value)}
+        aria-invalid={Boolean(errors[name])}
+        aria-describedby={
+          errors[name]
+            ? `error-${name}`
+            : options.helper
+              ? `help-${name}`
+              : undefined
+        }
+      />
+      {options.helper && <small id={`help-${name}`}>{options.helper}</small>}
+      {errors[name] && (
+        <small className="field-error" id={`error-${name}`}>
+          {errors[name]}
+        </small>
+      )}
+    </label>
+  );
+  const select = (name: "city" | "eventType", options: string[]) => (
+    <label className="field" htmlFor={`brief-${name}`}>
+      <span>
+        {labels[name]}
+        <span className="required-label">Required</span>
+      </span>
+      <select
+        id={`brief-${name}`}
+        required
+        value={values[name]}
+        onChange={(event) => update(name, event.target.value)}
+        aria-invalid={Boolean(errors[name])}
+        aria-describedby={errors[name] ? `error-${name}` : undefined}
+      >
+        {name === "eventType" && (
+          <option value="">Choose a gathering type</option>
+        )}
+        {values[name] && !options.includes(values[name]) && (
+          <option>{values[name]}</option>
+        )}
+        {options.map((option) => (
+          <option key={option}>{option}</option>
+        ))}
+      </select>
+      {errors[name] && (
+        <small className="field-error" id={`error-${name}`}>
+          {errors[name]}
+        </small>
+      )}
+    </label>
+  );
   return (
     <>
-    <form id="event-brief" className="brief-form" ref={(element) => { formRef.current = element; }} onSubmit={saveDraft}>
-      {error && <p className="form-message error-message" role="alert">{error}</p>}
-      {saved && <p className="form-message success-message" role="status">Your event brief is saved in this browser. You can come back and edit it any time.</p>}
-
-      <div className="example-brief-row">
-        <label className="field example-control"><span>Try an example <i>Optional</i></span><select aria-label="Try an example" value={example} onChange={(event)=>setExample(event.target.value as ExampleKey)}><option value="delhi-hackathon">Delhi NCR hackathon · research unknowns</option><option value="bengaluru-founders">Bengaluru founders · qualified eligibility</option><option value="demo-workshop">Fictional host workshop · operations demo</option></select></label>
-        <button className="button button-light" type="button" onClick={loadExample} disabled={!ready}>Load example</button>
-        <p>Examples fill the brief only. They never create an application or reservation.</p>
-      </div>
-
-      <div className="form-columns">
-        <section className="form-section" aria-labelledby="event-basics-title">
-          <div className="form-section-heading"><span className="form-section-number">01</span><div><h2 id="event-basics-title">The gathering</h2><p>Start with the shape of the day.</p></div></div>
-          <div className="field-stack">
-            <label className="field"><span>What are you calling it? <i>Required</i></span><input required maxLength={100} value={values.title} onChange={(e) => field("title", e.target.value)} placeholder="e.g. Sunday makers’ table" autoComplete="off" /></label>
-            <div className="field-row">
-              <label className="field"><span>City <i>Required</i></span><select value={values.city} onChange={(e) => field("city", e.target.value)}><option>Delhi NCR</option><option>Bengaluru</option></select></label>
-              <label className="field"><span>Kind of gathering <i>Required</i></span><select required value={values.eventType} onChange={(e) => field("eventType", e.target.value)}><option value="">Choose one</option><option>Workshop</option><option>Community meetup</option><option>Talk or panel</option><option>Screening</option><option>Retreat</option><option>Other</option></select></label>
+      <section hidden={view !== "brief"} id="event-brief">
+        <div className="view-heading">
+          <h2>Event brief</h2>
+          <Badge tone={saved ? "supported" : "neutral"}>
+            {!ready
+              ? "Restoring brief…"
+              : saved
+                ? "Saved in this browser"
+                : "Unsaved form changes"}
+          </Badge>
+        </div>
+        {recovery && (
+          <Notice tone="warning" role="status">
+            <p>{recovery}</p>
+            {rawRecovery && (
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={() => {
+                  const url = URL.createObjectURL(
+                    new Blob([rawRecovery], { type: "application/json" }),
+                  );
+                  const link = document.createElement("a");
+                  link.href = url;
+                  link.download = "backstage-stored-brief.json";
+                  link.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                Download stored brief
+              </Button>
+            )}
+          </Notice>
+        )}
+        {error && (
+          <Notice tone="error" role="alert">
+            {error}
+          </Notice>
+        )}
+        {exampleMessage && <Notice role="status">{exampleMessage}</Notice>}
+        <div className="example-brief-row">
+          <label className="field">
+            <span>
+              Try an example <small>Optional</small>
+            </span>
+            <select
+              aria-label="Try an example"
+              value={example}
+              onChange={(event) => setExample(event.target.value as Example)}
+            >
+              <option value="delhi-hackathon">
+                Delhi NCR hackathon · research unknowns
+              </option>
+              <option value="bengaluru-founders">
+                Bengaluru founders · qualified eligibility
+              </option>
+              <option value="demo-workshop">
+                Fictional host workshop · operations demo
+              </option>
+            </select>
+          </label>
+          <Button
+            variant="secondary"
+            type="button"
+            onClick={loadExample}
+            disabled={!ready}
+          >
+            Load example
+          </Button>
+          <p>
+            Fills the form only. Your applications and reservations stay
+            separate.
+          </p>
+        </div>
+        <form
+          className="brief-form"
+          ref={formRef}
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (step < 3) goStep((step + 1) as 2 | 3);
+            else saveBrief();
+          }}
+        >
+          <nav className="wizard-steps" aria-label="Event brief steps">
+            {["Event details", "Space and requirements", "Review"].map(
+              (label, index) => (
+                <a
+                  key={label}
+                  href={`?view=brief&step=${index + 1}`}
+                  aria-current={step === index + 1 ? "step" : undefined}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    goStep((index + 1) as 1 | 2 | 3);
+                  }}
+                >
+                  <span>{index + 1}</span>
+                  {label}
+                </a>
+              ),
+            )}
+          </nav>
+          <div className="wizard-layout">
+            <div className="wizard-fields">
+              <h3 id="wizard-heading" tabIndex={-1}>
+                {step === 1
+                  ? "Tell us about your event"
+                  : step === 2
+                    ? "Define the space and setup"
+                    : "Review your complete brief"}
+              </h3>
+              <section hidden={step !== 1} className="field-stack">
+                {field("title", { required: true, maxLength: 100 })}
+                <div className="field-row">
+                  {select("city", ["Delhi NCR", "Bengaluru"])}
+                  {select("eventType", [
+                    "Workshop",
+                    "Community meetup",
+                    "Talk or panel",
+                    "Screening",
+                    "Retreat",
+                    "Other",
+                  ])}
+                </div>
+                {field("audience", {
+                  required: true,
+                  maxLength: 120,
+                  helper:
+                    "Audience details matter for qualified community access.",
+                })}
+                <div className="field-row">
+                  {field("date", { type: "date", required: true })}
+                  {field("headcount", {
+                    type: "number",
+                    required: true,
+                    min: 1,
+                    max: 10000,
+                  })}
+                </div>
+                <div className="field-row">
+                  {field("startTime", { type: "time", required: true })}
+                  {field("endTime", { type: "time", required: true })}
+                </div>
+                <p className="helper-text">
+                  Event times are in Asia/Kolkata (IST). Start and end must be
+                  on the same day.
+                </p>
+              </section>
+              <section hidden={step !== 2} className="field-stack">
+                {field("budgetAmount", {
+                  type: "number",
+                  required: true,
+                  min: 0,
+                  max: 100000000,
+                  helper:
+                    "Use 0 when exploring sponsored or pro-bono access; access conditions still require evidence.",
+                })}
+                {field("rooms", {
+                  helper: "Separate required rooms or areas with commas.",
+                })}
+                {field("equipment", {
+                  helper:
+                    "Include quantities and qualifications such as connections or layout.",
+                })}
+                {field("essential", {
+                  helper:
+                    "Comma-separated must-haves; unknowns will remain unknown.",
+                })}
+                {field("flexible", {
+                  helper: "Comma-separated conditions you could adjust.",
+                })}
+                <div className="field-row">
+                  {field("setupMinutes", { type: "number", min: 0, max: 1440 })}
+                  {field("cleanupMinutes", {
+                    type: "number",
+                    min: 0,
+                    max: 1440,
+                  })}
+                </div>
+                <Notice>
+                  Setup and clear-up add to the occupied event interval. They do
+                  not change guest arrival or end time.
+                </Notice>
+              </section>
+              <section hidden={step !== 3}>
+                <div className="review-section">
+                  <div className="section-title">
+                    <h4>Event details</h4>
+                    <a
+                      href="?view=brief&step=1"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        goStep(1);
+                      }}
+                    >
+                      Edit event details
+                    </a>
+                  </div>
+                  <dl className="brief-review">
+                    {basics.map((name) => (
+                      <div key={name}>
+                        <dt>{labels[name]}</dt>
+                        <dd>{values[name] || "Not provided"}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+                <div className="review-section">
+                  <div className="section-title">
+                    <h4>Space and requirements</h4>
+                    <a
+                      href="?view=brief&step=2"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        goStep(2);
+                      }}
+                    >
+                      Edit requirements
+                    </a>
+                  </div>
+                  <dl className="brief-review">
+                    {(
+                      [
+                        "budgetAmount",
+                        "rooms",
+                        "equipment",
+                        "essential",
+                        "flexible",
+                        "setupMinutes",
+                        "cleanupMinutes",
+                      ] as BriefField[]
+                    ).map((name) => (
+                      <div key={name}>
+                        <dt>{labels[name]}</dt>
+                        <dd>{values[name] || "None specified"}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+                <Notice>
+                  Research returns potential leads with source-backed facts and
+                  explicit unknowns. It does not reserve a venue. Finding venues
+                  also saves this brief in your browser.
+                </Notice>
+              </section>
             </div>
-            <label className="field"><span>Who’s coming? <i>Required</i></span><input required maxLength={120} value={values.audience} onChange={(e) => field("audience", e.target.value)} placeholder="e.g. Independent designers and makers" /></label>
-            <div className="field-row">
-              <label className="field"><span>Event date <i>Required</i></span><input required type="date" value={values.date} onChange={(e) => field("date", e.target.value)} /></label>
-              <label className="field"><span>Expected guests <i>Required</i></span><input required type="number" min="1" max="10000" step="1" value={values.headcount} onChange={(e) => field("headcount", e.target.value)} placeholder="30" /></label>
-            </div>
-            <div className="field-row">
-              <label className="field"><span>Doors open <i>Required</i></span><input required type="time" value={values.startTime} onChange={(e) => field("startTime", e.target.value)} /></label>
-              <label className="field"><span>Wrap up <i>Required</i></span><input required type="time" value={values.endTime} onChange={(e) => field("endTime", e.target.value)} /></label>
-            </div>
-            <label className="field"><span>Budget for the space <i>INR · Required</i></span><div className="input-prefix"><span aria-hidden="true">₹</span><input required type="number" min="0" step="500" value={values.budgetAmount} onChange={(e) => field("budgetAmount", e.target.value)} placeholder="15000" /></div></label>
+            <aside className="brief-live-summary">
+              <p className="eyebrow">Your event at a glance</p>
+              <h3>{values.title || "Untitled event"}</h3>
+              <p>
+                {values.city} · {values.headcount || "—"} attendees
+              </p>
+              <p>
+                {values.date || "Date to choose"}
+                <br />
+                {values.startTime}–{values.endTime} IST
+              </p>
+              <dl>
+                <dt>Venue budget</dt>
+                <dd>
+                  {values.budgetAmount !== ""
+                    ? `₹${Number(values.budgetAmount).toLocaleString("en-IN")}`
+                    : "To specify"}
+                </dd>
+                <dt>Occupied buffers</dt>
+                <dd>
+                  {values.setupMinutes || "0"} min setup ·{" "}
+                  {values.cleanupMinutes || "0"} min clear-up
+                </dd>
+              </dl>
+              <p className="helper-text">
+                Browser-saved briefs and server-saved application drafts are
+                separate.
+              </p>
+            </aside>
           </div>
-        </section>
-
-        <section className="form-section setup-section" aria-labelledby="space-needs-title">
-          <div className="form-section-heading"><span className="form-section-number">02</span><div><h2 id="space-needs-title">The space &amp; details</h2><p>Help us picture what will make it work.</p></div></div>
-          <div className="field-stack">
-            <label className="field"><span>Rooms or areas</span><input value={values.rooms} onChange={(e) => field("rooms", e.target.value)} placeholder="Comma-separated · e.g. main room, breakout space" /><small>List spaces you’ll need, if you know.</small></label>
-            <label className="field"><span>Equipment or setup</span><input value={values.equipment} onChange={(e) => field("equipment", e.target.value)} placeholder="e.g. projector, 2 mics, moveable chairs" /><small>Shared resources matter too.</small></label>
-            <fieldset className="field"><legend>What’s essential?</legend><label className="field"><span className="sr-only">Essential requirements</span><input value={values.essential} onChange={(e) => field("essential", e.target.value)} placeholder="Comma-separated · must-haves" /></label><small>We’ll treat these as non-negotiable.</small></fieldset>
-            <fieldset className="field"><legend>What could flex?</legend><label className="field"><span className="sr-only">Flexible requirements</span><input value={values.flexible} onChange={(e) => field("flexible", e.target.value)} placeholder="Comma-separated · nice-to-haves" /></label><small>Useful context when the perfect setup doesn’t exist.</small></fieldset>
-            <div className="field-row">
-              <label className="field"><span>Setup time <i>Minutes</i></span><input type="number" min="0" max="1440" step="5" value={values.setupMinutes} onChange={(e) => field("setupMinutes", e.target.value)} /></label>
-              <label className="field"><span>Clear-up time <i>Minutes</i></span><input type="number" min="0" max="1440" step="5" value={values.cleanupMinutes} onChange={(e) => field("cleanupMinutes", e.target.value)} /></label>
+          <div className="form-submit">
+            <div>
+              {step > 1 && (
+                <Button
+                  variant="secondary"
+                  type="button"
+                  onClick={() => goStep((step - 1) as 1 | 2)}
+                >
+                  Back
+                </Button>
+              )}
+              <span className="helper-text">Step {step} of 3</span>
             </div>
-            <div className="form-footnote"><span aria-hidden="true">↳</span><p>Setup and clear-up count as part of your time at a venue. We’ll remember to make room for them.</p></div>
+            <div className="form-action-group">
+              {step < 3 ? (
+                <Button type="submit" disabled={!ready}>
+                  Continue
+                </Button>
+              ) : (
+                <>
+                  <Button variant="secondary" type="submit" disabled={!ready}>
+                    Save event brief
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={findVenues}
+                    disabled={!ready || loading}
+                  >
+                    {loading ? "Finding venues…" : "Find suitable venues"}
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
-        </section>
-      </div>
-      <div className="form-submit"><p>Your brief stays saved in this browser. Venue leads are evidence to investigate, not booking confirmations.</p><div className="form-action-group"><button className="button button-light" type="submit" disabled={!ready}>Save event brief</button><button className="button button-dark" type="button" onClick={findVenues} disabled={!ready || loading}>{loading ? "Looking into venues…" : "Find suitable venues"} <span className="arrow-circle" aria-hidden="true">↗</span></button></div></div>
-    </form>
-    <section id="venue-leads" className="discovery-panel" aria-live="polite" aria-busy={loading} aria-labelledby="discovery-heading">
-      <div className="discovery-heading"><p className="eyebrow"><span className="eyebrow-dot" /> SOURCE-BACKED VENUE LEADS</p><h2 id="discovery-heading">Venue leads</h2><p>Each lead includes source links, requirement status, qualifications, and open questions. Availability and booking authority remain unconfirmed.</p></div>
-      {loading && <p className="discovery-state" role="status">Checking the event brief against published venue knowledge…</p>}
-      {agentError && <div className="discovery-state error-message" role="alert"><p>{agentError}</p><button className="button button-light" type="button" onClick={() => lastBrief && void runDiscovery(lastBrief, conversation)} disabled={!lastBrief || loading}>Retry venue search</button></div>}
-      {!loading && recommendations && recommendations.length === 0 && <p className="discovery-state" role="status">{agentMessage} Try refining the event brief or asking a follow-up question below.</p>}
-      {!loading && recommendations && recommendations.length > 0 && <>
-        <p className="discovery-state" role="status">{agentMessage}</p>
-        {handoffMessage&&<p className="form-message success-message" role="status">{handoffMessage}</p>}
-        <div className="recommendation-grid">{recommendations.map((venue) => <article className="recommendation-card" key={venue.venueId}>
-          <div className="venue-card-top"><span className="venue-city">{venue.city}</span><span className="lead-badge">POTENTIAL HOST · NOT ONBOARDED</span></div>
-          <h3>{venue.name}</h3><p className="venue-locality">{venue.locality}</p>
-          {venue.historical && <p className="historical-note">The cited record includes past event hosting. It does not establish current access or permission to book.</p>}
-          {venue.documentedFacts.length > 0 && <section className="coverage-section"><h4>Published venue notes</h4><ul>{venue.documentedFacts.map((fact, index) => <li key={index}><span className="coverage-status supported">{fact.evidenceType === "historical-event" ? `Historical${fact.historicalDate ? ` · ${fact.historicalDate}` : ""}` : fact.evidenceType === "host-confirmed" ? "Host confirmed" : "Publicly documented"}</span><strong>{fact.claim}</strong><small>{fact.value}{fact.qualification ? ` ${fact.qualification}` : ""}</small></li>)}</ul></section>}
-          {venue.importantUnknowns.length > 0 && <section className="coverage-section"><h4>Important unknowns</h4><ul>{venue.importantUnknowns.map((item, index) => <li key={index}><strong>{item.claim}</strong><small>{item.value}</small></li>)}</ul></section>}
-          <section className="coverage-section" aria-label="Event requirement coverage"><h4>How it relates to your brief</h4><ul>{venue.requirementCoverage.map((item) => <li key={item.requirement}><span className={`coverage-status ${item.status}`}>{item.status === "supported" ? "Supported" : item.status === "contradicted" ? "Conflicting evidence" : "Unknown"}</span><strong>{item.requirement}</strong>{item.evidence.map((claim, index) => <small key={`${item.requirement}-${index}`}>{claim.claim} {claim.qualification ? claim.qualification : claim.value}</small>)}</li>)}</ul></section>
-          {venue.documentedConflicts.length > 0 && <section className="coverage-section"><h4>Documented conflicts</h4><ul>{venue.documentedConflicts.map((conflict, index) => <li key={index}><strong>{conflict.claim}</strong><small>{conflict.value}</small></li>)}</ul></section>}
-          <p className="recommendation-next"><strong>Suggested next step</strong>{venue.nextStep}</p>
-          <section className="recommendation-sources"><h4>Original sources</h4>{venue.sourceReferences.map((source) => <a key={source.id} href={source.url} target="_blank" rel="noreferrer">{source.title}<span aria-hidden="true"> ↗</span></a>)}</section>
-          <button className="button button-light" type="button" onClick={()=>prepareApplication(venue)} disabled={!lastBrief}>Prepare application draft</button>
-        </article>)}</div>
-      </>}
-      {!loading && recommendations && <form className="followup-form" onSubmit={sendFollowUp}><label htmlFor="venue-followup">Ask a follow-up question</label><div><input id="venue-followup" value={followUp} onChange={(event) => setFollowUp(event.target.value)} maxLength={500} placeholder="e.g. What about the Noida option?" disabled={loading}/><button className="button button-dark" type="submit" disabled={loading || !followUp.trim()}>Refine leads <span className="arrow-circle" aria-hidden="true">↗</span></button></div></form>}
-    </section>
+        </form>
+        {saved && (
+          <p className="saved-status" role="status">
+            Your event brief is saved in this browser.
+          </p>
+        )}
+      </section>
+      <section
+        hidden={view !== "research"}
+        id="venue-leads"
+        className="discovery-panel"
+        aria-busy={loading}
+        aria-labelledby="discovery-heading"
+      >
+        <div className="view-heading">
+          <div>
+            <h2 id="discovery-heading">Venue research</h2>
+            <p className="ops-muted">
+              Potential hosts for your brief. Research leads are not onboarded
+              for bookings.
+            </p>
+          </div>
+          <a
+            className="button button-light"
+            href="?view=brief&step=3"
+            onClick={(event) => {
+              event.preventDefault();
+              setQueryValues({ view: "brief", step: "3" });
+            }}
+          >
+            Review event brief
+          </a>
+        </div>
+        {lastBrief && (
+          <div className="discovery-snapshot">
+            <Badge>Discovery brief snapshot</Badge>
+            <p>
+              <strong>{lastBrief.title}</strong> · {lastBrief.city} ·{" "}
+              {lastBrief.headcount} attendees · {lastBrief.date} ·{" "}
+              {lastBrief.startTime}–{lastBrief.endTime} IST
+            </p>
+          </div>
+        )}
+        {changedSinceDiscovery && (
+          <Notice tone="warning">
+            The form has changed since these results were requested. Follow-ups
+            and private drafts keep the discovery snapshot above. Review the
+            edited brief to start a new search.
+          </Notice>
+        )}
+        {loading && (
+          <Notice role="status">
+            Retrieving and validating published venue evidence…
+            {recommendations &&
+              " Previous verified results are retained until the response succeeds."}
+          </Notice>
+        )}
+        {agentError && (
+          <Notice tone="error" role="alert">
+            <p>{agentError}</p>
+            {retrySeconds ? (
+              <p>
+                Try after the daily reset (about{" "}
+                {Math.ceil(retrySeconds / 3600)} hours). This retry will use the
+                same discovery brief.
+              </p>
+            ) : null}
+            <Button
+              variant="secondary"
+              type="button"
+              disabled={loading || !lastBrief || Boolean(retrySeconds)}
+              onClick={() =>
+                lastBrief && void runDiscovery(lastBrief, conversation)
+              }
+            >
+              Retry venue search
+            </Button>
+          </Notice>
+        )}
+        {handoffMessage && (
+          <Notice tone="success" role="status">
+            {handoffMessage}
+          </Notice>
+        )}
+        {!recommendations && !loading && !agentError && (
+          <EmptyState title="Start with your event brief">
+            Complete the three steps and choose Find suitable venues. Discovery
+            runs only when you ask.
+          </EmptyState>
+        )}
+        {recommendations && (
+          <>
+            <p role="status" className="agent-message">
+              {agentMessage}
+            </p>
+            {recommendations.length === 0 ? (
+              <EmptyState title="No verified leads returned">
+                Refine your requirements with a follow-up or review your brief.
+                Missing evidence is not a confirmed match.
+              </EmptyState>
+            ) : (
+              <div className="recommendation-grid">
+                {recommendations.map((venue) => (
+                  <ResearchLeadCard
+                    key={venue.venueId}
+                    venue={venue}
+                    onPrepare={() => prepare(venue)}
+                  />
+                ))}
+              </div>
+            )}
+            <form className="followup-form" onSubmit={sendFollowUp}>
+              <label htmlFor="venue-followup">Ask a follow-up question</label>
+              <p className="helper-text">
+                Uses the discovery brief snapshot, including its original
+                requirements.
+              </p>
+              <div>
+                <input
+                  id="venue-followup"
+                  value={followUp}
+                  maxLength={500}
+                  onChange={(event) => setFollowUp(event.target.value)}
+                  disabled={loading}
+                  placeholder="e.g. Exclude Noida; show only Gurugram."
+                />
+                <Button type="submit" disabled={loading || !followUp.trim()}>
+                  Refine leads
+                </Button>
+              </div>
+            </form>
+          </>
+        )}
+      </section>
     </>
   );
 }
