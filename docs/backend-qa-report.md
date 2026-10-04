@@ -102,6 +102,8 @@ npm run sanity:seed:dry-run
 
 Results: agent 30/30 passed; operations 29/29 passed; deployment controls and quota tests 6/6 passed; API route suite 2/2 passed; deterministic browser suite 5 passed and 2 opt-in live tests skipped; lint, TypeScript, and the production build embedded in `test:e2e` passed; catalog validation found 6 source-backed venues and 6 sources; seed dry run validated 37 stable-ID published documents and performed no writes. The live discovery and locality diagnostics were run separately, as described above.
 
+The QA harness commit `a84ae9f16a4c43d09fc2010464c372347fde9ffa` was pushed to `main`. GitHub Actions [Docker image smoke run 37188578805](https://github.com/diyaavirmani/backstage/actions/runs/37188578805) passed for that exact SHA; the production image build and mounted-volume restart check both completed successfully. This verifies packaging/CI only, not a new Railway deployment or production backend behavior.
+
 These diagnostics intentionally fail while the defects remain visible:
 
 ```bash
