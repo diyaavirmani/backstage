@@ -211,7 +211,6 @@ export function EventBriefForm() {
   return (
     <>
     <form id="event-brief" className="brief-form" ref={(element) => { formRef.current = element; }} onSubmit={saveDraft}>
-      <div className="form-progress"><span className="progress-step current"><b>01</b><span>Event basics</span></span><span className="progress-line" /><span className="progress-step"><b>02</b><span>Space &amp; needs</span></span><span className="progress-later">SOURCE-BACKED LEADS</span></div>
       {error && <p className="form-message error-message" role="alert">{error}</p>}
       {saved && <p className="form-message success-message" role="status">Your event brief is saved in this browser. You can come back and edit it any time.</p>}
 
@@ -261,7 +260,7 @@ export function EventBriefForm() {
       <div className="form-submit"><p>Your brief stays saved in this browser. Venue leads are evidence to investigate, not booking confirmations.</p><div className="form-action-group"><button className="button button-light" type="submit" disabled={!ready}>Save event brief</button><button className="button button-dark" type="button" onClick={findVenues} disabled={!ready || loading}>{loading ? "Looking into venues…" : "Find suitable venues"} <span className="arrow-circle" aria-hidden="true">↗</span></button></div></div>
     </form>
     <section id="venue-leads" className="discovery-panel" aria-live="polite" aria-busy={loading} aria-labelledby="discovery-heading">
-      <div className="discovery-heading"><p className="eyebrow"><span className="eyebrow-dot" /> SOURCE-BACKED VENUE LEADS</p><h2 id="discovery-heading">A place to begin the conversation.</h2><p>Backstage reads published venue knowledge and links each lead to its original sources. It does not check live availability or submit booking requests.</p></div>
+      <div className="discovery-heading"><p className="eyebrow"><span className="eyebrow-dot" /> SOURCE-BACKED VENUE LEADS</p><h2 id="discovery-heading">Venue leads</h2><p>Each lead includes source links, requirement status, qualifications, and open questions. Availability and booking authority remain unconfirmed.</p></div>
       {loading && <p className="discovery-state" role="status">Checking the event brief against published venue knowledge…</p>}
       {agentError && <div className="discovery-state error-message" role="alert"><p>{agentError}</p><button className="button button-light" type="button" onClick={() => lastBrief && void runDiscovery(lastBrief, conversation)} disabled={!lastBrief || loading}>Retry venue search</button></div>}
       {!loading && recommendations && recommendations.length === 0 && <p className="discovery-state" role="status">{agentMessage} Try refining the event brief or asking a follow-up question below.</p>}

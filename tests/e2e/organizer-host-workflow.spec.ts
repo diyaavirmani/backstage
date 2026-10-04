@@ -25,7 +25,7 @@ test("source-backed discovery handoff opens the matching private draft (determin
   await page.getByLabel("Organizer name").fill("Fixture Organizer");await page.getByLabel("Email",{exact:true}).fill("fixture@example.test");await page.getByLabel(/I have reviewed the brief snapshot/).check();await page.getByRole("button",{name:"Save application draft"}).click();
   await expect(page.getByRole("status").filter({hasText:"Application draft saved"})).toBeVisible();expect(String(posted?.venueId)).toMatch(/venue-masters-union-gurugram$/);expect((posted?.brief as Record<string,unknown>)?.title).toBe("Organizer browser journey");expect((posted?.discoveryBriefSnapshot as Record<string,unknown>)?.title).toBe("Organizer browser journey");expect(posted?.authoritativeResearchEvidence).toBeUndefined();
   const saved=page.locator(".application-card").filter({hasText:"Fixture Organizer"});await expect(saved).toContainText("DRAFT ONLY");await expect(saved.getByRole("link",{name:/Masters’ Union company events/}).first()).toHaveAttribute("href","https://mastersunion.org/for-companies");
-  await page.reload();await expect(page.locator(".application-card").filter({hasText:"Fixture Organizer"})).toContainText("DRAFT ONLY");
+  await page.reload();await page.locator("#application-workspace-disclosure > summary").click();await expect(page.locator(".application-card").filter({hasText:"Fixture Organizer"})).toContainText("DRAFT ONLY");
   await page.setViewportSize({width:390,height:844});const size=await page.evaluate(()=>({width:document.documentElement.clientWidth,scrollWidth:document.documentElement.scrollWidth}));expect(size.scrollWidth).toBeLessThanOrEqual(size.width);await page.screenshot({path:`${process.env.PLAYWRIGHT_ARTIFACT_DIR||".playwright-artifacts"}/research-handoff-mobile.png`,fullPage:true});
 });
 
@@ -97,6 +97,7 @@ test("organizer brief, host review, shared resources, cancellation, and mobile c
     await expect(organizer.locator(".brief-form").getByLabel(/Event date/)).toHaveValue(date);
     await organizer.screenshot({path:`${artifactDir}/organizer-saved-brief.png`,fullPage:true});
 
+    await organizer.locator("#application-workspace-disclosure > summary").click();
     await organizer.getByRole("button",{name:"Load saved event brief"}).click();
     await selectOptionMatching(organizer,"Potential host",/FICTIONAL DEMO.*Backstage Demo House/);
     await organizer.getByLabel("Event title").fill("First approved event");
@@ -179,6 +180,11 @@ test("organizer brief, host review, shared resources, cancellation, and mobile c
 
     await moveCalendarTo(host,alternateDate);
     await selectOptionMatching(host,"Filter resource",/Backstage Demo House.*Projector/);
+    for(let page=0;page<24&&(await host.locator(".calendar-confirmed-reservation").count())<2;page++){
+      const more=host.getByRole("button",{name:"Show 12 more calendar entries"});
+      if(!(await more.isVisible()))break;
+      await more.click();
+    }
     await expect(host.locator(".calendar-confirmed-reservation")).toHaveCount(2);
     const filteredItems=await host.locator(".calendar-item").allInnerTexts();
     expect(filteredItems.every((text)=>text.includes("Projector"))).toBe(true);
@@ -191,11 +197,17 @@ test("organizer brief, host review, shared resources, cancellation, and mobile c
     await selectOptionMatching(host,"Filter resource",/Backstage Demo House.*Projector/);
     await expect(host.locator(".calendar-confirmed-reservation")).toHaveCount(1);
 
+    for(let page=0;page<24&&(await host.locator(".calendar-availability").count())===0;page++){
+      const more=host.getByRole("button",{name:"Show 12 more calendar entries"});
+      if(!(await more.isVisible()))break;
+      await more.click();
+    }
     const available=host.locator(".calendar-availability").filter({has:host.getByRole("button",{name:"Withdraw availability"})}).first();
     await expect(available).toBeVisible();
-    const previousAvailabilityCount=await host.locator(".calendar-availability").count();
+    const previousCalendarCount=Number((await host.locator(".calendar-result-count").innerText()).match(/of (\d+)/)?.[1]);
+    expect(previousCalendarCount).toBeGreaterThan(0);
     await available.getByRole("button",{name:"Withdraw availability"}).click();
-    await expect(host.locator(".calendar-availability")).toHaveCount(previousAvailabilityCount-1);
+    await expect(host.locator(".calendar-result-count")).toContainText(`of ${previousCalendarCount-1}`);
     await expect(host.getByText(/Withdraw a window to stop offering it/)).toBeVisible();
 
     await host.setViewportSize({width:390,height:844});
