@@ -6,6 +6,12 @@ import {
   SanityVenueUnavailable,
 } from "@/lib/sanity-venue-data";
 import catalog from "@/data/research-catalog.json";
+import enrichment from "@/data/venue-enrichment.json";
+import type { SourceReference } from "@/types";
+import {
+  normalizeContacts,
+  reviewedContactRecords,
+} from "../../../scripts/venue-contacts.mjs";
 
 export const metadata = { title: "Venue research — Backstage" };
 
@@ -22,6 +28,7 @@ export default async function VenuesPage() {
       );
   } catch {
     origin = "preview";
+    const reviewedContacts = reviewedContactRecords(enrichment, catalog.sources);
     venues = catalog.venues.map((venue) => ({
       id: venue.id,
       name: venue.name,
@@ -29,6 +36,7 @@ export default async function VenuesPage() {
       locality: venue.locality,
       summary: venue.summary,
       relationshipStatus: venue.relationshipStatus,
+      contacts: normalizeContacts(reviewedContacts, venue.id),
       sourceReferences: venue.sourceIds
         .map((id) => catalog.sources.find((source) => source.id === id))
         .filter(Boolean)
@@ -36,10 +44,12 @@ export default async function VenuesPage() {
           id: source!.id,
           title: source!.title,
           url: source!.url,
+          sourceType: source!.sourceType as SourceReference["sourceType"],
           checkedAt: source!.checkedAt,
         })),
       claims: venue.claims.map((claim) => ({
         id: claim.id,
+        subject: claim.claimType,
         claim: claim.claim,
         value: claim.value,
         evidenceType: claim.evidenceType,
@@ -53,6 +63,7 @@ export default async function VenuesPage() {
             id: source!.id,
             title: source!.title,
             url: source!.url,
+            sourceType: source!.sourceType as SourceReference["sourceType"],
             checkedAt: source!.checkedAt,
           })),
       })),

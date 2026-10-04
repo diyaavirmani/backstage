@@ -1,4 +1,6 @@
 import {suggestEventSetup} from "../../scripts/brief-controls.mjs";
+import {orderVenueLeads} from "../../scripts/evidence-presentation.mjs";
+import {contactProjection, normalizeContacts, type RawContactRecord} from "../../scripts/venue-contacts.mjs";
 import { generateText as defaultGenerateText, Output, stepCountIs, tool } from "ai";
 import type {LanguageModel} from "ai";
 import { createMCPClient as defaultCreateMCPClient } from "@ai-sdk/mcp";
@@ -13,7 +15,7 @@ import {filterLocalities, parseLocalityIntent} from "../../scripts/locality-scop
 import {outlineEntryMatchesVenuePath} from "../../scripts/venue-outline-matching.mjs";
 import {discoveryQuotaLimits, discoveryRetryAfterSeconds, readRequestTextBounded, validateMutationOrigin} from "../../scripts/deployment-controls.mjs";
 import {consumeDiscoveryQuota, openOperationsStore} from "../../scripts/operations-store.mjs";
-import type { City, EventBrief } from "../types";
+import type { City, EventBrief, VenueRecommendation } from "../types";
 
 type DiscoveryDependencies = {
   getModel: () => LanguageModel | Promise<LanguageModel>;
@@ -35,7 +37,8 @@ const generatedOutputSchema = z.object({
 type RetrievedVenue = {
   _id: string; name: string; city: City; locality: string; relationshipStatus: string;
   sources: Array<{_id: string; title: string; url: string}>;
-  claims: Array<{_key: string; subject: string; claim: string; value: string; evidenceType: string; checkedAt?: string; historicalDate?: string; layout?: string; qualification?: string; appliesToSpaceId?: string; sources: Array<{_id: string; title: string; url: string}>}>;
+  claims: Array<{_key: string; subject: string; claim: string; value: string; evidenceType: string; checkedAt?: string; historicalDate?: string; layout?: string; qualification?: string; appliesToSpaceId?: string; sources: Array<{_id: string; title: string; url: string; sourceType?: string}>}>;
+  contacts?: RawContactRecord[];
   spaces: Array<{_id: string; name: string; layout?: string; capacity?: number}>;
 };
 
@@ -114,7 +117,8 @@ export function createVenueDiscoveryHandler(overrides: Partial<DiscoveryDependen
     const venues = await withDeadline<RetrievedVenue[]>(sanity.fetch<RetrievedVenue[]>(`*[_type == "venue" && knowledgeBaseEligible == true && isDemonstration == false && relationshipStatus == "research-lead"]{
       _id, name, city, locality, relationshipStatus,
       "sources": sourceReferences[]->{_id, title, url},
-      claims[]{_key, subject, claim, value, evidenceType, checkedAt, historicalDate, layout, qualification, appliesToSpaceId, "sources": sourceReferences[]->{_id, title, url}},
+      claims[]{_key, subject, claim, value, evidenceType, checkedAt, historicalDate, layout, qualification, appliesToSpaceId, "sources": sourceReferences[]->{_id, title, url, sourceType}},
+      ${contactProjection},
       "spaces": spaces[]->{_id, name, layout, capacity}
     }`, {}, {signal, timeout: 12_000}), "Published venue knowledge", 12_000, signal);
     if (!venues.length || venues.some((venue) => !venue.sources?.length || !venue.claims?.length)) throw new Error("The published research catalog is empty or missing source-backed claims. Verify the Sanity seed before using discovery.");
@@ -249,7 +253,8 @@ First use readVenueKnowledge to read relevant outline entries for ${brief.city}.
     }));
     return Response.json({
       suggestedSetup: suggestEventSetup(brief),
-      recommendations: validated.recommendations.map((item) => Object.fromEntries(Object.entries(item as Record<string, unknown>).filter(([key]) => key !== "evidencePaths"))),
+      // Contact routes come only from published records for the validated venue identity, never from model output.
+      recommendations: orderVenueLeads(validated.recommendations.map((item) => ({...Object.fromEntries(Object.entries(item as Record<string, unknown>).filter(([key]) => key !== "evidencePaths")), contacts: normalizeContacts(venues.find((venue) => venue._id === item.venueId)?.contacts, item.venueId)}) as VenueRecommendation), brief),
       requestedRequirements: validated.requestedRequirements,
       retrievalEvidence: validated.recommendations.map((item)=>({venueId:item.venueId,entryPaths:item.evidencePaths,sourceReferenceIds:item.sourceReferences.map((source)=>source.id)})),
       message: validated.recommendations.length

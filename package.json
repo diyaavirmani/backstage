@@ -14,7 +14,7 @@
     "sanity:verify-seed": "node scripts/verify-seed.mjs",
     "sanity:context-check": "node scripts/sanity-context-check.mjs",
     "test:context-outline": "node --test scripts/context-outline.test.mjs scripts/context-citations.test.mjs",
-    "test:agent": "node --test scripts/agent-input.test.mjs scripts/agent-validation.test.mjs scripts/agent-retrieval.test.mjs scripts/context-outline.test.mjs scripts/context-citations.test.mjs scripts/locality-scope.test.mjs scripts/brief-controls.test.mjs",
+    "test:agent": "node --test scripts/agent-input.test.mjs scripts/agent-validation.test.mjs scripts/agent-retrieval.test.mjs scripts/context-outline.test.mjs scripts/context-citations.test.mjs scripts/locality-scope.test.mjs scripts/brief-controls.test.mjs scripts/venue-enrichment.test.mjs",
     "test:operations": "node --test scripts/operations-store.test.mjs scripts/backend-startup-race.diagnostic.test.mjs",
     "test:deployment-controls": "node --test scripts/deployment-controls.test.mjs scripts/discovery-quota.test.mjs",
     "test:backend-api-qa": "playwright test tests/e2e/backend-api-qa.spec.ts",
@@ -28,7 +28,9 @@
     "test:e2e": "npm run build && playwright test",
     "sanity:schema:validate": "sanity schemas validate --level error",
     "sanity:schema:deploy": "sanity schemas deploy",
-    "sanity:dev": "sanity dev --host 127.0.0.1"
+    "sanity:dev": "sanity dev --host 127.0.0.1",
+    "sanity:enrich": "node scripts/enrich-sanity.mjs",
+    "sanity:enrich:dry-run": "node scripts/enrich-sanity.mjs --dry-run"
   },
   "dependencies": {
     "@ai-sdk/mcp": "^2.0.66",

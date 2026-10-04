@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
+import {enrichmentDocuments, validateEnrichment} from "./venue-enrichment.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const catalog = JSON.parse(fs.readFileSync(path.join(root, "src/data/research-catalog.json"), "utf8"));
@@ -72,6 +73,7 @@ export function validateCatalog(data = catalog) {
       for (const sourceId of policy.sourceIds || []) if (!sources.has(sourceId)) add(policy.id, `unknown source ${sourceId}`);
     }
   }
+  if (data === catalog) errors.push(...validateEnrichment(data));
   return errors;
 }
 
@@ -90,5 +92,6 @@ export function buildDocuments(data = catalog) {
     const claimReferences = (venue.claims || []).map((claim) => ({_key: claim.id, subject: claim.claimType, claim: claim.claim, value: claim.value, evidenceType: claim.evidenceType === "public-documentation" ? "public-documentation" : claim.evidenceType, sourceReferences: claim.sourceIds.map(reference), checkedAt: claim.checkedAt, historicalDate: claim.historicalDate, appliesToSpace: claim.appliesToSpaceId ? reference(claim.appliesToSpaceId) : undefined, layout: claim.layout, qualification: claim.qualification}));
     docs.push({_id: venue.id, _type: "venue", name: venue.name, city: venue.city, locality: venue.locality, summary: venue.summary, hostOrganization: venue.hostOrganizationId ? reference(venue.hostOrganizationId) : undefined, relationshipStatus: "research-lead", isDemonstration: false, knowledgeBaseEligible: true, sourceReferences: venue.sourceIds.map(reference), claims: claimReferences, spaces: (venue.spaces || []).map((item) => reference(item.id)), resources: (venue.resources || []).map((item) => reference(item.id)), policies: (venue.policies || []).map((item) => reference(item.id)), opportunities: [reference(opportunity.id)]});
   }
-  return docs;
+  // Reviewed contact routes are separate documents, so seeding or enriching never edits venue claims.
+  return data === catalog ? [...docs, ...enrichmentDocuments()] : docs;
 }

@@ -73,6 +73,15 @@ export const schemaTypes = [
     defineField({name: "evidenceType", type: "string", options: {list: ["public-documentation", "host-confirmed", "unknown", "conflicting"]}, validation: (r) => r.required()}), sourceRefs(),
     defineField({name: "checkedAt", type: "date", validation: (r) => r.required()}),
   ]}),
+  defineType({name: "venueContact", title: "Sourced public enquiry route", type: "document", description: "A published route for asking questions. It does not establish availability, capacity, eligibility, or booking authority.", fields: [
+    defineField({name: "venues", type: "array", of: [{type: "reference", to: [{type: "venue"}]}], validation: (r) => r.required().min(1).unique()}),
+    defineField({name: "type", type: "string", options: {list: ["phone", "email", "enquiry-page"]}, validation: (r) => r.required()}),
+    defineField({name: "value", type: "string", description: "E.164 phone number, email address, or the HTTPS enquiry page itself.", validation: (r) => r.required()}),
+    defineField({name: "purpose", type: "text", rows: 2, description: "The purpose as published by the source. Do not relabel admissions or support routes as event contacts.", validation: (r) => r.required().max(300)}),
+    defineField({name: "scope", type: "string", options: {list: ["venue-specific", "organization-wide"]}, validation: (r) => r.required()}),
+    defineField({name: "checkedAt", type: "date", validation: (r) => r.required()}),
+    defineField({name: "sourceReferences", title: "Source references", type: "array", of: [{type: "reference", to: [{type: "sourceReference"}]}], validation: (r) => r.required().min(1)}),
+  ], preview: {select: {title: "value", subtitle: "purpose"}}}),
   defineType({name: "hostingOpportunity", title: "Hosting opportunity", type: "document", fields: [
     defineField({name: "title", type: "string", validation: (r) => r.required()}),
     defineField({name: "venue", type: "reference", to: [{type: "venue"}], validation: (r) => r.required()}),

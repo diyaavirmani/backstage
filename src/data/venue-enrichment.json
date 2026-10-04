@@ -1,0 +1,152 @@
+{
+  "checkedAt": "2026-10-05",
+  "sources": [
+    {
+      "id": "source-ofis-contact",
+      "title": "Ofis Square contact page",
+      "url": "https://ofissquare.com/contact-us/",
+      "publisher": "Ofis Square",
+      "sourceType": "official-page",
+      "checkedAt": "2026-10-05",
+      "reviewNote": "Support block labels +91 82879 91481 as “Sales”. The site-wide footer invites workspace requirements with “Call +91 95600 50321 for swift solutions”. Neither is labelled for events or for one branch. Unlabelled sales@/hello@ addresses on a different ofisspaces.com domain were not stored. The events page’s “Book An Event Space” block is a mailing-list sign-up, not a booking form."
+    },
+    {
+      "id": "source-ofis-noida-sector-62",
+      "title": "Ofis Square coworking space, Noida Sector 62",
+      "url": "https://ofissquare.com/coworking-space-in-noida-sector-62/",
+      "publisher": "Ofis Square",
+      "sourceType": "official-page",
+      "checkedAt": "2026-10-05",
+      "reviewNote": "Branch FAQ: “For booking assistance at our coworking space in Noida Sector 62, contact hello@ofissquare.com.” It does not mention event spaces."
+    },
+    {
+      "id": "source-saiacs-contact",
+      "title": "Contact SAIACS CEO Centre — room bookings and event enquiries",
+      "url": "https://saiacs-ceocenter.com/contact-hotel-in-bengaluru.html",
+      "publisher": "SAIACS CEO Centre",
+      "sourceType": "official-page",
+      "checkedAt": "2026-10-05",
+      "reviewNote": "“Call Our Team” lists +91 9606008031 and +91 9606008032 for the reservations and events team; “Email Us” gives ceoenquiry@saiacs-ceocenter.com for booking requests and event requirements. The separate footer address and WhatsApp number carry no events label and were not stored."
+    },
+    {
+      "id": "source-masters-union-contact",
+      "title": "Masters’ Union contact page",
+      "url": "https://mastersunion.org/contact-us",
+      "publisher": "Masters’ Union",
+      "sourceType": "official-page",
+      "checkedAt": "2026-10-05",
+      "reviewNote": "“Contact Us: info@mastersunion.org” is the general address. Admissions, media and programme addresses on the same page are not venue contacts and were not stored. No phone number is published."
+    },
+    {
+      "id": "source-shifu-den-events",
+      "title": "Shifu Den events — Host at the Den",
+      "url": "https://den.shifuventures.com/events",
+      "publisher": "Shifu Ventures",
+      "sourceType": "official-page",
+      "checkedAt": "2026-10-05",
+      "reviewNote": "“Host at the Den” opens the on-page Host an Event request form and says “Questions? Write to us at team@shifuventures.com”. No phone or WhatsApp number is published. The form was inspected, not submitted."
+    }
+  ],
+  "contacts": [
+    {
+      "id": "contact-ofis-sales-phone",
+      "venueIds": ["venue-ofis-gurugram-sohna-road", "venue-ofis-noida-sector-62"],
+      "type": "phone",
+      "value": "+918287991481",
+      "purpose": "Labelled “Sales” on the official contact page; not specific to events or to one branch.",
+      "scope": "organization-wide",
+      "sourceId": "source-ofis-contact",
+      "checkedAt": "2026-10-05"
+    },
+    {
+      "id": "contact-ofis-workspace-phone",
+      "venueIds": ["venue-ofis-gurugram-sohna-road", "venue-ofis-noida-sector-62"],
+      "type": "phone",
+      "value": "+919560050321",
+      "purpose": "Site-wide line for sharing workspace requirements; not labelled for events.",
+      "scope": "organization-wide",
+      "sourceId": "source-ofis-contact",
+      "checkedAt": "2026-10-05"
+    },
+    {
+      "id": "contact-ofis-noida-booking-email",
+      "venueIds": ["venue-ofis-noida-sector-62"],
+      "type": "email",
+      "value": "hello@ofissquare.com",
+      "purpose": "Named for Sector 62 coworking booking assistance; event spaces are not mentioned.",
+      "scope": "venue-specific",
+      "sourceId": "source-ofis-noida-sector-62",
+      "checkedAt": "2026-10-05"
+    },
+    {
+      "id": "contact-saiacs-events-phone-1",
+      "venueIds": ["venue-saiacs-ceo-centre-bengaluru"],
+      "type": "phone",
+      "value": "+919606008031",
+      "purpose": "Reservations and events team: room bookings, conference enquiries and venue availability.",
+      "scope": "venue-specific",
+      "sourceId": "source-saiacs-contact",
+      "checkedAt": "2026-10-05"
+    },
+    {
+      "id": "contact-saiacs-events-phone-2",
+      "venueIds": ["venue-saiacs-ceo-centre-bengaluru"],
+      "type": "phone",
+      "value": "+919606008032",
+      "purpose": "Reservations and events team: room bookings, conference enquiries and venue availability.",
+      "scope": "venue-specific",
+      "sourceId": "source-saiacs-contact",
+      "checkedAt": "2026-10-05"
+    },
+    {
+      "id": "contact-saiacs-events-email",
+      "venueIds": ["venue-saiacs-ceo-centre-bengaluru"],
+      "type": "email",
+      "value": "ceoenquiry@saiacs-ceocenter.com",
+      "purpose": "Booking requests and event requirements.",
+      "scope": "venue-specific",
+      "sourceId": "source-saiacs-contact",
+      "checkedAt": "2026-10-05"
+    },
+    {
+      "id": "contact-masters-union-hosting-form",
+      "venueIds": ["venue-masters-union-gurugram"],
+      "type": "enquiry-page",
+      "value": "https://mastersunion.org/for-companies",
+      "purpose": "“Host an Event at Masters’ Union” section; its company form offers Partner → For Hosting Events.",
+      "scope": "organization-wide",
+      "sourceId": "source-masters-union-companies",
+      "checkedAt": "2026-10-05"
+    },
+    {
+      "id": "contact-masters-union-general-email",
+      "venueIds": ["venue-masters-union-gurugram"],
+      "type": "email",
+      "value": "info@mastersunion.org",
+      "purpose": "General “Contact Us” address; not specific to event hosting.",
+      "scope": "organization-wide",
+      "sourceId": "source-masters-union-contact",
+      "checkedAt": "2026-10-05"
+    },
+    {
+      "id": "contact-shifu-den-host-form",
+      "venueIds": ["venue-shifu-den-bengaluru"],
+      "type": "enquiry-page",
+      "value": "https://den.shifuventures.com/events",
+      "purpose": "“Host at the Den” request form; founder-community conditions still apply.",
+      "scope": "venue-specific",
+      "sourceId": "source-shifu-den-events",
+      "checkedAt": "2026-10-05"
+    },
+    {
+      "id": "contact-shifu-team-email",
+      "venueIds": ["venue-shifu-den-bengaluru"],
+      "type": "email",
+      "value": "team@shifuventures.com",
+      "purpose": "Shifu Ventures team address given for questions about hosting at the Den.",
+      "scope": "organization-wide",
+      "sourceId": "source-shifu-den-events",
+      "checkedAt": "2026-10-05"
+    }
+  ]
+}

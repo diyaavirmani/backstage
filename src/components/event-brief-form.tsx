@@ -941,6 +941,7 @@ export function EventBriefForm() {
                   <ResearchLeadCard
                     key={venue.venueId}
                     venue={venue}
+                    brief={lastBrief || undefined}
                     onPrepare={() => prepare(venue)}
                   />
                 ))}

@@ -1,4 +1,5 @@
 import {catalog, validateCatalog} from "./catalog-lib.mjs";
+import {enrichment} from "./venue-enrichment.mjs";
 import fs from "node:fs";
 
 const errors = validateCatalog();
@@ -14,5 +15,5 @@ if (errors.length) {
   console.error(`Catalog validation failed (${errors.length} issue${errors.length === 1 ? "" : "s"}):\n- ${errors.join("\n- ")}`);
   process.exitCode = 1;
 } else {
-  console.log(`Catalog valid: ${catalog.venues.length} source-backed research profiles, ${catalog.sources.length} sources, no demonstration inventory; unsupported capacities, availability, prices, and booking authority remain unknown.`);
+  console.log(`Catalog valid: ${catalog.venues.length} source-backed research profiles, ${catalog.sources.length} sources, ${enrichment.sources.length} enquiry sources and ${enrichment.contacts.length} reviewed contact routes, no demonstration inventory; unsupported capacities, availability, prices, and booking authority remain unknown.`);
 }

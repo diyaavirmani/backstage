@@ -171,3 +171,14 @@ test("supports pro-bono eligibility only when the organizer audience matches the
   assert.equal(access.status, "supported");
   assert.match(access.evidence[0].qualification || access.evidence[0].claim, /founder/i);
 });
+
+test("documented facts link only verified claim sources and keep their subject for labelling", () => {
+  const unverified = {_id: "unverified-source", title: "Unverified", url: "https://example.test/"};
+  const mixed = {...venue, claims: venue.claims.map((claim) => claim._key === "claim-hosting" ? {...claim, checkedAt: "2026-10-02", sources: [source, unverified]} : claim)};
+  const result = validateAgentRecommendations({output: outputFor(), venues: [mixed], brief, evidence: {checks: [validCheck]}});
+  const fact = result.recommendations[0].documentedFacts.find((item) => item.claim === "Public hosting invitation");
+  assert.equal(fact.subject, "hosting-conditions");
+  assert.equal(fact.checkedAt, "2026-10-02");
+  assert.deepEqual(fact.sourceReferences.map((item) => item.id), [source._id]);
+  assert.equal(result.recommendations[0].contacts, undefined, "contacts are attached by the server handler from Sanity, not by model validation");
+});

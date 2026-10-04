@@ -2176,3 +2176,124 @@ legend {
   flex-shrink: 0;
   accent-color: #163c2c;
 }
+
+/* Evidence-first venue cards and published enquiry routes. */
+.evidence-highlights {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.evidence-highlights li {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+}
+.evidence-highlights span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.venue-card .lead-summary h3,
+.venue-card .venue-sources h3,
+.venue-card .lead-unknowns h3 {
+  font-size: 14px;
+}
+.venue-card .venue-sources,
+.recommendation-card .recommendation-sources {
+  margin-top: 0;
+}
+.venue-card > .card-actions,
+.recommendation-card > .card-actions {
+  margin-top: auto;
+}
+.lead-unknowns > ul {
+  padding-left: 18px;
+  list-style: disc;
+}
+.source-label {
+  font-weight: 700;
+  color: var(--text);
+}
+.source-label::after {
+  content: " ·";
+  font-weight: 400;
+}
+.venue-enquiry {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  justify-items: start;
+}
+.venue-enquiry h4,
+.venue-enquiry h5 {
+  font-size: 13px;
+  margin: 0;
+}
+.contact-routes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+.contact-routes li {
+  display: grid;
+  gap: 2px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.contact-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+}
+.contact-line > a,
+.contact-line > .source-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  font-weight: 700;
+  font-size: 14px;
+}
+.contact-routes p {
+  margin: 0;
+  color: var(--muted);
+}
+.contact-routes small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.contact-routes small .source-link {
+  display: inline;
+  font-size: 12px;
+}
+.contact-type,
+.contact-scope {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.contact-scope {
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.contact-caveat,
+.contact-missing {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+.enquiry-text textarea {
+  width: 100%;
+  min-height: 260px;
+  resize: vertical;
+  font-size: 14px;
+  line-height: 1.5;
+}

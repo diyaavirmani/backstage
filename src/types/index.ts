@@ -19,6 +19,18 @@ export type EvidenceType =
   | "conflicting"
   | "demonstration";
 
+/** A published enquiry route. It is not evidence of availability, capacity, eligibility, or booking authority. */
+export type VenueContact = {
+  id: string;
+  venueIds: string[];
+  type: "phone" | "email" | "enquiry-page";
+  value: string;
+  purpose: string;
+  scope: "venue-specific" | "organization-wide";
+  checkedAt: string;
+  sourceReferences: Array<Pick<SourceReference, "id" | "title" | "url" | "checkedAt">>;
+};
+
 export type VenueClaim = {
   id: string;
   venueId: string;
@@ -161,15 +173,20 @@ export type VenueRecommendation = {
   historical: boolean;
   requirementCoverage: RequirementCoverage[];
   documentedFacts: Array<{
+    subject?: string;
     claim: string;
     value: string;
     evidenceType: EvidenceType;
+    checkedAt?: string | null;
     historicalDate?: string | null;
     qualification?: string | null;
+    sourceReferences?: Array<Pick<SourceReference, "id" | "title" | "url" | "sourceType" | "checkedAt">>;
   }>;
   importantUnknowns: Array<{claim: string; value: string; evidenceType: EvidenceType}>;
   documentedConflicts: Array<{claim: string; value: string}>;
   sourceReferences: Array<Pick<SourceReference, "id" | "title" | "url">>;
+  /** Resolved server-side from published Sanity records for this exact venue identity. */
+  contacts?: VenueContact[];
   nextStep: string;
 };
 
