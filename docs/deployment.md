@@ -101,7 +101,11 @@ These are npm's multiple affected-package rows and paths for one advisory, not t
 
 There must be exactly one service replica while using this SQLite volume. Railway volumes cannot be shared across replicas. Restarts and redeployments preserve the SQLite file, but a deployment with a mounted volume has a brief handoff downtime. Back up SQLite using an online SQLite backup operation or stop the app first; account for WAL/SHM state rather than copying an active main database file alone. Test restore into a separate volume before relying on backups. Never use a network-mounted shared SQLite file.
 
-## Current illustrated release — 4 October 2026
+## Current release — sourced organizer tools — 5 October 2026
+
+PR #3 was merged by the user into `main` as `e08ed194475fd5ff7ec2066714e76d31d22cce66`. The existing service is connected to the GitHub repository, so the merge itself started deployment `f84ac7c9-38b1-4f5c-a6f8-7adadbea99b3` (Railway metadata: branch `main`, commit `e08ed19`), which reached `SUCCESS`. No CLI upload was needed. **Every push to `main` now redeploys the service**, including documentation-only commits, so record deployment notes on a branch unless a redeploy is intended. Docker CI [37236056111](https://github.com/diyaavirmani/backstage/actions/runs/37236056111) passed for the same commit. Service, domain, one replica, volume, variables, quotas and billing were unchanged; contacts and galleries were already published in Sanity, so no new runtime variables were required. Hosted verification is in the build log.
+
+## Illustrated release — 4 October 2026
 
 At the user's explicit request, the clean, pushed source revision `c8ff4f190c59e86ebd174bbbce50527f3afb8784` was uploaded from `feat/green-saas-redesign` to the existing service with the installed Railway CLI 5.63.1:
 
