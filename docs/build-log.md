@@ -758,3 +758,9 @@ GitHub Docker CI and Railway health/page verification for the pushed correction 
 
 - Added `docs/images/backstage-cover.png` (1000×420), rendered from the intro video's end frame (wordmark, “Your next event starts here.”, deployed URL). It is linked to the live app at the top of `README.md`.
 - Documentation only; no application code changed.
+
+## Demo video link — 5 October 2026
+
+- The README now links the 45-second demo video (https://youtu.be/RB1jf3wNA2g), the live app and the judge walkthrough under the cover.
+- `docs/submission.md` is brought over from `video/intro-45s` (the version re-verified today) and embeds the video.
+- At the time of this commit, YouTube reported the video as private (`LOGIN_REQUIRED`). It must be set to Unlisted or Public before judges can play it.

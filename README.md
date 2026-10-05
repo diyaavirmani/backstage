@@ -1,5 +1,7 @@
 [![Backstage: your next event starts here](docs/images/backstage-cover.png)](https://backstage-production-0849.up.railway.app)
 
+**[▶ Watch the 45-second demo video](https://youtu.be/RB1jf3wNA2g)** · **[Open the live app](https://backstage-production-0849.up.railway.app)** · **[Judge walkthrough](docs/judge-guide.md)**
+
 # Backstage
 
 Backstage is a venue coordination agent for Delhi NCR and Bengaluru. Its promise is simple: tell Backstage what you’re hosting, and it will find a place where that event can actually work.
