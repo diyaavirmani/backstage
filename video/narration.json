@@ -1,0 +1,14 @@
+{
+  "voice": "coral",
+  "model": "gpt-4o-mini-tts",
+  "instructions": "You are the narrator of a modern, energetic product introduction video. Speak in a warm, confident, professional and conversational way, with natural pacing and a light smile in the voice. Not an exaggerated announcer and not flat. Pronounce Sanity naturally like the English word. Say NCR as three separate letters: N, C, R. Pronounce Bengaluru clearly as ben-GAH-loo-roo.",
+  "lines": [
+    {"id": "l1", "text": "Great events start with an idea. Finding the right space takes coordination."},
+    {"id": "l2", "text": "Meet Backstage. Describe your event, your audience, and the facilities you need."},
+    {"id": "l3", "text": "Its agent queries a Sanity Knowledge Base for researched venue leads across Delhi N C R and Bengaluru."},
+    {"id": "l4", "text": "See the sources, understand the qualifications, and know what still needs confirmation."},
+    {"id": "l5", "text": "Create a private draft with your event brief and evidence kept together."},
+    {"id": "l6", "text": "Explore a demo of host approvals, resource allocation, and preparation."},
+    {"id": "l7", "text": "Backstage. Your next event starts here."}
+  ]
+}
