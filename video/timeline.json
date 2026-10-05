@@ -1,0 +1,784 @@
+{
+  "fps": 30,
+  "duration": 45,
+  "offset": -0.38,
+  "note": "Source times are action marks from build/raw/events.json; offset converts marks to video time (calibrated from the evidence dialog backdrop). Camera keys: [progress 0..1, scale, centerX, centerY] in 1920x1080 source pixels. vdx shifts the camera horizontally in the vertical edit only, so its narrower window keeps the content column in view.",
+  "vo": [
+    {
+      "id": "l1",
+      "start": 0.15
+    },
+    {
+      "id": "l2",
+      "start": 6.05
+    },
+    {
+      "id": "l3",
+      "start": 12.7
+    },
+    {
+      "id": "l4",
+      "start": 21.8
+    },
+    {
+      "id": "l5",
+      "start": 29.7
+    },
+    {
+      "id": "l6",
+      "start": 35.4
+    },
+    {
+      "id": "l7",
+      "start": 41.6,
+      "tempo": 1.04
+    }
+  ],
+  "captions": [
+    [
+      "l1",
+      [
+        "Great events start with an idea.",
+        "Finding the right space takes coordination."
+      ]
+    ],
+    [
+      "l2",
+      [
+        "Meet Backstage.",
+        "Describe your event, your audience,",
+        "and the facilities you need."
+      ]
+    ],
+    [
+      "l3",
+      [
+        "Its agent queries a Sanity Knowledge Base",
+        "for researched venue leads across Delhi NCR and Bengaluru."
+      ]
+    ],
+    [
+      "l4",
+      [
+        "See the sources, understand the qualifications,",
+        "and know what still needs confirmation."
+      ]
+    ],
+    [
+      "l5",
+      [
+        "Create a private draft",
+        "with your event brief and evidence kept together."
+      ]
+    ],
+    [
+      "l6",
+      [
+        "Explore a demo of host approvals,",
+        "resource allocation, and preparation."
+      ]
+    ],
+    [
+      "l7",
+      [
+        "Backstage. Your next event starts here."
+      ]
+    ]
+  ],
+  "sections": [
+    {
+      "start": 6.0,
+      "end": 12.6,
+      "chip": "01 \u00b7 Describe",
+      "punch": "Describe it once."
+    },
+    {
+      "start": 12.6,
+      "end": 21.8,
+      "chip": "02 \u00b7 Discover",
+      "punch": "Real leads. Real sources.",
+      "punchAt": 14.45
+    },
+    {
+      "start": 21.8,
+      "end": 29.6,
+      "chip": "03 \u00b7 Evidence",
+      "punch": "Know what's proven."
+    },
+    {
+      "start": 29.6,
+      "end": 35.4,
+      "chip": "04 \u00b7 Private draft",
+      "punch": "Keep it together."
+    },
+    {
+      "start": 35.4,
+      "end": 41.5,
+      "chip": "05 \u00b7 Demo hosts",
+      "punch": "See the host side."
+    }
+  ],
+  "shots": [
+    {
+      "id": "s1a",
+      "out": [
+        6.0,
+        7.4
+      ],
+      "clip": "organizer",
+      "src": [
+        2.3,
+        5.1
+      ],
+      "cam": [
+        [
+          0,
+          1.0,
+          960,
+          540
+        ],
+        [
+          1,
+          1.18,
+          900,
+          430
+        ]
+      ],
+      "vdx": -200
+    },
+    {
+      "id": "s1b",
+      "out": [
+        7.4,
+        9.4
+      ],
+      "clip": "organizer",
+      "src": [
+        6.9,
+        10.9
+      ],
+      "cam": [
+        [
+          0,
+          1.5,
+          885,
+          620
+        ],
+        [
+          1,
+          1.55,
+          900,
+          690
+        ]
+      ],
+      "vdx": -100
+    },
+    {
+      "id": "s1c",
+      "out": [
+        9.4,
+        11.3
+      ],
+      "clip": "organizer",
+      "src": [
+        14.5,
+        18.3
+      ],
+      "cam": [
+        [
+          0,
+          1.5,
+          720,
+          560
+        ],
+        [
+          0.55,
+          1.5,
+          720,
+          560
+        ],
+        [
+          1,
+          1.45,
+          820,
+          820
+        ]
+      ]
+    },
+    {
+      "id": "s1d",
+      "out": [
+        11.3,
+        12.6
+      ],
+      "clip": "organizer",
+      "src": [
+        20.3,
+        22.2
+      ],
+      "cam": [
+        [
+          0,
+          1.0,
+          960,
+          540
+        ],
+        [
+          1,
+          1.06,
+          940,
+          560
+        ]
+      ],
+      "vdx": -150
+    },
+    {
+      "id": "s2a",
+      "out": [
+        12.6,
+        13.75
+      ],
+      "clip": "organizer",
+      "src": [
+        22.4,
+        23.85
+      ],
+      "cam": [
+        [
+          0,
+          1.0,
+          960,
+          540
+        ],
+        [
+          0.55,
+          1.7,
+          1420,
+          880
+        ],
+        [
+          1,
+          1.75,
+          1430,
+          890
+        ]
+      ]
+    },
+    {
+      "id": "s2b",
+      "out": [
+        13.75,
+        14.45
+      ],
+      "clip": "organizer",
+      "src": [
+        24.5,
+        24.5
+      ],
+      "freeze": true,
+      "searching": true,
+      "cam": [
+        [
+          0,
+          1.75,
+          1430,
+          890
+        ],
+        [
+          1,
+          1.2,
+          1100,
+          700
+        ]
+      ]
+    },
+    {
+      "id": "s2c",
+      "out": [
+        14.45,
+        17.1
+      ],
+      "clip": "organizer",
+      "src": [
+        31.3,
+        33.95
+      ],
+      "cam": [
+        [
+          0,
+          1.0,
+          960,
+          540
+        ],
+        [
+          1,
+          1.08,
+          960,
+          520
+        ]
+      ],
+      "vdx": -200
+    },
+    {
+      "id": "s2d",
+      "out": [
+        17.1,
+        21.8
+      ],
+      "clip": "organizer",
+      "src": [
+        34.6,
+        41.5
+      ],
+      "cam": [
+        [
+          0,
+          1.6,
+          740,
+          340
+        ],
+        [
+          0.38,
+          1.6,
+          740,
+          340
+        ],
+        [
+          0.58,
+          1.5,
+          745,
+          470
+        ],
+        [
+          1,
+          1.5,
+          745,
+          530
+        ]
+      ],
+      "vdx": -70
+    },
+    {
+      "id": "s3",
+      "out": [
+        21.8,
+        29.6
+      ],
+      "clip": "organizer",
+      "src": [
+        41.6,
+        50.3
+      ],
+      "cam": [
+        [
+          0,
+          1.0,
+          960,
+          540
+        ],
+        [
+          0.15,
+          1.0,
+          960,
+          540
+        ],
+        [
+          0.24,
+          1.5,
+          900,
+          420
+        ],
+        [
+          0.44,
+          1.6,
+          860,
+          460
+        ],
+        [
+          0.6,
+          1.45,
+          930,
+          570
+        ],
+        [
+          0.72,
+          1.0,
+          960,
+          540
+        ],
+        [
+          0.82,
+          1.4,
+          900,
+          620
+        ],
+        [
+          1,
+          1.25,
+          920,
+          620
+        ]
+      ]
+    },
+    {
+      "id": "s4a",
+      "out": [
+        29.6,
+        31.0
+      ],
+      "clip": "organizer",
+      "src": [
+        53.1,
+        55.9
+      ],
+      "cam": [
+        [
+          0,
+          1.0,
+          960,
+          540
+        ],
+        [
+          1,
+          1.05,
+          900,
+          520
+        ]
+      ],
+      "vdx": -150
+    },
+    {
+      "id": "s4b",
+      "out": [
+        31.0,
+        32.6
+      ],
+      "clip": "organizer",
+      "src": [
+        55.9,
+        57.5
+      ],
+      "cam": [
+        [
+          0,
+          1.2,
+          800,
+          560
+        ],
+        [
+          1,
+          1.55,
+          740,
+          640
+        ]
+      ]
+    },
+    {
+      "id": "s4c",
+      "out": [
+        32.6,
+        34.1
+      ],
+      "clip": "organizer",
+      "src": [
+        61.6,
+        64.6
+      ],
+      "cam": [
+        [
+          0,
+          1.55,
+          1180,
+          830
+        ],
+        [
+          1,
+          1.55,
+          1150,
+          860
+        ]
+      ]
+    },
+    {
+      "id": "s4d",
+      "out": [
+        34.1,
+        35.4
+      ],
+      "clip": "organizer",
+      "src": [
+        66.3,
+        68.0
+      ],
+      "cam": [
+        [
+          0,
+          1.3,
+          800,
+          880
+        ],
+        [
+          1,
+          1.6,
+          760,
+          900
+        ]
+      ]
+    },
+    {
+      "id": "s5a",
+      "out": [
+        35.4,
+        37.5
+      ],
+      "clip": "host",
+      "src": [
+        6.6,
+        9.6
+      ],
+      "cam": [
+        [
+          0,
+          1.0,
+          960,
+          540
+        ],
+        [
+          0.5,
+          1.0,
+          960,
+          540
+        ],
+        [
+          0.8,
+          1.55,
+          820,
+          880
+        ],
+        [
+          1,
+          1.55,
+          820,
+          880
+        ]
+      ],
+      "vdx": -120
+    },
+    {
+      "id": "s5b",
+      "out": [
+        37.5,
+        39.5
+      ],
+      "clip": "host",
+      "src": [
+        14.6,
+        18.4
+      ],
+      "cam": [
+        [
+          0,
+          1.2,
+          860,
+          520
+        ],
+        [
+          0.45,
+          1.55,
+          800,
+          420
+        ],
+        [
+          1,
+          1.6,
+          800,
+          420
+        ]
+      ],
+      "vdx": -100
+    },
+    {
+      "id": "s5c",
+      "out": [
+        39.5,
+        41.5
+      ],
+      "clip": "host",
+      "src": [
+        21.9,
+        24.7
+      ],
+      "cam": [
+        [
+          0,
+          1.3,
+          860,
+          860
+        ],
+        [
+          0.4,
+          1.55,
+          820,
+          920
+        ],
+        [
+          1,
+          1.6,
+          800,
+          940
+        ]
+      ],
+      "vdx": -110
+    }
+  ],
+  "sfx": [
+    [
+      "pop",
+      0.45
+    ],
+    [
+      "pop",
+      1.05
+    ],
+    [
+      "pop",
+      1.65
+    ],
+    [
+      "pop",
+      2.25
+    ],
+    [
+      "pop",
+      2.85
+    ],
+    [
+      "pop",
+      3.45
+    ],
+    [
+      "whoosh",
+      5.75
+    ],
+    [
+      "tick",
+      6.12
+    ],
+    [
+      "pop",
+      7.33
+    ],
+    [
+      "pop",
+      7.61
+    ],
+    [
+      "tick",
+      8.21
+    ],
+    [
+      "tick",
+      8.88
+    ],
+    [
+      "pop",
+      9.58
+    ],
+    [
+      "pop",
+      10.09
+    ],
+    [
+      "tick",
+      10.62
+    ],
+    [
+      "whoosh",
+      11.25
+    ],
+    [
+      "tick",
+      13.55
+    ],
+    [
+      "riser",
+      12.6
+    ],
+    [
+      "whoosh",
+      13.72
+    ],
+    [
+      "lift",
+      14.45
+    ],
+    [
+      "whoosh",
+      17.05
+    ],
+    [
+      "tick",
+      21.88
+    ],
+    [
+      "whoosh",
+      21.95
+    ],
+    [
+      "tick",
+      29.74
+    ],
+    [
+      "whoosh",
+      30.42
+    ],
+    [
+      "pop",
+      32.79
+    ],
+    [
+      "tick",
+      33.32
+    ],
+    [
+      "chime",
+      33.55
+    ],
+    [
+      "whoosh",
+      35.35
+    ],
+    [
+      "tick",
+      35.7
+    ],
+    [
+      "chime",
+      36.5
+    ],
+    [
+      "whoosh",
+      37.45
+    ],
+    [
+      "whoosh",
+      39.45
+    ],
+    [
+      "tick",
+      40.15
+    ],
+    [
+      "chime",
+      40.4
+    ],
+    [
+      "whoosh",
+      41.3
+    ],
+    [
+      "hit",
+      41.5
+    ]
+  ]
+}

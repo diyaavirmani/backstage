@@ -753,3 +753,33 @@ GitHub Docker CI and Railway health/page verification for the pushed correction 
   - The query now projects `"appliesToSpaceId": appliesToSpace._ref`.
   - Using the production query text against live Sanity (no model call), the verifier returns, for an 80-person workshop, “Largest documented room for cluster or classroom seating: Jacaranda hall, 60; 80 needed”, naming both conflicts. A 90-person talk is supported by Jacaranda (100 theatre-style) and a 50-person workshop by Rudra (50) and Jacaranda (60).
   - A regression test asserts the query mapping. Grounding and provider tests 10/10; agent 60/60.
+
+## 45-second introduction video — 5 October 2026
+
+- **What was added:** an editable video project in `video/`.
+  - `timeline.json` (edit list) and `compositor.html` (frame renderer).
+  - Playwright capture with timestamped action marks.
+  - OpenAI TTS narration, original synthesized music and SFX with ducking.
+  - Render and mux scripts.
+  - `README.md` with the rebuild steps and limitations.
+  - Rendered files are kept in the ignored `video/out/`.
+- **Pre-recording check:** discovery was verified live before recording (Bengaluru, 30-person founder meetup).
+  - The agent read `facilities_and_equipment`, `venues/bengaluru/shifu_den` and `venues/bengaluru/saiacs_ceo_centre`.
+  - It returned Shifu Den and SAIACS CEO Centre with 0 rejected candidates. The recorded results are that response.
+  - The Knowledge Base and citation checks were not changed.
+- **Footage:**
+  - Source: a local production build of the `feat/judge-ready` code on 127.0.0.1:3130, with an isolated temporary SQLite workspace and live services. One discovery search was spent.
+  - Organizer data is fictional (`organizer@example.test`).
+  - Host scenes use the demo's fictional hosts and role simulation, labelled on screen "Demo hosts • simulated workflow". The saved application is a draft, never a booking.
+- **Exports:** `backstage-intro-1920x1080.mp4` and `backstage-intro-1080x1920.mp4`.
+  - ffprobe: H.264 High, yuv420p, 30 fps, 1350 frames, AAC 48 kHz stereo, duration 45.000000 s each.
+  - Loudness: −15.7 LUFS integrated, −1.4 dBFS peak.
+  - Also exported: separate `backstage-intro-voiceover.wav` (45.000 s) and `backstage-intro-captions.srt`.
+- **Review:**
+  - Frame stills of both formats inspected every second, plus consecutive frames around cuts; no blank or white frames.
+  - Narration lines are level-matched to −23 dBFS RMS and sit 9.2–19.4 dB above the ducked music, line by line. The first mix left line 5 only 5.5 dB clear, so lines are now normalized individually.
+  - A transcription of the final voiceover with `gpt-4o-transcribe` matched the script word for word.
+- **Limitations:**
+  - The voice is AI-generated (`gpt-4o-mini-tts`, `coral`).
+  - The music and SFX are synthesized.
+  - No one has listened to the mix by ear yet.
