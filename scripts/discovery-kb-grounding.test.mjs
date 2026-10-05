@@ -16,11 +16,12 @@ const section=(heading,locality,source,marker=1)=>`## ${heading}\nLocated at ${l
 const mastersEntry=`# Delhi NCR venues\n\n${section('Masters’ Union Campus — DLF Cyber Park, Udyog Vihar Phase III, Gurugram',masters.locality,muSource)}\n\n## Sources\n1. Masters Union Companies — ${muSource.url}`;
 const brief={id:'kb-grounding',title:'Community workshop',city:'Delhi NCR',eventType:'Workshop',date:'2028-11-14',startTime:'10:00',endTime:'12:00',audience:'Developers',headcount:20,budgetAmount:0,currency:'INR',roomRequirements:[],equipmentRequirements:[],essentialRequirements:[],flexibleRequirements:[],setupMinutes:0,cleanupMinutes:0,savedAt:'2028-01-01T00:00:00.000Z'};
 
+const queries=[];
 function scenario({outline,entries,proposals,read=true}){
   const reads=[];
   const handler=createVenueDiscoveryHandler({
     getModel:()=>({model:'mock'}),
-    createSanityClient:()=>({fetch:async()=>[masters,ofis]}),
+    createSanityClient:()=>({fetch:async(query)=>{queries.push(query);return[masters,ofis];}}),
     createMCPClient:async()=>({
       listTools:async()=>({tools:[{name:'initial_context'},{name:'knowledge_base_read'}]}),
       callTool:async({name,arguments:args})=>{
@@ -59,6 +60,10 @@ test('a venue that exists in Sanity but not in the read Knowledge Base entry is 
   assert.deepEqual(run.reads,['venues/delhi_ncr'],'the agent read the Knowledge Base through MCP');
   assert.deepEqual(body.recommendations.map((lead)=>lead.venueId),[masters._id],'Ofis is published in Sanity but absent from the entry, so it is dropped');
   assert.equal(body.verification.rejectedCandidateCount,2);
+  assert.deepEqual(body.verification.rejectedCandidates,[
+    {venueId:ofis._id,reason:'no verified Knowledge Base section for this venue in the entries read'},
+    {venueId:null,reason:'not a published research venue'},
+  ],'each rejection is explained without echoing model-invented identifiers');
   assert.deepEqual(body.verification.entriesRead.map((entry)=>entry.path),['venues/delhi_ncr']);
   assert.deepEqual(body.retrievalEvidence,[{venueId:masters._id,entryPaths:['venues/delhi_ncr'],sourceReferenceIds:[muSource._id]}]);
 });
@@ -79,4 +84,28 @@ test('without a Knowledge Base read, or without an entry for the city, no leads 
   const otherCity=await discover(scenario({outline:['venues/bengaluru [core]'],entries:{},proposals:[]}).handler);
   assert.equal(otherCity.status,502,'a Bengaluru-only outline yields no Delhi NCR entries to read');
   assert.equal(otherCity.body.recommendations,undefined);
+});
+
+test('a shortened locality resolves to the published record, but another branch\'s locality is rejected with a reason',async()=>{
+  const shortened=await discover(scenario({outline:['venues/delhi_ncr [core]'],entries:{'venues/delhi_ncr':mastersEntry},proposals:[{venueId:masters._id,locality:'Gurugram',entryPaths:['venues/delhi_ncr']}]}).handler);
+  assert.equal(shortened.status,200,JSON.stringify(shortened.body));
+  assert.deepEqual(shortened.body.recommendations.map((lead)=>[lead.venueId,lead.locality]),[[masters._id,masters.locality]]);
+  const wrongBranch=await discover(scenario({outline:['venues/delhi_ncr [core]'],entries:{'venues/delhi_ncr':mastersEntry},proposals:[{venueId:masters._id,locality:'Sector 62, Noida',entryPaths:['venues/delhi_ncr']}]}).handler);
+  assert.deepEqual(wrongBranch.body.recommendations,[]);
+  assert.deepEqual(wrongBranch.body.verification.rejectedCandidates,[{venueId:masters._id,reason:'locality does not match the published record'}]);
+});
+
+test('a lead is backed by the verified sections the server read, even if the model cites tool entry IDs instead of paths',async()=>{
+  const run=scenario({outline:['venues/delhi_ncr [core]'],entries:{'venues/delhi_ncr':mastersEntry},proposals:[{venueId:masters._id,locality:masters.locality,entryPaths:['entry-1']}]});
+  const {status,body}=await discover(run.handler);
+  assert.equal(status,200,JSON.stringify(body));
+  assert.deepEqual(body.recommendations.map((lead)=>lead.venueId),[masters._id]);
+  assert.deepEqual(body.retrievalEvidence[0].entryPaths,['venues/delhi_ncr'],'evidence paths come from what was actually read and verified');
+});
+
+test('the published-record query links each claim to its room, so live capacity claims can be verified',()=>{
+  assert.ok(queries.length>0);
+  // Sanity stores the room as the reference field appliesToSpace; asking for a non-existent appliesToSpaceId field
+  // silently returned nothing and left every live capacity claim unverifiable.
+  assert.match(queries[0],/"appliesToSpaceId": appliesToSpace\._ref/);
 });

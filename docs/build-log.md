@@ -734,3 +734,61 @@ GitHub Docker CI and Railway health/page verification for the pushed correction 
 - Found the user's open Sanity Dashboard tab, but DOM inspection is blocked by Chrome's AppleScript error **12** (JavaScript from Apple Events disabled); no browser/CDP connector is attached. Browser account identity and the Dashboard request's HTTP status remain unobserved. The UI message cannot establish deletion or an HTTP 404. The minimum next diagnostic is opening the Knowledge Base from the Backstage Context list in the intended account; local page automation requires enabling the Chrome inspection option. Requested that capability, without changing Sanity permissions.
 - Official documentation confirms **Entries → earlier outline version → Restore this version**. No restore was performed. No rebuild, refresh, recreation, deletion, permissions change or citation relaxation was attempted. The two contradiction issues remain optional and unresolved. The post-restoration live agent search is pending; **zero OpenAI calls** were made. PR #4 remains unmerged.
 - Focused outline/citation regressions: **10/10 passed**. No application changes required a build or browser regression rerun. Private diagnostic output is outside Git; `git diff --check` passed before these documentation updates.
+
+## Knowledge Base restored; rejection reasons and server-attached evidence — 5 October 2026
+
+- **Restore:** the user restored the 2 Oct outline version (job `…1790948631445`) in the Dashboard.
+  - The live checker read 9 per-venue entries; all six venues verify with correctly attributed citations.
+  - The only issue it reports is that SAIACS's entry predates and therefore omits the two source pages added today. The app accepts that section because every citation in it is SAIACS's own.
+  - The Knowledge Base still shows two open contradiction issues (cluster 40–60 vs 30–80; ground 500 vs 400); resolving them is optional.
+- **First post-restore live search** (Bengaluru, 80-person workshop): the model read the SAIACS and Shifu entries and proposed one lead, which was rejected. The server did not record why.
+- **Fix 1:** the server now records every rejection with its reason in the verification trace (UI and logs). It accepts a shortened locality only when every word belongs to the published locality, then uses the published locality.
+- **Second live search** (same brief) showed the reason: SAIACS was proposed, but the model's own path list matched none of the two entries in which SAIACS has verified sections, most likely because it echoed the read tool's entry IDs.
+- **Fix 2:** evidence paths are now attached by the server from sections verified for that venue in entries actually read during the request, rather than taken from the model's list.
+- **Checks:** grounding and provider tests 9/9 (including model-supplied entry IDs, shortened and wrong-branch localities, and rejection reasons); agent 60/60; lint and TypeScript clean. Evidence, workspace and locality browser specs pass. No further live search has been run since fix 2.
+- **Final confirming live search** (user-approved, same Bengaluru 80-person workshop brief, after fix 2):
+  - SAIACS was returned with 0 rejections, backed by verified sections in both entries read (`facilities_and_equipment`, `venues/bengaluru/saiacs_ceo_centre`).
+  - It had 3 contact routes and 5 photos; Parking and Wi-Fi were supported, and both source conflicts were shown.
+- **Capacity bug that search exposed:** its capacity line wrongly said no room had a documented layout. The discovery query asked Sanity for a non-existent `appliesToSpaceId` field, while documents store the room as the `appliesToSpace` reference. No venue had room capacities until today, and offline tests build that field directly, so it was latent.
+  - The query now projects `"appliesToSpaceId": appliesToSpace._ref`.
+  - Using the production query text against live Sanity (no model call), the verifier returns, for an 80-person workshop, “Largest documented room for cluster or classroom seating: Jacaranda hall, 60; 80 needed”, naming both conflicts. A 90-person talk is supported by Jacaranda (100 theatre-style) and a 50-person workshop by Rudra (50) and Jacaranda (60).
+  - A regression test asserts the query mapping. Grounding and provider tests 10/10; agent 60/60.
+
+## 45-second introduction video — 5 October 2026
+
+- **What was added:** an editable video project in `video/`.
+  - `timeline.json` (edit list) and `compositor.html` (frame renderer).
+  - Playwright capture with timestamped action marks.
+  - OpenAI TTS narration, original synthesized music and SFX with ducking.
+  - Render and mux scripts.
+  - `README.md` with the rebuild steps and limitations.
+  - Rendered files are kept in the ignored `video/out/`.
+- **Pre-recording check:** discovery was verified live before recording (Bengaluru, 30-person founder meetup).
+  - The agent read `facilities_and_equipment`, `venues/bengaluru/shifu_den` and `venues/bengaluru/saiacs_ceo_centre`.
+  - It returned Shifu Den and SAIACS CEO Centre with 0 rejected candidates. The recorded results are that response.
+  - The Knowledge Base and citation checks were not changed.
+- **Footage:**
+  - Source: a local production build of the `feat/judge-ready` code on 127.0.0.1:3130, with an isolated temporary SQLite workspace and live services. One discovery search was spent.
+  - Organizer data is fictional (`organizer@example.test`).
+  - Host scenes use the demo's fictional hosts and role simulation, labelled on screen "Demo hosts • simulated workflow". The saved application is a draft, never a booking.
+- **Exports:** `backstage-intro-1920x1080.mp4` and `backstage-intro-1080x1920.mp4`.
+  - ffprobe: H.264 High, yuv420p, 30 fps, 1350 frames, AAC 48 kHz stereo, duration 45.000000 s each.
+  - Loudness: −15.7 LUFS integrated, −1.4 dBFS peak.
+  - Also exported: separate `backstage-intro-voiceover.wav` (45.000 s) and `backstage-intro-captions.srt`.
+- **Review:**
+  - Frame stills of both formats inspected every second, plus consecutive frames around cuts; no blank or white frames.
+  - Narration lines are level-matched to −23 dBFS RMS and sit 9.2–19.4 dB above the ducked music, line by line. The first mix left line 5 only 5.5 dB clear, so lines are now normalized individually.
+  - A transcription of the final voiceover with `gpt-4o-transcribe` matched the script word for word.
+- **Limitations:**
+  - The voice is AI-generated (`gpt-4o-mini-tts`, `coral`).
+  - The music and SFX are synthesized.
+  - No one has listened to the mix by ear yet.
+
+## Submission post refreshed with today's verified facts — 5 October 2026
+
+- `docs/submission.md` now reflects what was re-checked today:
+  - Unit suites: agent 60/60, grounding and provider 10/10, operations 33/33, deployment controls 6/6. Playwright lists 33 tests; they were not re-run for this docs change.
+  - Live Sanity: 67 published documents by type, and SAIACS's four named halls.
+  - `sanity:context-check`: 9 entries read, all six venues verified. Strict mode still exits 1 because SAIACS's entries predate two newer source URLs. The post states this instead of claiming a pass.
+- Added the no-hardcoding guarantee, server-attached evidence paths, rejection reasons, the final-day rebuild and restore, and a video embed placeholder.
+- Cover image rendered from the video's end frame: `video/out/backstage-cover-1000x420.png` (ignored).

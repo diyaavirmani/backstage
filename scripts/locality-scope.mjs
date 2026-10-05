@@ -32,3 +32,15 @@ export function filterLocalities(venues, intent) {
     return included.size === 0 || included.has(locality);
   });
 }
+
+const localityWords = (value) => String(value || '').normalize('NFKD').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(Boolean);
+
+/**
+ * The model may shorten a locality ("Bengaluru" for "Bengaluru (neighborhood not stated)"). It is accepted only when
+ * every word it gives appears in the venue's published locality, so "Sector 62, Noida" never passes for Sohna Road.
+ */
+export function localityCompatible(candidateLocality, publishedLocality) {
+  const given = localityWords(candidateLocality);
+  const published = new Set(localityWords(publishedLocality));
+  return given.length > 0 && given.every((word) => published.has(word));
+}

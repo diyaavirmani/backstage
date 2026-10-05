@@ -44,3 +44,13 @@ test("outline eligibility works for per-venue, per-city and topic entries withou
   assert.equal(outlineEntryIsEligible("facilities", [shifu], all, "Bengaluru"), true);
   assert.equal(outlineEntryIsEligible("venues/delhi_ncr", [shifu], all, "Bengaluru"), false);
 });
+
+test("a shortened locality is accepted only when all its words belong to the published locality", async () => {
+  const {localityCompatible} = await import("./locality-scope.mjs");
+  assert.equal(localityCompatible("Bengaluru", "Bengaluru (neighborhood not stated)"), true);
+  assert.equal(localityCompatible("North Bengaluru", "North Bengaluru"), true);
+  assert.equal(localityCompatible("Sector 62", "Sector 62, Noida"), true);
+  assert.equal(localityCompatible("Sector 62, Noida", "Sohna Road, Gurugram"), false, "never another branch");
+  assert.equal(localityCompatible("Gurugram", "Sector 62, Noida"), false);
+  assert.equal(localityCompatible("", "Noida"), false);
+});

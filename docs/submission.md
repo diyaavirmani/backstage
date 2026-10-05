@@ -19,7 +19,9 @@ Venue research is a domain where a confident wrong answer costs real money and r
 - **Past events.** A listing says Paytm's Noida office hosted a meetup in 2026. That is historical evidence, not availability, and “2026” is not a seat count.
 - **Shared pages.** One Ofis page describes two locations. The Sector 62 auditorium must never leak into the Sohna Road lead.
 
-**It only works because the content is structured.** Every claim in Sanity carries a subject, an evidence type (documented, historical, unknown or conflicting), a qualification, its source and a check date. Capacity claims point to a specific space and layout. The model never decides whether a requirement is met. It picks which Knowledge Base entries to read. The server then classifies each requirement from structured claims, with caveats scoped to the clause they appear in.
+**It only works because the content is structured.** Every claim in Sanity carries a subject, an evidence type (documented, historical, unknown or conflicting), a qualification, its source and a check date. Capacity claims point to a specific room and layout. The model never decides whether a requirement is met. It picks which Knowledge Base entries to read. The server then classifies each requirement from structured claims, with caveats scoped to the clause they appear in.
+
+**Nothing is hardcoded.** A venue reaches the organizer only if an entry the agent read *in that request* contains a correctly cited section for it. Tests check that a venue published in Sanity but missing from the entry read is dropped. They also check that a venue the model invents is rejected. If the entry cites the wrong venue's source, nothing is returned, and there is no fallback list.
 
 **Measured, not claimed.** I asked 26 real organizer questions of the *same* published text. A transparent keyword match answered **17** correctly; Backstage's structured verifier answered **25**. Keyword matching fails toward a confident yes. Backstage fails toward “needs confirmation”, and it never claimed something the sources don't establish.
 
@@ -29,18 +31,28 @@ What organizers get:
 
 - **A guided brief:** audience presets that never imply eligibility, equipment kept separate from policies and services, and essentials kept separate from optional extras. A **suggested event setup** is proposed from the activities and is never inferred from headcount alone.
 - **Evidence-first leads:** “Why consider this venue” comes first, with direct links to the exact cited pages and visible qualifications and conflicts.
-- **“How these leads were verified”:** a trace of the Knowledge Base outline, the exact entries the agent read over MCP, each citation check, and how many model suggestions the server rejected.
+- **“How these leads were verified”:** a trace of the Knowledge Base outline, the exact entries the agent read over MCP, each citation check, and every model suggestion the server rejected, with the reason.
 - **Actionable unknowns:** each lead lists open questions next to published enquiry routes, labelled as venue-specific or organization-wide. An editable enquiry is built from the brief; it is copied, never sent.
 - **Official photos** with branch-level location evidence and credit. Masters’ Union's terms forbid republishing, so its card links out instead.
-- **Private drafts:** a lead can be saved with the server-resolved evidence snapshot. Real venues are research leads, never bookable through Backstage. A clearly fictional host workspace demonstrates approvals and conflict-safe resource allocation.
+- **Private drafts:** a lead can be saved with the server-resolved evidence snapshot. Real venues are research leads, never bookable through Backstage. A clearly fictional host workspace demonstrates approvals, conflict-safe resource allocation and shared preparation.
 
 ## Demo
 
+<!-- PLACEHOLDER: upload video/out/backstage-intro-1920x1080.mp4 to YouTube, then replace the next line with the video's URL. -->
+{% embed https://www.youtube.com/watch?v=YOUR_VIDEO_ID %}
+
+*45-second intro: real app footage of a live discovery, with AI-generated narration.*
+
 **Live app (no login):** https://backstage-production-0849.up.railway.app
 
-Try **Organizer → Try an example → Bengaluru founders**, continue to Review, then **Find suitable venues**. Open **How these leads were verified** and a lead's **View evidence**. Then change the audience to *Students* and search again: founder eligibility stays unknown. The homepage shows the keyword-vs-structure comparison.
+**Try it yourself:**
 
-**Recording:** <!-- PLACEHOLDER: add the public walkthrough recording URL or embed. -->
+1. Go to **Organizer → Try an example → Bengaluru founders · qualified eligibility**.
+2. Continue to Review, then click **Find suitable venues**.
+3. Open **How these leads were verified** and a lead's **View evidence**.
+4. Change the audience to *Students* and search again: founder eligibility stays unknown.
+
+The homepage shows the keyword-vs-structure comparison.
 
 Live discovery is rate-limited to five searches per browser per day so shared credits survive judging.
 
@@ -48,11 +60,25 @@ Live discovery is rate-limited to five searches per browser per day so shared cr
 
 **Repository:** https://github.com/diyaavirmani/backstage
 
-Next.js App Router and TypeScript, the Vercel AI SDK with an OpenAI model, `@ai-sdk/mcp` for Sanity Context, and SQLite for the fictional operations demo. The tests cover 52 provenance, verifier and enrichment unit cases, 33 operations and concurrency tests, and 30 deterministic Playwright journeys. An opt-in live journey is capped at three discovery calls.
+**Stack:**
+
+- Next.js App Router and TypeScript
+- The Vercel AI SDK with an OpenAI model
+- `@ai-sdk/mcp` for Sanity Context
+- SQLite for the fictional host-operations demo
+
+**Tests, passing today:**
+
+- 60 retrieval, verifier, locality and evaluation tests
+- 10 Knowledge Base grounding and provider-failure tests
+- 33 operations and concurrency tests
+- 6 deployment-control tests
+
+On top of those there are 33 Playwright browser tests, and an opt-in live journey capped at three discovery calls.
 
 ## How I Used Sanity
 
-**What I pointed Sanity Context at.** The Knowledge Base `kbPFAVeDOOjD` is built from my own Sanity dataset through a GROQ import. The query takes eligible research venues and dereferences their claims, sources, spaces, resources, policies and hosting opportunities. It excludes drafts, demonstration inventory and anything private. Context distilled this into 9 navigable entries: one per venue plus `facilities_and_equipment`, `event_hosting_history` and `unknown_and_unverified`.
+**What I pointed Sanity Context at.** The Knowledge Base `kbPFAVeDOOjD` is built from my own Sanity dataset through a GROQ import. The query takes eligible research venues and dereferences their claims, sources, spaces, resources, policies and hosting opportunities. It excludes drafts, demonstration inventory and anything private. Context distilled this into 9 navigable entries: one per venue (`venues/bengaluru/shifu_den`, …) plus `facilities_and_equipment`, `event_hosting_history` and `unknown_and_unverified`.
 
 **Which tools the agent uses.** For each discovery, the agent:
 
@@ -62,14 +88,19 @@ Next.js App Router and TypeScript, the Vercel AI SDK with an OpenAI model, `@ai-
 
 It must read before it may answer. The endpoint also exposes `knowledge_base_search`, which is BM25 keyword search. I deliberately do not let it decide answers, because keyword matching is exactly the failure mode measured above.
 
-**What the agent does with what it reads.** The model returns only venue IDs, localities and the entry paths it read. The server then:
+**What the agent does with what it reads.** The model returns only venue IDs and localities. The server then:
 
-- Verifies every venue section's numbered footnotes against that venue's published `sourceReference` documents and original URLs, so a citation for one venue can't vouch for another.
-- Rejects any identity, locality or path the reads don't support.
-- Classifies every requirement from structured claims.
+- Checks every venue section's footnotes and inline source links against that venue's published `sourceReference` documents and original URLs, so a citation for one venue can't vouch for another.
+- Attaches each lead's evidence paths itself, from the sections it verified in the entries actually read during that request. It never trusts the model's list.
+- Rejects any identity or locality the reads don't support, and records why.
+- Classifies every requirement from structured claims. For example, a capacity claim is linked to its room through the `appliesToSpace` reference, so “Jacaranda hall, 60 in cluster seating” is checked against the event's layout.
 - Attaches published contacts and photos for the exact verified venue ID. These never reach the model.
 
-**A real Knowledge Base lesson.** An early build put the numbered sources under the wrong venue section: Shifu Den's footnote pointed to SAIACS. Independent reads proved the dataset relationships were correct, so the problem was in the generated entries. I added a source-scoped provenance instruction to the Knowledge Base and rebuilt it. Then I made the citation checker fail closed: section-scoped footnotes, all six venues present, canonical URLs, and shared URLs allowed across distinct locations. `npm run sanity:context-check` re-verifies all six live entries; it passed again today.
+**Knowledge Base builds can be wrong, so the server fails closed.** An early build put Shifu Den's numbered footnote under SAIACS. Independent reads proved the dataset relationships were correct, so the problem was in the generated entries. I added a source-scoped provenance instruction and made citation checks section-scoped and strict.
+
+That paid off on the last day. I rebuilt the Knowledge Base to add SAIACS's hall-capacity table, and the new build reorganized entries, attached two Ofis branches' sources to each other and dropped Masters' Union. Discovery didn't invent anything; the server refused to publish leads it couldn't verify. I restored the previous outline version from the Sanity Dashboard.
+
+Today `npm run sanity:context-check` reads all 9 entries and finds a correctly attributed section for every one of the six venues. Its strict mode still flags one honest gap: SAIACS's entries predate two source pages I added to Sanity afterwards. The hall capacities themselves come from structured Sanity records, which the server reads directly.
 
 **Structured content beyond the Knowledge Base.** Enquiry routes and photo galleries are separate `venueContact` and `venueGallery` documents. Each holds its venue, published purpose or caption, scope, source and check date. They are applied by an additive, idempotent enrichment script that reports differences instead of overwriting editors' work. The server validates them per venue against an allowlist of official image hosts.
 
@@ -78,7 +109,15 @@ It must read before it may answer. The endpoint also exposes `knowledge_base_sea
 - **Project ID:** `1428jmxu` (dataset `production`, private)
 - **Knowledge Base:** `kbPFAVeDOOjD`, Backstage Venue Knowledge (9 entries)
 - **Context MCP endpoint:** Knowledge Base mode; tools `initial_context`, `knowledge_base_read` and `knowledge_base_search`
-- **Published documents:** 67 (6 venues, 17 source references, 13 spaces including SAIACS's four named halls, 10 enquiry routes, 5 photo galleries, plus resources, host organizations and opportunities)
+- **Published documents (67):**
+  - 6 venues
+  - 17 source references
+  - 13 spaces, including SAIACS's four named halls (Jacaranda, Joel, Mysore, Rudra)
+  - 10 enquiry routes
+  - 5 photo galleries
+  - 5 resources
+  - 5 host organizations
+  - 6 hosting opportunities
 
 **Honest limits:**
 
@@ -89,4 +128,10 @@ It must read before it may answer. The endpoint also exposes `knowledge_base_sea
 
 ## Agent Session
 
-<!-- PLACEHOLDER: upload the redacted session at https://dev.to/agent_sessions/new, click "Make Public", then embed it here. -->
+I built Backstage with Claude Code. The session covers the parts I'd want a judge to see:
+
+- the citation-verification design;
+- the keyword-vs-structure evaluation, including the bugs it found in my own verifier;
+- the final-day Knowledge Base rebuild that failed closed and was restored.
+
+<!-- PLACEHOLDER: upload the redacted session at https://dev.to/agent_sessions/new, click "Make Public", then embed it here. Check it for keys and personal data first. -->

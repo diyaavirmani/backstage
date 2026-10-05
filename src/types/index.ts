@@ -231,6 +231,7 @@ export type DiscoveryVerification = {
   readToolCalls: number;
   modelCandidateCount: number;
   rejectedCandidateCount: number;
+  rejectedCandidates?: Array<{venueId: string | null; reason: string}>;
   citationChecks: Array<{venueId: string; path: string; valid: boolean; sourceIds: string[]}>;
 };
 

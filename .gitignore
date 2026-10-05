@@ -53,3 +53,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Rendered video assets (large; regenerate with video/README.md)
+/video/build/
+/video/out/
