@@ -119,7 +119,7 @@ export function createVenueDiscoveryHandler(overrides: Partial<DiscoveryDependen
     const venues = await withDeadline<RetrievedVenue[]>(sanity.fetch<RetrievedVenue[]>(`*[_type == "venue" && knowledgeBaseEligible == true && isDemonstration == false && relationshipStatus == "research-lead"]{
       _id, name, city, locality, relationshipStatus,
       "sources": sourceReferences[]->{_id, title, url},
-      claims[]{_key, subject, claim, value, evidenceType, checkedAt, historicalDate, layout, qualification, appliesToSpaceId, "sources": sourceReferences[]->{_id, title, url, sourceType}},
+      claims[]{_key, subject, claim, value, evidenceType, checkedAt, historicalDate, layout, qualification, "appliesToSpaceId": appliesToSpace._ref, "sources": sourceReferences[]->{_id, title, url, sourceType}},
       ${contactProjection},
       ${galleryProjection},
       "spaces": spaces[]->{_id, name, layout, capacity}

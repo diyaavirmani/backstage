@@ -16,11 +16,12 @@ const section=(heading,locality,source,marker=1)=>`## ${heading}\nLocated at ${l
 const mastersEntry=`# Delhi NCR venues\n\n${section('Masters’ Union Campus — DLF Cyber Park, Udyog Vihar Phase III, Gurugram',masters.locality,muSource)}\n\n## Sources\n1. Masters Union Companies — ${muSource.url}`;
 const brief={id:'kb-grounding',title:'Community workshop',city:'Delhi NCR',eventType:'Workshop',date:'2028-11-14',startTime:'10:00',endTime:'12:00',audience:'Developers',headcount:20,budgetAmount:0,currency:'INR',roomRequirements:[],equipmentRequirements:[],essentialRequirements:[],flexibleRequirements:[],setupMinutes:0,cleanupMinutes:0,savedAt:'2028-01-01T00:00:00.000Z'};
 
+const queries=[];
 function scenario({outline,entries,proposals,read=true}){
   const reads=[];
   const handler=createVenueDiscoveryHandler({
     getModel:()=>({model:'mock'}),
-    createSanityClient:()=>({fetch:async()=>[masters,ofis]}),
+    createSanityClient:()=>({fetch:async(query)=>{queries.push(query);return[masters,ofis];}}),
     createMCPClient:async()=>({
       listTools:async()=>({tools:[{name:'initial_context'},{name:'knowledge_base_read'}]}),
       callTool:async({name,arguments:args})=>{
@@ -100,4 +101,11 @@ test('a lead is backed by the verified sections the server read, even if the mod
   assert.equal(status,200,JSON.stringify(body));
   assert.deepEqual(body.recommendations.map((lead)=>lead.venueId),[masters._id]);
   assert.deepEqual(body.retrievalEvidence[0].entryPaths,['venues/delhi_ncr'],'evidence paths come from what was actually read and verified');
+});
+
+test('the published-record query links each claim to its room, so live capacity claims can be verified',()=>{
+  assert.ok(queries.length>0);
+  // Sanity stores the room as the reference field appliesToSpace; asking for a non-existent appliesToSpaceId field
+  // silently returned nothing and left every live capacity claim unverifiable.
+  assert.match(queries[0],/"appliesToSpaceId": appliesToSpace\._ref/);
 });

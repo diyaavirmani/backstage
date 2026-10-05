@@ -746,3 +746,10 @@ GitHub Docker CI and Railway health/page verification for the pushed correction 
 - **Second live search** (same brief) showed the reason: SAIACS was proposed, but the model's own path list matched none of the two entries in which SAIACS has verified sections, most likely because it echoed the read tool's entry IDs.
 - **Fix 2:** evidence paths are now attached by the server from sections verified for that venue in entries actually read during the request, rather than taken from the model's list.
 - **Checks:** grounding and provider tests 9/9 (including model-supplied entry IDs, shortened and wrong-branch localities, and rejection reasons); agent 60/60; lint and TypeScript clean. Evidence, workspace and locality browser specs pass. No further live search has been run since fix 2.
+- **Final confirming live search** (user-approved, same Bengaluru 80-person workshop brief, after fix 2):
+  - SAIACS was returned with 0 rejections, backed by verified sections in both entries read (`facilities_and_equipment`, `venues/bengaluru/saiacs_ceo_centre`).
+  - It had 3 contact routes and 5 photos; Parking and Wi-Fi were supported, and both source conflicts were shown.
+- **Capacity bug that search exposed:** its capacity line wrongly said no room had a documented layout. The discovery query asked Sanity for a non-existent `appliesToSpaceId` field, while documents store the room as the `appliesToSpace` reference. No venue had room capacities until today, and offline tests build that field directly, so it was latent.
+  - The query now projects `"appliesToSpaceId": appliesToSpace._ref`.
+  - Using the production query text against live Sanity (no model call), the verifier returns, for an 80-person workshop, “Largest documented room for cluster or classroom seating: Jacaranda hall, 60; 80 needed”, naming both conflicts. A 90-person talk is supported by Jacaranda (100 theatre-style) and a 50-person workshop by Rudra (50) and Jacaranda (60).
+  - A regression test asserts the query mapping. Grounding and provider tests 10/10; agent 60/60.
