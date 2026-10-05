@@ -59,6 +59,10 @@ test('a venue that exists in Sanity but not in the read Knowledge Base entry is 
   assert.deepEqual(run.reads,['venues/delhi_ncr'],'the agent read the Knowledge Base through MCP');
   assert.deepEqual(body.recommendations.map((lead)=>lead.venueId),[masters._id],'Ofis is published in Sanity but absent from the entry, so it is dropped');
   assert.equal(body.verification.rejectedCandidateCount,2);
+  assert.deepEqual(body.verification.rejectedCandidates,[
+    {venueId:ofis._id,reason:'no verified Knowledge Base section for this venue in the entries read'},
+    {venueId:null,reason:'not a published research venue'},
+  ],'each rejection is explained without echoing model-invented identifiers');
   assert.deepEqual(body.verification.entriesRead.map((entry)=>entry.path),['venues/delhi_ncr']);
   assert.deepEqual(body.retrievalEvidence,[{venueId:masters._id,entryPaths:['venues/delhi_ncr'],sourceReferenceIds:[muSource._id]}]);
 });
@@ -79,4 +83,21 @@ test('without a Knowledge Base read, or without an entry for the city, no leads 
   const otherCity=await discover(scenario({outline:['venues/bengaluru [core]'],entries:{},proposals:[]}).handler);
   assert.equal(otherCity.status,502,'a Bengaluru-only outline yields no Delhi NCR entries to read');
   assert.equal(otherCity.body.recommendations,undefined);
+});
+
+test('a shortened locality resolves to the published record, but another branch\'s locality is rejected with a reason',async()=>{
+  const shortened=await discover(scenario({outline:['venues/delhi_ncr [core]'],entries:{'venues/delhi_ncr':mastersEntry},proposals:[{venueId:masters._id,locality:'Gurugram',entryPaths:['venues/delhi_ncr']}]}).handler);
+  assert.equal(shortened.status,200,JSON.stringify(shortened.body));
+  assert.deepEqual(shortened.body.recommendations.map((lead)=>[lead.venueId,lead.locality]),[[masters._id,masters.locality]]);
+  const wrongBranch=await discover(scenario({outline:['venues/delhi_ncr [core]'],entries:{'venues/delhi_ncr':mastersEntry},proposals:[{venueId:masters._id,locality:'Sector 62, Noida',entryPaths:['venues/delhi_ncr']}]}).handler);
+  assert.deepEqual(wrongBranch.body.recommendations,[]);
+  assert.deepEqual(wrongBranch.body.verification.rejectedCandidates,[{venueId:masters._id,reason:'locality does not match the published record'}]);
+});
+
+test('a lead is backed by the verified sections the server read, even if the model cites tool entry IDs instead of paths',async()=>{
+  const run=scenario({outline:['venues/delhi_ncr [core]'],entries:{'venues/delhi_ncr':mastersEntry},proposals:[{venueId:masters._id,locality:masters.locality,entryPaths:['entry-1']}]});
+  const {status,body}=await discover(run.handler);
+  assert.equal(status,200,JSON.stringify(body));
+  assert.deepEqual(body.recommendations.map((lead)=>lead.venueId),[masters._id]);
+  assert.deepEqual(body.retrievalEvidence[0].entryPaths,['venues/delhi_ncr'],'evidence paths come from what was actually read and verified');
 });

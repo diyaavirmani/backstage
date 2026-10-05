@@ -75,6 +75,16 @@ export function VerificationTrace({
           {verification.modelCandidateCount === 1 ? "" : "s"};{" "}
           {verification.rejectedCandidateCount} failed identity, locality or
           citation checks; {leadCount} {leadCount === 1 ? "is" : "are"} shown.
+          {verification.rejectedCandidates?.length ? (
+            <ul>
+              {verification.rejectedCandidates.map((item, index) => (
+                <li key={`${item.venueId}-${index}`}>
+                  ✗ {item.venueId ? <code>{item.venueId}</code> : "An unrecognised venue"}:{" "}
+                  {item.reason}
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </li>
         <li>
           <strong>Requirements.</strong> Statuses come from structured rules

@@ -12,7 +12,7 @@ import { assertContextOutline, assertContextTools, assertKnowledgeReads, candida
 import { validateAgentRecommendations } from "../../scripts/agent-validation.mjs";
 import { verifyVenueEvidence } from "../../scripts/context-citations.mjs";
 import { parseContextOutline } from "../../scripts/context-outline.mjs";
-import {filterLocalities, parseLocalityIntent} from "../../scripts/locality-scope.mjs";
+import {filterLocalities, localityCompatible, parseLocalityIntent} from "../../scripts/locality-scope.mjs";
 import {outlineEntryIsEligible} from "../../scripts/venue-outline-matching.mjs";
 import {discoveryQuotaLimits, discoveryRetryAfterSeconds, readRequestTextBounded, validateMutationOrigin} from "../../scripts/deployment-controls.mjs";
 import {consumeDiscoveryQuota, openOperationsStore} from "../../scripts/operations-store.mjs";
@@ -218,13 +218,24 @@ First use readVenueKnowledge to read relevant outline entries for ${brief.city}.
       const paths = readEntries.map((entry) => entry.path).filter((path) => checkedPathsByVenue.get(venue._id)?.has(path));
       return paths.length ? [{venueId: venue._id, locality: venue.locality, entryPaths: [...new Set(paths)]}] : [];
     });
-    // A lead keeps only the entry paths whose section verified for that venue, and needs at least one.
-    const scopedModelCandidates = output.recommendations.map((candidate) => ({...candidate, entryPaths: candidate.entryPaths.filter((path) => checkedPathsByVenue.get(candidate.venueId)?.has(path))})).filter((candidate) => {
+    // Evidence paths are attached by the server, not taken from the model's own list: a lead needs a section verified
+    // for that venue in an entry actually read during this request. (Models sometimes echo the read tool's entry IDs
+    // instead of paths.) Every rejection is recorded with its reason so the trace shows why a proposal was dropped.
+    const readPaths = new Set(readEntries.map((entry) => entry.path));
+    const rejectedCandidates: Array<{venueId: string | null; reason: string}> = [];
+    const scopedModelCandidates = output.recommendations.flatMap((candidate) => {
       const venue = venues.find((item) => item._id === candidate.venueId);
-      return !!venue && selectedVenueIds.has(candidate.venueId) && venue.city === brief.city && venue.locality === candidate.locality
-        && candidate.entryPaths.length > 0 && candidateHasVerifiedSources(candidate,evidence);
+      const verifiedPaths = [...(checkedPathsByVenue.get(candidate.venueId) || [])].filter((path) => readPaths.has(path));
+      const reason = !venue ? "not a published research venue"
+        : !selectedVenueIds.has(candidate.venueId) || venue.city !== brief.city ? "outside the requested city or locality"
+          : !localityCompatible(candidate.locality, venue.locality) ? "locality does not match the published record"
+            : !verifiedPaths.length ? "no verified Knowledge Base section for this venue in the entries read"
+              : !candidateHasVerifiedSources({...candidate, entryPaths: verifiedPaths}, evidence) ? "no matching published citation" : null;
+      if (reason) { rejectedCandidates.push({venueId: venue ? venue._id : null, reason}); return []; }
+      // Downstream validation uses the published locality, never the model's wording.
+      return [{...candidate, locality: venue!.locality, entryPaths: verifiedPaths}];
     });
-    const rejectedModelCandidateCount = output.recommendations.length - scopedModelCandidates.length;
+    const rejectedModelCandidateCount = rejectedCandidates.length;
     const validationOutput = explicitVenueCandidates.length ? {recommendations: explicitVenueCandidates} : {recommendations: scopedModelCandidates};
     let validated: ReturnType<typeof validateAgentRecommendations>;
     try { validated = validateAgentRecommendations({output: validationOutput, venues, brief, evidence}); }
@@ -243,6 +254,7 @@ First use readVenueKnowledge to read relevant outline entries for ${brief.city}.
       successfulReadPaths: readEntries.map((entry) => entry.path),
       readToolCalls: modelToolCalls,
       rejectedModelCandidateCount,
+      rejectedCandidates,
       recommendations: validated.recommendations.map((item) => ({
         venueId: item.venueId,
         evidencePaths: item.evidencePaths,
@@ -273,6 +285,7 @@ First use readVenueKnowledge to read relevant outline entries for ${brief.city}.
         readToolCalls: modelToolCalls,
         modelCandidateCount: output.recommendations.length,
         rejectedCandidateCount: rejectedModelCandidateCount,
+        rejectedCandidates,
         citationChecks: evidence.checks.map((check) => ({venueId: check.venue._id, path: check.path, valid: check.valid && (check.citationLabels.some((citation) => citation.sourceIds?.length) || check.inlineSourceIds.length > 0), sourceIds: [...new Set([...check.citationLabels.flatMap((citation) => citation.sourceIds || []), ...check.inlineSourceIds])]})),
       },
       message: validated.recommendations.length

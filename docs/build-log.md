@@ -734,3 +734,15 @@ GitHub Docker CI and Railway health/page verification for the pushed correction 
 - Found the user's open Sanity Dashboard tab, but DOM inspection is blocked by Chrome's AppleScript error **12** (JavaScript from Apple Events disabled); no browser/CDP connector is attached. Browser account identity and the Dashboard request's HTTP status remain unobserved. The UI message cannot establish deletion or an HTTP 404. The minimum next diagnostic is opening the Knowledge Base from the Backstage Context list in the intended account; local page automation requires enabling the Chrome inspection option. Requested that capability, without changing Sanity permissions.
 - Official documentation confirms **Entries → earlier outline version → Restore this version**. No restore was performed. No rebuild, refresh, recreation, deletion, permissions change or citation relaxation was attempted. The two contradiction issues remain optional and unresolved. The post-restoration live agent search is pending; **zero OpenAI calls** were made. PR #4 remains unmerged.
 - Focused outline/citation regressions: **10/10 passed**. No application changes required a build or browser regression rerun. Private diagnostic output is outside Git; `git diff --check` passed before these documentation updates.
+
+## Knowledge Base restored; rejection reasons and server-attached evidence — 5 October 2026
+
+- **Restore:** the user restored the 2 Oct outline version (job `…1790948631445`) in the Dashboard.
+  - The live checker read 9 per-venue entries; all six venues verify with correctly attributed citations.
+  - The only issue it reports is that SAIACS's entry predates and therefore omits the two source pages added today. The app accepts that section because every citation in it is SAIACS's own.
+  - The Knowledge Base still shows two open contradiction issues (cluster 40–60 vs 30–80; ground 500 vs 400); resolving them is optional.
+- **First post-restore live search** (Bengaluru, 80-person workshop): the model read the SAIACS and Shifu entries and proposed one lead, which was rejected. The server did not record why.
+- **Fix 1:** the server now records every rejection with its reason in the verification trace (UI and logs). It accepts a shortened locality only when every word belongs to the published locality, then uses the published locality.
+- **Second live search** (same brief) showed the reason: SAIACS was proposed, but the model's own path list matched none of the two entries in which SAIACS has verified sections, most likely because it echoed the read tool's entry IDs.
+- **Fix 2:** evidence paths are now attached by the server from sections verified for that venue in entries actually read during the request, rather than taken from the model's list.
+- **Checks:** grounding and provider tests 9/9 (including model-supplied entry IDs, shortened and wrong-branch localities, and rejection reasons); agent 60/60; lint and TypeScript clean. Evidence, workspace and locality browser specs pass. No further live search has been run since fix 2.
