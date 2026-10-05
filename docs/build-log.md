@@ -708,3 +708,18 @@ GitHub Docker CI and Railway health/page verification for the pushed correction 
   - A section is valid when all its citations are the venue's own and at least one venue source is cited; uncited sources stay in the strict checker's report.
   - A heading needs the venue's name and one locality word, while the section body keeps the full locality.
 - **Checks:** unit 59/59, lint and TypeScript clean; full Playwright 30 passed, 3 opt-in skipped (run before the final checker-only heading change).
+
+## Knowledge Base grounding check — 5 October 2026
+
+- **Audit (user request: confirm leads come from the Knowledge Base, not hardcoded data):**
+  - The discovery handler imports no checked-in venue data, and organizer lead cards render only the API response.
+  - Published Sanity records supply venue identities and the structured claims used for requirement statuses. A venue becomes a lead only when an entry read through Context MCP in that request contains a section whose citations match that venue's published sources.
+  - Checked-in JSON is used only outside search: the homepage's labelled illustrative preview and build-time comparison; the `/venues` fallback, labelled “Local research preview” and shown only when Sanity is unreachable; and the private-draft venue picker. Draft evidence itself is resolved from published Sanity at save time.
+- **New `scripts/discovery-kb-grounding.test.mjs`** (in `test:provider-failures`, 7/7 with the existing provider tests) runs the real handler and verifiers with mocked providers:
+  - A venue published in Sanity but absent from the read entry is dropped, along with an invented ID.
+  - A wrongly attributed citation yields no leads and no fallback.
+  - Without a read, or without an entry for the city, nothing is published.
+- **One live local call** (Delhi NCR, current faulty build):
+  - The agent read `facilities_and_capacity` and `venues/delhi_ncr` and proposed three Delhi venues.
+  - All three were rejected by citation checks, so zero leads were returned although Sanity holds four Delhi venues.
+  - This confirms both Knowledge Base grounding and that hosted results stay empty until the 2 Oct build is restored.

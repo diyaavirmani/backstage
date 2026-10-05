@@ -20,7 +20,7 @@
     "test:backend-api-qa": "playwright test tests/e2e/backend-api-qa.spec.ts",
     "test:backend-stress": "node scripts/backend-stress.mjs",
     "test:backend-operations-stress": "node scripts/backend-operations-stress.mjs",
-    "test:provider-failures": "node --experimental-strip-types --test scripts/provider-failure-qa.test.mjs",
+    "test:provider-failures": "node --experimental-strip-types --test scripts/provider-failure-qa.test.mjs scripts/discovery-kb-grounding.test.mjs",
     "test:backend-startup-diagnostic": "node --test scripts/backend-startup-race.diagnostic.test.mjs",
     "test:backend-live-locality-diagnostic": "APP_ORIGIN=http://127.0.0.1:3107 BACKSTAGE_LIVE_LOCALITY_DIAGNOSTIC=1 node --import ./scripts/load-env.mjs ./node_modules/playwright/cli.js test tests/e2e/live-locality-diagnostic.spec.ts",
     "test:live-journey:dry": "BACKSTAGE_LIVE_JOURNEY=dry node --import ./scripts/load-env.mjs ./node_modules/playwright/cli.js test tests/e2e/live-product-journey.spec.ts",
