@@ -783,3 +783,12 @@ GitHub Docker CI and Railway health/page verification for the pushed correction 
   - The voice is AI-generated (`gpt-4o-mini-tts`, `coral`).
   - The music and SFX are synthesized.
   - No one has listened to the mix by ear yet.
+
+## Submission post refreshed with today's verified facts — 5 October 2026
+
+- `docs/submission.md` now reflects what was re-checked today:
+  - Unit suites: agent 60/60, grounding and provider 10/10, operations 33/33, deployment controls 6/6. Playwright lists 33 tests; they were not re-run for this docs change.
+  - Live Sanity: 67 published documents by type, and SAIACS's four named halls.
+  - `sanity:context-check`: 9 entries read, all six venues verified. Strict mode still exits 1 because SAIACS's entries predate two newer source URLs. The post states this instead of claiming a pass.
+- Added the no-hardcoding guarantee, server-attached evidence paths, rejection reasons, the final-day rebuild and restore, and a video embed placeholder.
+- Cover image rendered from the video's end frame: `video/out/backstage-cover-1000x420.png` (ignored).
