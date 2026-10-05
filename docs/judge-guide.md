@@ -6,10 +6,11 @@ Backstage helps organizers describe what they are hosting, then retrieves source
 
 ## What to look for (about five minutes)
 
-1. **Homepage, “Keyword search would have said yes.”** Four real traps from the published records, with the measured score: 22 organizer questions, keyword match 14 correct, Backstage's structured verifier 21. The [full table, method and misses](structure-eval.md) is reproducible with `npm run eval:structure`.
+1. **Homepage, “Keyword search would have said yes.”** Four real traps from the published records, with the measured score: 26 organizer questions, keyword match 17 correct, Backstage's structured verifier 25. The [full table, method and misses](structure-eval.md) is reproducible with `npm run eval:structure`.
 2. **A live search** (below), then open **How these leads were verified**. It shows the Knowledge Base outline size, the exact entries the agent read over Sanity Context MCP, each citation check, and how many model suggestions the server rejected.
 3. **A lead's View evidence.** It shows every requirement status and the evidence behind it, the Knowledge Base entries and citations for that lead, and its published enquiry routes.
 4. **Change the audience to *Students* and search again.** Shifu Den's founder-community access must stay unknown rather than become a yes.
+5. **Layout-aware capacity.** Search Bengaluru for an 80-person **Workshop**. SAIACS's card should say capacity needs confirmation: its largest cluster-style hall seats 60, and its two official sources disagree (30–80). Change the gathering type to **Talk or panel** with 90 attendees, and Jacaranda hall (100 theatre-style) is documented as enough. Its evidence view shows the conflicting ground capacities (500 vs 400) side by side with both sources.
 
 ## Try discovery in your own browser
 

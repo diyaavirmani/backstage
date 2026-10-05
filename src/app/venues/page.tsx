@@ -85,7 +85,7 @@ export default async function VenuesPage() {
             ? null
             : {
                 guestCount: space.capacity,
-                layout: space.layout,
+                layout: space.layout ?? "",
                 checkedAt: "",
                 sourceReferences: [],
               },

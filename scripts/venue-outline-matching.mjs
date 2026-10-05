@@ -20,3 +20,14 @@ export function outlineEntryMatchesVenuePath(entryPath, venue) {
   if (venueGurugram && pathNoida) return false;
   return true;
 }
+
+/**
+ * Knowledge Base builds may organize entries per venue, per city, or by topic. A per-venue entry is eligible only for
+ * the selected venues; a shared entry is eligible unless it names the other city. Citations are then checked per section.
+ */
+export function outlineEntryIsEligible(entryPath, selectedVenues, allVenues, city) {
+  if (selectedVenues.some((venue) => outlineEntryMatchesVenuePath(entryPath, venue))) return true;
+  if (allVenues.some((venue) => outlineEntryMatchesVenuePath(entryPath, venue))) return false;
+  const otherCity = city === 'Bengaluru' ? /delhi|noida|gurugram|gurgaon/ : /bengaluru|bangalore/;
+  return !otherCity.test(String(entryPath).toLowerCase());
+}

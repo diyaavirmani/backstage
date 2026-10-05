@@ -13,16 +13,17 @@ tags: devchallenge, sanitychallenge, sanity, ai
 Venue research is a domain where a confident wrong answer costs real money and real trust. The public text is full of traps that keyword search walks straight into:
 
 - **Negation.** An Ofis Square record reads “this does not establish outside-food permission”. Keyword search sees `outside`, `food` and `permission`, and says yes.
-- **Numbers without a layout.** SAIACS mentions “approximately 350 seats”. That is not a yes for 300 people in a classroom layout. Backstage counts capacity only when a source pairs a *named room* with a *seating layout*.
+- **Numbers without a layout.** SAIACS mentions “approximately 350 seats” for its auditorium, but gives no layout. Its own hall table is precise: Jacaranda seats 100 theatre-style but only 60 in cluster seating. So a 90-person talk fits, and a 90-person hands-on workshop doesn't. Backstage counts capacity only when a source pairs a *named room* with a *seating layout* that suits the event.
+- **Sources that disagree.** The CEO Centre says its ground hosts up to 500; its parent institute says 400. The hall table tops out at 60 in cluster seating; the institute says 30–80. Backstage shows both figures with both sources and doesn't pick one.
 - **Audience conditions.** Shifu Den is “completely pro bono” *for founders*. A student meetup does not inherit that.
 - **Past events.** A listing says Paytm's Noida office hosted a meetup in 2026. That is historical evidence, not availability, and “2026” is not a seat count.
 - **Shared pages.** One Ofis page describes two locations. The Sector 62 auditorium must never leak into the Sohna Road lead.
 
 **It only works because the content is structured.** Every claim in Sanity carries a subject, an evidence type (documented, historical, unknown or conflicting), a qualification, its source and a check date. Capacity claims point to a specific space and layout. The model never decides whether a requirement is met. It picks which Knowledge Base entries to read. The server then classifies each requirement from structured claims, with caveats scoped to the clause they appear in.
 
-**Measured, not claimed.** I asked 22 real organizer questions of the *same* published text. A transparent keyword match answered **14** correctly; Backstage's structured verifier answered **21**. Keyword matching fails toward a confident yes; Backstage fails toward “needs confirmation”.
+**Measured, not claimed.** I asked 26 real organizer questions of the *same* published text. A transparent keyword match answered **17** correctly; Backstage's structured verifier answered **25**. Keyword matching fails toward a confident yes. Backstage fails toward “needs confirmation”, and it never claimed something the sources don't establish.
 
-The comparison also found bugs in my own verifier: one caveat anywhere in a claim was hiding documented facts like display screens and catering. I fixed it and then wrote six fresh cases I did not tune on. On those, both approaches scored 5/6, and the structured miss was a cautious “unknown”. The [full table, method and misses](https://github.com/diyaavirmani/backstage/blob/main/docs/structure-eval.md) are reproducible with `npm run eval:structure`.
+The comparison also found bugs in my own verifier: one caveat anywhere in a claim was hiding documented facts like display screens and catering. I fixed it and then wrote six fresh cases I did not tune on. On those, keyword matching scored 6/6 and Backstage 5/6, and Backstage's miss was a cautious “unknown”. I'm reporting that rather than hiding it. The [full table, method and misses](https://github.com/diyaavirmani/backstage/blob/main/docs/structure-eval.md) are reproducible with `npm run eval:structure`.
 
 What organizers get:
 
@@ -77,14 +78,14 @@ It must read before it may answer. The endpoint also exposes `knowledge_base_sea
 - **Project ID:** `1428jmxu` (dataset `production`, private)
 - **Knowledge Base:** `kbPFAVeDOOjD`, Backstage Venue Knowledge (9 entries)
 - **Context MCP endpoint:** Knowledge Base mode; tools `initial_context`, `knowledge_base_read` and `knowledge_base_search`
-- **Published documents:** 61 (6 venues, 15 source references, 10 enquiry routes, 5 photo galleries, plus spaces, resources, host organizations and opportunities)
+- **Published documents:** 67 (6 venues, 17 source references, 13 spaces including SAIACS's four named halls, 10 enquiry routes, 5 photo galleries, plus resources, host organizations and opportunities)
 
 **Honest limits:**
 
-- Six researched venues is a small catalogue. No source pairs a room with a layout yet, so capacity is always “needs confirmation”, which is the truthful answer.
+- Six researched venues is a small catalogue. So far only SAIACS publishes room × layout capacities; elsewhere capacity stays “needs confirmation”, which is the truthful answer.
 - Published phone numbers and emails are not verified as active.
 - Photos are embedded with credit under “all rights reserved” footers; no reuse licence was granted.
-- The 22-case comparison is a demonstration built from real records, not a general benchmark.
+- The 26-case comparison is a demonstration built from real records, not a general benchmark.
 
 ## Agent Session
 

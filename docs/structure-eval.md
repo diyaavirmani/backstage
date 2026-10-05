@@ -22,13 +22,19 @@ The comparison changed the product: the first ten cases exposed three over-cauti
 | Is there a projector at Ofis Sector 62? | Ofis Square — Sector 62, Noida | not established: AV systems and screens are described; a projector is not named | ✓ not established | ✓ not established |
 | Can Paytm Office, Noida hold 200 people? | Paytm Office, Noida (historical event location) | not established: no room or capacity is given (2026 is the event year, not a seat count) | ✗ established | ✓ not established |
 | Can our student club use Masters’ Union? | Masters’ Union Campus | not established: no audience or eligibility rule is published | ✓ not established | ✓ not established |
-| Does SAIACS have outdoor lawns? † | SAIACS CEO Centre | established: the site lists lawns among its spaces | ✗ not established | ✗ not established |
+| Does SAIACS have outdoor lawns? † | SAIACS CEO Centre | established: the site lists lawns among its spaces | ✓ established | ✗ not established |
 | Is there an outdoor terrace at Ofis Sohna Road? † | Ofis Square — Sohna Road | established: the events page describes an open-air terrace garden on Sohna Road | ✓ established | ✓ established |
 | Is there an outdoor terrace at Ofis Sector 62? † | Ofis Square — Sector 62, Noida | not established: the terrace garden is the Sohna Road location's, not Sector 62's | ✓ not established | ✓ not established |
 | Can we hold a film screening at Shifu Den? † | Shifu Den | not established: the reviewed record does not mention screenings | ✓ not established | ✓ not established |
 | How much does Masters’ Union charge? † | Masters’ Union Campus | not established: price terms are explicitly unknown | ✓ not established | ✓ not established |
 | Is SAIACS wheelchair accessible? † | SAIACS CEO Centre | not established: accessibility is not described | ✓ not established | ✓ not established |
+| Can SAIACS seat 50 for a hands-on workshop? ‡ | SAIACS CEO Centre | established: Rudra (50) and Jacaranda (60) are listed for cluster seating | ✓ established | ✓ established |
+| Can SAIACS seat 80 for a hands-on workshop? ‡ | SAIACS CEO Centre | not established: the hall table tops out at 60 in cluster seating; the institute page says 30–80, a conflict | ✗ established | ✓ not established |
+| Can SAIACS seat 90 for a talk? ‡ | SAIACS CEO Centre | established: Jacaranda hall is listed at 100 in theatre style | ✓ established | ✓ established |
+| Can SAIACS host 450 on its grounds? ‡ | SAIACS CEO Centre | not established: the CEO Centre says up to 500, the institute page says 400 | ✗ established | ✓ not established |
 
-Keyword match correct: **14/22**. Backstage structured verifier correct: **21/22**.
+Keyword match correct: **17/26**. Backstage structured verifier correct: **25/26**.
 
-Final round († — 6 cases written after the last tuning fix and never tuned on): keyword 5/6, structured 5/6.
+Capacity cases (‡ — written with the SAIACS hall table to check layout-aware capacity, not held out): keyword 2/4, structured 4/4.
+
+Final round († — 6 cases written after the last tuning fix and never tuned on): keyword 6/6, structured 5/6.

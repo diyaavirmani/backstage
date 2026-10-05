@@ -54,6 +54,24 @@
       "sourceType": "official-page",
       "checkedAt": "2026-10-02",
       "reviewNote": "Describes event facilities on a North Bengaluru campus, including an auditorium, halls, lawns, dining spaces, Wi-Fi, and parking. It gives some capacity figures without documenting the room layout needed to apply them."
+    },
+    {
+      "id": "source-saiacs-conference-events",
+      "title": "SAIACS CEO Centre — Conference & Events",
+      "url": "https://saiacs-ceocenter.com/conference-and-events.html",
+      "publisher": "SAIACS CEO Centre",
+      "sourceType": "official-page",
+      "checkedAt": "2026-10-05",
+      "reviewNote": "Seminar & Conference Halls table (Hall | Cluster Style | Theatre Style): Mysore 40 | 60, Rudra 50 | 70, Joel 40 | 50, Jacaranda 60 | 100; every hall includes audio systems, projection facilities and writing boards. “Ground Event Area: Suitable for gatherings of up to 500 guests.” The Caleb Auditorium seats “approximately 350 guests” with no stated layout."
+    },
+    {
+      "id": "source-saiacs-institute-ceo-centre",
+      "title": "SAIACS institute — CEO Centre",
+      "url": "https://saiacs.org/ceo-centre/",
+      "publisher": "SAIACS",
+      "sourceType": "official-page",
+      "checkedAt": "2026-10-05",
+      "reviewNote": "Parent institute page for the CEO Centre. Seminar Halls: “Cluster Seating 30–80”, “Theatre Seating Up to 100”; Open Ground: “Capacity: 400”; Caleb Auditorium: “350 Seating Capacity”. The server answered automated requests with HTTP 500 while still serving the full page."
     }
   ],
   "hostOrganizations": [
@@ -708,7 +726,9 @@
       "hostOrganizationId": "hostorg-saiacs-ceo-centre",
       "summary": "The Centre publicly describes corporate, academic, NGO, church, conference, workshop, retreat, and residential gatherings at its North Bengaluru campus, with an auditorium, halls, dining spaces, lawns, Wi-Fi, and parking.",
       "sourceIds": [
-        "source-saiacs-ceo-centre"
+        "source-saiacs-ceo-centre",
+        "source-saiacs-conference-events",
+        "source-saiacs-institute-ceo-centre"
       ],
       "claims": [
         {
@@ -727,14 +747,166 @@
           "id": "claim-saiacs-capacity-unknown",
           "subjectId": "venue-saiacs-ceo-centre-bengaluru",
           "claimType": "capacity",
-          "claim": "Room and layout-specific attendee capacity.",
-          "value": "Unknown for a specified layout — the page mentions approximate capacities but does not document the seat layout or a capacity/layout pair for each room. Do not use those figures as a room match.",
+          "claim": "Caleb Auditorium attendee capacity by seating layout.",
+          "value": "Unknown for a specified layout — the auditorium is described as seating approximately 350 guests, but no seating layout is stated. Do not use that figure as a layout-specific room match.",
           "evidenceType": "unknown",
           "sourceIds": [
             "source-saiacs-ceo-centre"
           ],
           "checkedAt": "2026-10-02",
-          "qualification": "The source describes the Caleb Auditorium as approximately 350 seats, four flexible halls at approximately 40–100 guests each, and lawns up to approximately 500 guests. Layouts and per-room assignments are not specified."
+          "qualification": "Seminar-hall capacities by layout are recorded separately from the CEO Centre's hall table."
+        },
+        {
+          "id": "claim-saiacs-mysore-cluster",
+          "subjectId": "venue-saiacs-ceo-centre-bengaluru",
+          "claimType": "capacity",
+          "claim": "Mysore hall cluster-style capacity.",
+          "value": "40 guests in cluster style.",
+          "evidenceType": "public-documentation",
+          "sourceIds": [
+            "source-saiacs-conference-events"
+          ],
+          "checkedAt": "2026-10-05",
+          "appliesToSpaceId": "space-saiacs-hall-mysore",
+          "layout": "cluster"
+        },
+        {
+          "id": "claim-saiacs-mysore-theatre",
+          "subjectId": "venue-saiacs-ceo-centre-bengaluru",
+          "claimType": "capacity",
+          "claim": "Mysore hall theatre-style capacity.",
+          "value": "60 guests in theatre style.",
+          "evidenceType": "public-documentation",
+          "sourceIds": [
+            "source-saiacs-conference-events"
+          ],
+          "checkedAt": "2026-10-05",
+          "appliesToSpaceId": "space-saiacs-hall-mysore",
+          "layout": "theatre"
+        },
+        {
+          "id": "claim-saiacs-rudra-cluster",
+          "subjectId": "venue-saiacs-ceo-centre-bengaluru",
+          "claimType": "capacity",
+          "claim": "Rudra hall cluster-style capacity.",
+          "value": "50 guests in cluster style.",
+          "evidenceType": "public-documentation",
+          "sourceIds": [
+            "source-saiacs-conference-events"
+          ],
+          "checkedAt": "2026-10-05",
+          "appliesToSpaceId": "space-saiacs-hall-rudra",
+          "layout": "cluster"
+        },
+        {
+          "id": "claim-saiacs-rudra-theatre",
+          "subjectId": "venue-saiacs-ceo-centre-bengaluru",
+          "claimType": "capacity",
+          "claim": "Rudra hall theatre-style capacity.",
+          "value": "70 guests in theatre style.",
+          "evidenceType": "public-documentation",
+          "sourceIds": [
+            "source-saiacs-conference-events"
+          ],
+          "checkedAt": "2026-10-05",
+          "appliesToSpaceId": "space-saiacs-hall-rudra",
+          "layout": "theatre"
+        },
+        {
+          "id": "claim-saiacs-joel-cluster",
+          "subjectId": "venue-saiacs-ceo-centre-bengaluru",
+          "claimType": "capacity",
+          "claim": "Joel hall cluster-style capacity.",
+          "value": "40 guests in cluster style.",
+          "evidenceType": "public-documentation",
+          "sourceIds": [
+            "source-saiacs-conference-events"
+          ],
+          "checkedAt": "2026-10-05",
+          "appliesToSpaceId": "space-saiacs-hall-joel",
+          "layout": "cluster"
+        },
+        {
+          "id": "claim-saiacs-joel-theatre",
+          "subjectId": "venue-saiacs-ceo-centre-bengaluru",
+          "claimType": "capacity",
+          "claim": "Joel hall theatre-style capacity.",
+          "value": "50 guests in theatre style.",
+          "evidenceType": "public-documentation",
+          "sourceIds": [
+            "source-saiacs-conference-events"
+          ],
+          "checkedAt": "2026-10-05",
+          "appliesToSpaceId": "space-saiacs-hall-joel",
+          "layout": "theatre"
+        },
+        {
+          "id": "claim-saiacs-jacaranda-cluster",
+          "subjectId": "venue-saiacs-ceo-centre-bengaluru",
+          "claimType": "capacity",
+          "claim": "Jacaranda hall cluster-style capacity.",
+          "value": "60 guests in cluster style.",
+          "evidenceType": "public-documentation",
+          "sourceIds": [
+            "source-saiacs-conference-events"
+          ],
+          "checkedAt": "2026-10-05",
+          "appliesToSpaceId": "space-saiacs-hall-jacaranda",
+          "layout": "cluster"
+        },
+        {
+          "id": "claim-saiacs-jacaranda-theatre",
+          "subjectId": "venue-saiacs-ceo-centre-bengaluru",
+          "claimType": "capacity",
+          "claim": "Jacaranda hall theatre-style capacity.",
+          "value": "100 guests in theatre style.",
+          "evidenceType": "public-documentation",
+          "sourceIds": [
+            "source-saiacs-conference-events"
+          ],
+          "checkedAt": "2026-10-05",
+          "appliesToSpaceId": "space-saiacs-hall-jacaranda",
+          "layout": "theatre"
+        },
+        {
+          "id": "claim-saiacs-hall-equipment",
+          "subjectId": "venue-saiacs-ceo-centre-bengaluru",
+          "claimType": "equipment",
+          "claim": "Every seminar and conference hall includes audio systems, projection facilities and writing boards.",
+          "value": "Documented for all four halls (Mysore, Rudra, Joel and Jacaranda); quantities and models are not stated.",
+          "evidenceType": "public-documentation",
+          "sourceIds": [
+            "source-saiacs-conference-events"
+          ],
+          "checkedAt": "2026-10-05"
+        },
+        {
+          "id": "claim-saiacs-cluster-range-conflict",
+          "subjectId": "venue-saiacs-ceo-centre-bengaluru",
+          "claimType": "capacity",
+          "claim": "Largest cluster-style seminar-hall capacity.",
+          "value": "Sources conflict: the CEO Centre hall table lists cluster capacities of 40–60 per hall (largest: Jacaranda, 60), while the SAIACS institute page gives cluster seating of 30–80 for the four seminar halls.",
+          "evidenceType": "conflicting",
+          "sourceIds": [
+            "source-saiacs-conference-events",
+            "source-saiacs-institute-ceo-centre"
+          ],
+          "checkedAt": "2026-10-05",
+          "qualification": "Confirm with the venue before planning more than 60 people in cluster seating."
+        },
+        {
+          "id": "claim-saiacs-ground-capacity-conflict",
+          "subjectId": "venue-saiacs-ceo-centre-bengaluru",
+          "claimType": "capacity",
+          "claim": "Outdoor ground event capacity.",
+          "value": "Sources conflict: the CEO Centre events page says its Ground Event Area suits gatherings of up to 500 guests; the SAIACS institute page lists the Open Ground at a capacity of 400.",
+          "evidenceType": "conflicting",
+          "sourceIds": [
+            "source-saiacs-conference-events",
+            "source-saiacs-institute-ceo-centre"
+          ],
+          "checkedAt": "2026-10-05",
+          "qualification": "No seating layout is stated by either source."
         },
         {
           "id": "claim-saiacs-access-unknown",
@@ -807,6 +979,46 @@
           ],
           "capacity": null,
           "layout": "Unknown — per-room configurations are not stated."
+        },
+        {
+          "id": "space-saiacs-hall-mysore",
+          "name": "Mysore hall",
+          "spaceType": "meeting-space",
+          "summary": "One of four named seminar and conference halls for meetings, workshops, breakout sessions and training. The CEO Centre hall table lists 40 guests in cluster style and 60 in theatre style.",
+          "sourceIds": [
+            "source-saiacs-conference-events"
+          ],
+          "capacity": null
+        },
+        {
+          "id": "space-saiacs-hall-rudra",
+          "name": "Rudra hall",
+          "spaceType": "meeting-space",
+          "summary": "One of four named seminar and conference halls for meetings, workshops, breakout sessions and training. The CEO Centre hall table lists 50 guests in cluster style and 70 in theatre style.",
+          "sourceIds": [
+            "source-saiacs-conference-events"
+          ],
+          "capacity": null
+        },
+        {
+          "id": "space-saiacs-hall-joel",
+          "name": "Joel hall",
+          "spaceType": "meeting-space",
+          "summary": "One of four named seminar and conference halls for meetings, workshops, breakout sessions and training. The CEO Centre hall table lists 40 guests in cluster style and 50 in theatre style.",
+          "sourceIds": [
+            "source-saiacs-conference-events"
+          ],
+          "capacity": null
+        },
+        {
+          "id": "space-saiacs-hall-jacaranda",
+          "name": "Jacaranda hall",
+          "spaceType": "meeting-space",
+          "summary": "One of four named seminar and conference halls for meetings, workshops, breakout sessions and training. The CEO Centre hall table lists 60 guests in cluster style and 100 in theatre style.",
+          "sourceIds": [
+            "source-saiacs-conference-events"
+          ],
+          "capacity": null
         },
         {
           "id": "space-saiacs-banquet-dining",

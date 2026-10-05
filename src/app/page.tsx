@@ -20,7 +20,10 @@ const traps = [
     id: "ofis-sohna-outside-food",
     keyword: "the text contains “outside-food permission”.",
   },
-  { id: "saiacs-300-seats", keyword: "the text mentions “approximately 350 seats”." },
+  {
+    id: "saiacs-80-workshop",
+    keyword: "the text mentions 100 theatre seats and about 350 auditorium seats.",
+  },
   { id: "shifu-free-students", keyword: "the text says “pro bono” and “free”." },
   { id: "paytm-200", keyword: "the text contains 2026, which is more than 200." },
 ];

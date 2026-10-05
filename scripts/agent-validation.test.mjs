@@ -190,3 +190,21 @@ test("caveats are scoped to their clause and terms match whole words only", () =
   assert.equal(run("Projector"), "unknown", "an unnamed item stays unknown");
   assert.equal(run("Main room"), "unknown", "\"main\" does not match \"remain\"");
 });
+
+test("capacity needs a named room in a layout that suits the activity, and names relevant conflicts", () => {
+  const halls = {...venue, spaces: [{_id: "space-hall-a", name: "Hall A"}, {_id: "space-hall-b", name: "Hall B"}], claims: [...venue.claims,
+    {_key: "a-cluster", subject: "capacity", claim: "Hall A cluster-style capacity.", value: "60 guests in cluster style.", evidenceType: "public-documentation", appliesToSpaceId: "space-hall-a", layout: "cluster", sources: [source]},
+    {_key: "a-theatre", subject: "capacity", claim: "Hall A theatre-style capacity.", value: "100 guests in theatre style.", evidenceType: "public-documentation", appliesToSpaceId: "space-hall-a", layout: "theatre", sources: [source]},
+    {_key: "b-theatre", subject: "capacity", claim: "Hall B theatre-style capacity.", value: "70 guests in theatre style.", evidenceType: "public-documentation", appliesToSpaceId: "space-hall-b", layout: "theatre", sources: [source]},
+    {_key: "conflict", subject: "capacity", claim: "Largest cluster-style hall capacity.", value: "Sources conflict: 60 versus 80.", evidenceType: "conflicting", sources: [source]},
+  ]};
+  const capacity = (headcount, eventType) => validateAgentRecommendations({output: outputFor(), venues: [halls], brief: {...brief, headcount, eventType, title: "Test", essentialRequirements: []}, evidence: {checks: [validCheck]}}).recommendations[0].requirementCoverage.find((item) => item.requirement === `Capacity for ${headcount} guests`);
+  const workshop80 = capacity(80, "Workshop");
+  assert.equal(workshop80.status, "unknown", "100 theatre seats do not seat 80 at workshop tables");
+  assert.match(workshop80.basis, /Largest documented room for cluster or classroom seating: Hall A, 60; 80 needed\. Sources conflict on: largest cluster-style hall capacity/);
+  const talk80 = capacity(80, "Talk or panel");
+  assert.equal(talk80.status, "supported");
+  assert.equal(talk80.basis, "Hall A: 100 in theatre style — enough for 80 in theatre-style seating.", "the cluster conflict is irrelevant to a talk");
+  assert.equal(capacity(50, "Workshop").status, "supported");
+  assert.equal(capacity(120, "Community meetup").status, "unknown");
+});

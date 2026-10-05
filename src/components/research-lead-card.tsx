@@ -38,6 +38,9 @@ export function ResearchLeadCard({
     brief,
   );
   const questions = confirmationQuestions(venue);
+  const capacity = venue.requirementCoverage.find(
+    (item) => item.basis && /^Capacity for \d+ guests$/.test(item.requirement),
+  );
   const qualifications = [
     ...new Set(
       venue.requirementCoverage
@@ -107,6 +110,18 @@ export function ResearchLeadCard({
             {qualification}
           </p>
         ))}
+        {capacity && (
+          <p className="capacity-check">
+            <Badge
+              tone={capacity.status === "supported" ? "supported" : "unknown"}
+            >
+              {capacity.status === "supported"
+                ? "Capacity documented"
+                : "Capacity needs confirmation"}
+            </Badge>{" "}
+            {capacity.basis}
+          </p>
+        )}
       </section>
       {venue.documentedConflicts.map((item, index) => (
         <p className="conflict-note" key={index}>
@@ -231,6 +246,7 @@ export function ResearchLeadCard({
                       : "Unknown"}
                 </Badge>
                 <strong>{item.requirement}</strong>
+                {item.basis && <p className="requirement-basis">{item.basis}</p>}
                 {item.evidence.map((claim, index) => (
                   <p key={index}>
                     {claim.claim}: {claim.value} {claim.qualification || ""}

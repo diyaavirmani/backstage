@@ -13,7 +13,7 @@ import { validateAgentRecommendations } from "../../scripts/agent-validation.mjs
 import { verifyVenueEvidence } from "../../scripts/context-citations.mjs";
 import { parseContextOutline } from "../../scripts/context-outline.mjs";
 import {filterLocalities, parseLocalityIntent} from "../../scripts/locality-scope.mjs";
-import {outlineEntryMatchesVenuePath} from "../../scripts/venue-outline-matching.mjs";
+import {outlineEntryIsEligible} from "../../scripts/venue-outline-matching.mjs";
 import {discoveryQuotaLimits, discoveryRetryAfterSeconds, readRequestTextBounded, validateMutationOrigin} from "../../scripts/deployment-controls.mjs";
 import {consumeDiscoveryQuota, openOperationsStore} from "../../scripts/operations-store.mjs";
 import type { City, EventBrief, VenueRecommendation } from "../types";
@@ -156,7 +156,7 @@ export function createVenueDiscoveryHandler(overrides: Partial<DiscoveryDependen
     });
     const selectedScope = directlyNamedVenues.length ? directlyNamedVenues : localityScope;
     const selectedVenueIds = new Set(selectedScope.map((venue: RetrievedVenue) => venue._id));
-    const eligible = outline.filter((entry) => /^(?:kb[\w-]+)$/.test(entry.knowledgeBase) && selectedScope.some((venue: RetrievedVenue) => outlineEntryMatchesVenuePath(entry.path, venue)));
+    const eligible = outline.filter((entry) => /^(?:kb[\w-]+)$/.test(entry.knowledgeBase) && outlineEntryIsEligible(entry.path, selectedScope, venues, brief.city));
     if (!eligible.length) throw new Error("No readable Knowledge Base entries were discovered from the Context outline.");
     const pathIdMap = new Map(eligible.map((entry, index) => [`entry-${index + 1}`, entry]));
     const pathEnum = z.enum([...pathIdMap.keys()] as [string, ...string[]]);
@@ -208,22 +208,21 @@ First use readVenueKnowledge to read relevant outline entries for ${brief.city}.
     assertKnowledgeReads(readEntries, modelToolCalls);
     failureStage = "venue-source-validation";
     const evidence = verifyVenueEvidence(readEntries, venues);
-    const explicitVenueCandidates = directlyNamedVenues.flatMap((venue: RetrievedVenue) => {
-      const readEntry = readEntries.find((entry) => outlineEntryMatchesVenuePath(entry.path, venue));
-      return readEntry ? [{venueId: venue._id, locality: venue.locality, entryPaths: [readEntry.path]}] : [];
-    });
     const checkedPathsByVenue = new Map<string, Set<string>>();
     for (const check of evidence.checks.filter((item) => item.valid)) {
       const paths = checkedPathsByVenue.get(check.venue._id) || new Set<string>();
       paths.add(check.path);
       checkedPathsByVenue.set(check.venue._id, paths);
     }
-    const scopedModelCandidates = output.recommendations.filter((candidate) => {
+    const explicitVenueCandidates = directlyNamedVenues.flatMap((venue: RetrievedVenue) => {
+      const paths = readEntries.map((entry) => entry.path).filter((path) => checkedPathsByVenue.get(venue._id)?.has(path));
+      return paths.length ? [{venueId: venue._id, locality: venue.locality, entryPaths: [...new Set(paths)]}] : [];
+    });
+    // A lead keeps only the entry paths whose section verified for that venue, and needs at least one.
+    const scopedModelCandidates = output.recommendations.map((candidate) => ({...candidate, entryPaths: candidate.entryPaths.filter((path) => checkedPathsByVenue.get(candidate.venueId)?.has(path))})).filter((candidate) => {
       const venue = venues.find((item) => item._id === candidate.venueId);
-      const validPaths = checkedPathsByVenue.get(candidate.venueId);
       return !!venue && selectedVenueIds.has(candidate.venueId) && venue.city === brief.city && venue.locality === candidate.locality
-        && candidate.entryPaths.length > 0 && candidate.entryPaths.every((path) => validPaths?.has(path))
-        && candidateHasVerifiedSources(candidate,evidence);
+        && candidate.entryPaths.length > 0 && candidateHasVerifiedSources(candidate,evidence);
     });
     const rejectedModelCandidateCount = output.recommendations.length - scopedModelCandidates.length;
     const validationOutput = explicitVenueCandidates.length ? {recommendations: explicitVenueCandidates} : {recommendations: scopedModelCandidates};

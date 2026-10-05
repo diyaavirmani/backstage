@@ -83,3 +83,22 @@ test("inline links inside a venue's own section map to that venue's source IDs o
   assert.deepEqual(foreign.checks[0].inlineSourceIds, [], "another venue's URL never vouches for this venue");
   assert.equal(foreign.checks[0].valid, false);
 });
+
+test("a section citing only some of its venue's sources stays usable but is still reported", () => {
+  const saiacs = {...venues.find(({_id}) => _id === "saiacs"), sources: [...venues.find(({_id}) => _id === "saiacs").sources, {_id: "saiacs-halls", title: "Conference & Events", url: "https://saiacs-ceocenter.com/conference-and-events.html"}]};
+  const result = verifyVenueEvidence([{path: "venues/bengaluru", text: section(saiacs)}], [saiacs]);
+  assert.equal(result.checks[0].valid, true);
+  assert.ok(result.issues.some((issue) => issue.includes("missing published source URL")), "the strict checker still reports the gap");
+});
+
+test("a shortened heading still identifies a venue whose section keeps its full locality", () => {
+  const masters = venues.find(({_id}) => _id === "masters");
+  const text = `## Masters' Union Campus, Gurugram\nLocated at DLF Cyber Park, Udyog Vihar Phase III, Gurugram.\nSource: [Masters Union public pages](https://mastersunion.org/for-companies)\nCapacity: Unknown. Availability: Unknown. Price: Unknown. Backstage booking authority: Unknown.`;
+  const result = verifyVenueEvidence([{path: "venues/delhi_ncr", text}], [masters]);
+  assert.equal(result.checks.length, 1);
+  assert.equal(result.checks[0].valid, true);
+  const gurugram = venues.find(({_id}) => _id === "ofis-gurugram");
+  const noida = venues.find(({_id}) => _id === "ofis-noida");
+  const mixed = verifyVenueEvidence([{path: "venues/delhi_ncr", text: section(noida)}], [gurugram, noida]);
+  assert.deepEqual(mixed.checks.map((check) => check.venue._id), ["ofis-noida"], "branch names still keep Ofis locations apart");
+});

@@ -184,6 +184,8 @@ export type RequirementStatus = "supported" | "unknown" | "contradicted";
 export type RequirementCoverage = {
   requirement: string;
   status: RequirementStatus;
+  /** Plain-language rule result, e.g. which documented room and layout fits. */
+  basis?: string;
   evidence: Array<{
     claim: string;
     value: string;

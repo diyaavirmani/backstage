@@ -1,3 +1,5 @@
+import {seatingStyle} from "./brief-controls.mjs";
+
 const normalize = (value) => String(value ?? "")
   .normalize("NFKD")
   .replace(/[\u0300-\u036f]/g, "")
@@ -127,10 +129,37 @@ function claimSupportsRequirement(claim, requirement, kind, brief) {
 
 function capacityIsVerified(claim, venue) {
   if (claim.subject !== "capacity" || !claim.appliesToSpaceId || !claim.layout) return false;
+  if (["unknown", "conflicting", "demonstration"].includes(claim.evidenceType)) return false;
   const space = (venue.spaces || []).find((item) => item._id === claim.appliesToSpaceId || item.id === claim.appliesToSpaceId);
-  if (!space || space.name === "" || space.layout !== claim.layout) return false;
-  const count = Number(String(claim.value || "").match(/\d+/)?.[0]);
-  return Number.isFinite(count) && count > 0;
+  // A room may have several documented layouts; a room recorded with one fixed layout must match it.
+  if (!space || space.name === "" || (space.layout && !/^unknown/i.test(space.layout) && space.layout !== claim.layout)) return false;
+  return claimCount(claim) > 0;
+}
+
+const claimCount = (claim) => Number(String(claim.value || "").match(/\d+/)?.[0]) || 0;
+const layoutsByStyle = {"hands-on": ["cluster", "classroom", "schoolroom"], presentation: ["theatre", "theater"]};
+const styleLabel = {"hands-on": "cluster or classroom", presentation: "theatre-style"};
+
+/** Capacity counts only for a named room in a seating layout that suits the event's activities. */
+function classifyCapacity(venue, claims, brief) {
+  const style = seatingStyle(brief);
+  const accepted = layoutsByStyle[style];
+  const headcount = Number(brief.headcount);
+  const spaceName = (claim) => (venue.spaces || []).find((item) => item._id === claim.appliesToSpaceId || item.id === claim.appliesToSpaceId)?.name || "A documented room";
+  const rooms = claims.filter((claim) => capacityIsVerified(claim, venue));
+  const suitable = rooms.filter((claim) => !accepted || accepted.includes(normalize(claim.layout)));
+  const fitting = suitable.filter((claim) => claimCount(claim) >= headcount).sort((a, b) => claimCount(a) - claimCount(b));
+  const conflicts = claims.filter((claim) => claim.subject === "capacity" && claim.evidenceType === "conflicting");
+  // Name only conflicts that bear on this answer: same seating layout when a room fits, any when none does.
+  const conflictNote = (relevant) => (relevant.length ? ` Sources conflict on: ${relevant.map((claim) => claim.claim.replace(/\.$/, "").toLowerCase()).join("; ")}.` : "");
+  const layoutConflicts = conflicts.filter((claim) => !accepted || accepted.some((layout) => claimText(claim).includes(layout)));
+  const layoutText = accepted ? `${styleLabel[style]} seating` : "any documented seating layout";
+  if (fitting.length) return {status: "supported", evidence: fitting.slice(0, 3), basis: `${fitting.slice(0, 3).map((claim) => `${spaceName(claim)}: ${claimCount(claim)} in ${claim.layout} style`).join("; ")} — enough for ${headcount} in ${layoutText}.${conflictNote(layoutConflicts)}`};
+  const largest = [...suitable].sort((a, b) => claimCount(b) - claimCount(a))[0];
+  const basis = largest ? `Largest documented room for ${layoutText}: ${spaceName(largest)}, ${claimCount(largest)}; ${headcount} needed.`
+    : rooms.length ? `Documented capacities are for ${[...new Set(rooms.map((claim) => claim.layout))].join(" and ")} seating; ${layoutText} is not listed.`
+      : "No room is documented with both a seating layout and a capacity.";
+  return {status: "unknown", evidence: [...(largest ? [largest] : []), ...claims.filter((claim) => claim.subject === "capacity" && ["unknown", "conflicting"].includes(claim.evidenceType))], basis: `${basis}${conflictNote(conflicts)}`};
 }
 
 /**
@@ -193,8 +222,13 @@ export function validateAgentRecommendations({ output, venues, brief, evidence }
       const audienceKind = ["eligibility", "access-model"].includes(kind);
       const documentedClaims = relatedClaims.filter((claim) => audienceKind ? !["unknown", "conflicting", "demonstration"].includes(claim.evidenceType) : claimDocuments(claim, requirement, kind) || explicitlyProhibits(claim, requirement));
       const prohibitions = documentedClaims.filter((claim) => audienceKind ? explicitlyProhibits(claim) : explicitlyProhibits(claim, requirement));
+      if (kind === "capacity" && requirement === `Capacity for ${brief.headcount} guests`) {
+        const capacity = classifyCapacity(venue, sourceVerifiedClaims, brief);
+        classifications.push({requirement, status: capacity.status, basis: capacity.basis, evidence: capacity.evidence.map((claim) => ({claim: claim.claim, value: claim.value, evidenceType: claim.evidenceType, qualification: claim.qualification || null}))});
+        continue;
+      }
       const supportedClaims = kind === "capacity"
-        ? documentedClaims.filter((claim) => capacityIsVerified(claim, venue) && Number(String(claim.value).match(/\d+/)?.[0]) >= Number(brief.headcount))
+        ? documentedClaims.filter((claim) => capacityIsVerified(claim, venue) && claimCount(claim) >= Number(brief.headcount))
         : documentedClaims.filter((claim) => claimSupportsRequirement(claim, requirement, kind, brief));
       let status = "unknown";
       let supportingClaims = [];

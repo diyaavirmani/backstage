@@ -30,3 +30,17 @@ test('shared Ofis Square wording does not make location-specific outline paths i
   assert.equal(outlineEntryMatchesVenuePath('venues/delhi_ncr/ofis_square_noida', venues[1]), false);
   assert.equal(outlineEntryMatchesVenuePath('venues/delhi_ncr/ofis_square_gurgaon', venues[0]), false);
 });
+
+test("outline eligibility works for per-venue, per-city and topic entries without crossing cities or exclusions", async () => {
+  const {outlineEntryIsEligible} = await import("./venue-outline-matching.mjs");
+  const noida = {_id: "venue-ofis-noida-sector-62", name: "Ofis Square — Sector 62, Noida", locality: "Sector 62, Noida"};
+  const gurugram = {_id: "venue-ofis-gurugram-sohna-road", name: "Ofis Square — Sohna Road", locality: "Sohna Road, Gurugram"};
+  const shifu = {_id: "venue-shifu-den-bengaluru", name: "Shifu Den", locality: "Bengaluru"};
+  const all = [noida, gurugram, shifu];
+  assert.equal(outlineEntryIsEligible("venues/delhi_ncr/ofis_square_gurugram", [gurugram], all, "Delhi NCR"), true);
+  assert.equal(outlineEntryIsEligible("venues/delhi_ncr/ofis_square_noida", [gurugram], all, "Delhi NCR"), false, "an excluded venue's own entry stays out");
+  assert.equal(outlineEntryIsEligible("venues/delhi_ncr", [gurugram], all, "Delhi NCR"), true, "a city entry is readable; sections are verified per venue");
+  assert.equal(outlineEntryIsEligible("venues/bengaluru", [gurugram], all, "Delhi NCR"), false, "never the other city");
+  assert.equal(outlineEntryIsEligible("facilities", [shifu], all, "Bengaluru"), true);
+  assert.equal(outlineEntryIsEligible("venues/delhi_ncr", [shifu], all, "Bengaluru"), false);
+});

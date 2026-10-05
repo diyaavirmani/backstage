@@ -683,3 +683,28 @@ GitHub Docker CI and Railway health/page verification for the pushed correction 
   - The first (Bengaluru founders) returned the trace with KB `kbPFAVeDOOjD`, 9 outline entries, 2 entries read and 1 rejected candidate. That was SAIACS, which exposed the inline-citation bug.
   - The second, after the fix (Bengaluru developer workshop), returned SAIACS and Shifu with 0 rejected; SAIACS showed Parking and Wi-Fi supported, both stated on its site.
 - **Not done:** new venues, and SAIACS's official hall × layout capacity table and its conflicting parent-site figures. Both need venue claim patches and a Knowledge Base rebuild that would change live production content, and are left for explicit approval.
+
+## SAIACS hall capacities, source conflicts and a Knowledge Base rebuild incident — 5 October 2026
+
+- With the user's approval, added SAIACS's official hall table from `conference-and-events.html`, verified against the raw page: Mysore 40/60, Rudra 50/70, Joel 40/50 and Jacaranda 60/100 in cluster/theatre seating. Also added the hall equipment statement and two genuine conflicts with the SAIACS institute page `saiacs.org/ceo-centre/`, which answered HTTP 500 to automated requests while serving the full page:
+  - ground capacity: 500 versus 400;
+  - largest cluster seating: 60 versus 30–80.
+  The auditorium's “approximately 350” stays unknown for any layout.
+- Capacity is now layout-aware. Hands-on events need cluster or classroom seating, talks need theatre, and anything else accepts any documented layout. Each result carries a plain-language basis such as “Largest documented room for cluster or classroom seating: Jacaranda hall, 60; 80 needed”, and names only the conflicts relevant to it. Cards show a Capacity check line. The evaluation grows to 26 cases: keyword 17, structured 25. The capacity cases score 2/4 versus 4/4 and were written with the data, not held out. On the final untuned round, keyword matching now scores 6/6 and the structured verifier 5/6, reported unchanged.
+- **Sanity:**
+  - The seed created 2 sources and 4 hall spaces.
+  - A new `scripts/sync-venue-records.mjs` (dry run first) appended 11 claims, 2 source references and 4 spaces to the published SAIACS venue. It replaced one reviewed claim only after confirming the published copy still matched git HEAD.
+  - A first run hit a client limit of one array insert per patch, which dropped two appends. The script now patches separately; a rerun and dry run confirmed it is idempotent.
+  - `sanity:verify-seed`: 67/67 documents and 197 references.
+- **Knowledge Base incident:**
+  - `sanity context refresh` re-checked the six sources but did not rewrite entries. A full `build` then replaced the nine per-venue entries with city- and topic-level entries.
+  - Its generated source lists number items in dataset order while in-text markers follow first appearance, so most footnotes point at a neighbouring venue. Masters' Union was absent.
+  - A second build had the same misattribution. Only Paytm and Shifu verified.
+  - The checker failed closed throughout, so no wrong citation was shown. But the app's per-venue outline matching found no eligible entries, so hosted discovery stopped returning leads from the first rebuild onward.
+  - The known-good build is job `ctx-build-…-1790948631445` (2 Oct, all six venues verified). The CLI has no restore command, so restoring it from the Sanity Dashboard is the recommended recovery.
+- **Robustness changes (fail-closed):**
+  - Outline eligibility accepts per-venue, per-city or topic entries for the brief's city and never the other city's, via the tested `outlineEntryIsEligible`.
+  - A candidate keeps only the entry paths verified for that venue.
+  - A section is valid when all its citations are the venue's own and at least one venue source is cited; uncited sources stay in the strict checker's report.
+  - A heading needs the venue's name and one locality word, while the section body keeps the full locality.
+- **Checks:** unit 59/59, lint and TypeScript clean; full Playwright 30 passed, 3 opt-in skipped (run before the final checker-only heading change).

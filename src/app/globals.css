@@ -2633,3 +2633,10 @@ legend {
   color: #d3ef9b;
   justify-self: start;
 }
+.capacity-check {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.requirement-basis {
+  font-weight: 700;
+}

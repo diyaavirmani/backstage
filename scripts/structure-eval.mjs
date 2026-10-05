@@ -64,9 +64,10 @@ export function evalMarkdown(rows) {
   return [
     `| Organizer question | Venue | What the sources establish | Keyword match | Backstage (structured) |`,
     `|---|---|---|---|---|`,
-    ...rows.map((row) => `| ${row.question}${row.heldOut ? " †" : ""} | ${row.venueName} | ${row.expected}: ${row.why} | ${row.keywordCorrect ? "✓" : "✗"} ${row.keyword} | ${row.structuredCorrect ? "✓" : "✗"} ${row.structured} |`),
+    ...rows.map((row) => `| ${row.question}${row.heldOut ? " †" : row.capacityRound ? " ‡" : ""} | ${row.venueName} | ${row.expected}: ${row.why} | ${row.keywordCorrect ? "✓" : "✗"} ${row.keyword} | ${row.structuredCorrect ? "✓" : "✗"} ${row.structured} |`),
     ``,
     `Keyword match correct: **${score("keywordCorrect")}**. Backstage structured verifier correct: **${score("structuredCorrect")}**.`,
+    ...(rows.some((row) => row.capacityRound) ? [``, `Capacity cases (‡ — written with the SAIACS hall table to check layout-aware capacity, not held out): keyword ${score("keywordCorrect", rows.filter((row) => row.capacityRound))}, structured ${score("structuredCorrect", rows.filter((row) => row.capacityRound))}.`] : []),
     ...(heldOut.length ? [``, `Final round († — ${heldOut.length} cases written after the last tuning fix and never tuned on): keyword ${score("keywordCorrect", heldOut)}, structured ${score("structuredCorrect", heldOut)}.`] : []),
   ].join("\n");
 }
