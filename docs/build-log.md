@@ -753,3 +753,8 @@ GitHub Docker CI and Railway health/page verification for the pushed correction 
   - The query now projects `"appliesToSpaceId": appliesToSpace._ref`.
   - Using the production query text against live Sanity (no model call), the verifier returns, for an 80-person workshop, “Largest documented room for cluster or classroom seating: Jacaranda hall, 60; 80 needed”, naming both conflicts. A 90-person talk is supported by Jacaranda (100 theatre-style) and a 50-person workshop by Rudra (50) and Jacaranda (60).
   - A regression test asserts the query mapping. Grounding and provider tests 10/10; agent 60/60.
+
+## README cover image — 5 October 2026
+
+- Added `docs/images/backstage-cover.png` (1000×420), rendered from the intro video's end frame (wordmark, “Your next event starts here.”, deployed URL). It is linked to the live app at the top of `README.md`.
+- Documentation only; no application code changed.
