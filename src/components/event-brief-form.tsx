@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import type { EventBrief, VenueRecommendation } from "@/types";
+import type {
+  DiscoveryVerification,
+  EventBrief,
+  VenueRecommendation,
+} from "@/types";
 import { publishResearchApplicationHandoff } from "@/lib/application-handoff";
 import {
   BRIEF_STORAGE_KEY,
@@ -25,6 +29,13 @@ import {
 } from "@/components/brief-input-controls";
 import { suggestEventSetup } from "../../scripts/brief-controls.mjs";
 import { ResearchLeadCard } from "@/components/research-lead-card";
+import { VerificationTrace } from "@/components/verification-trace";
+
+type RetrievalEvidence = {
+  venueId: string;
+  entryPaths: string[];
+  sourceReferenceIds: string[];
+};
 
 type Turn = { role: "user" | "assistant"; content: string };
 type Example = "delhi-hackathon" | "bengaluru-founders" | "demo-workshop";
@@ -84,6 +95,9 @@ export function EventBriefForm() {
   const [recommendations, setRecommendations] = useState<
     VenueRecommendation[] | null
   >(null);
+  const [verification, setVerification] =
+    useState<DiscoveryVerification | null>(null);
+  const [retrieval, setRetrieval] = useState<RetrievalEvidence[]>([]);
   const [agentMessage, setAgentMessage] = useState("");
   const [agentError, setAgentError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -294,6 +308,8 @@ export function EventBriefForm() {
         recommendations?: VenueRecommendation[];
         retryAfterSeconds?: number;
         suggestedSetup?: ReturnType<typeof suggestEventSetup>;
+        verification?: DiscoveryVerification;
+        retrievalEvidence?: RetrievalEvidence[];
       };
       if (id !== requestId.current) return;
       if (!response.ok) {
@@ -308,6 +324,8 @@ export function EventBriefForm() {
           "The venue response could not be read. No new leads were published.",
         );
       setRecommendations(payload.recommendations);
+      setVerification(payload.verification || null);
+      setRetrieval(payload.retrievalEvidence || []);
       const proposed = payload.suggestedSetup || suggestEventSetup(draft);
       setSetup(proposed);
       setSetupRooms(proposed.rooms.join(", "));
@@ -962,6 +980,13 @@ export function EventBriefForm() {
                 {setupMessage && <p role="status">{setupMessage}</p>}
               </section>
             )}
+            {verification && lastBrief && (
+              <VerificationTrace
+                verification={verification}
+                leadCount={recommendations.length}
+                city={lastBrief.city}
+              />
+            )}
             {recommendations.length === 0 ? (
               <EmptyState title="No verified leads returned">
                 Refine your requirements with a follow-up or review your brief.
@@ -974,6 +999,9 @@ export function EventBriefForm() {
                     key={venue.venueId}
                     venue={venue}
                     brief={lastBrief || undefined}
+                    retrieval={retrieval.find(
+                      (item) => item.venueId === venue.venueId,
+                    )}
                     onPrepare={() => prepare(venue)}
                   />
                 ))}

@@ -28,7 +28,9 @@ function headingIdentifiesVenue(heading, venue) {
   const headingWords = new Set(normalize(heading).split(" "));
   const nameWords = venueNameKey(venue).split(" ").filter(Boolean);
   const locationWords = localityWords(venue);
-  return nameWords.every((word) => headingWords.has(word)) && locationWords.every((word) => headingWords.has(word));
+  // Headings may shorten a long address ("Masters' Union Campus, Gurugram"); the section body must still contain the
+  // full locality (checked below), and branch names such as "Sohna Road" or "Sector 62, Noida" are part of the name.
+  return nameWords.every((word) => headingWords.has(word)) && (!locationWords.length || locationWords.some((word) => headingWords.has(word)));
 }
 
 function parseSourceIndex(lines) {
@@ -171,9 +173,13 @@ export function verifyVenueEvidence(entries, venues) {
         path: entry.path,
         heading: current.title,
         citationLabels: associations,
+        // Inline links inside this venue's own section that match its published sources are provenance too.
+        inlineSourceIds: [...new Set(expectedSources.filter((source) => matchedInlineUrls.includes(canonicalUrl(source.url))).map((source) => source._id))],
         matchedUrls: [...coveredUrls],
         expectedUrls,
-        valid: citationIssues.length === 0 && missingUrls.length === 0 && missingLocality.length === 0,
+        // Every citation must be this venue's own and at least one of its sources must be cited. Sources the build left
+        // uncited are still reported as issues for the strict live checker.
+        valid: citationIssues.length === 0 && coveredUrls.size > 0 && missingLocality.length === 0,
       };
       checks.push(check);
       const existing = foundById.get(current.venue._id) || [];

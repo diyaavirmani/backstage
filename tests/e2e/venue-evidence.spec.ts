@@ -141,6 +141,23 @@ test("recommendations put evidence first and prepare an editable, unsent enquiry
     route.fulfill({
       json: {
         message: "Deterministic evidence fixture.",
+        retrievalEvidence: [
+          { venueId: "venue-ofis-noida-sector-62", entryPaths: ["venues/delhi_ncr/ofis_square_noida"], sourceReferenceIds: ["source-ofis-events"] },
+        ],
+        verification: {
+          knowledgeBaseIds: ["kbFixture"],
+          outlineEntryCount: 9,
+          scopedEntryCount: 6,
+          localityFilter: { included: [], excluded: ["gurugram"] },
+          entriesRead: [{ path: "venues/delhi_ncr/ofis_square_noida", tag: "core" }, { path: "event_hosting_history", tag: null }],
+          readToolCalls: 2,
+          modelCandidateCount: 3,
+          rejectedCandidateCount: 1,
+          citationChecks: [
+            { venueId: "venue-ofis-noida-sector-62", path: "venues/delhi_ncr/ofis_square_noida", valid: true, sourceIds: ["source-ofis-events"] },
+            { venueId: "venue-masters-union-gurugram", path: "venues/delhi_ncr/masters_union", valid: false, sourceIds: [] },
+          ],
+        },
         recommendations: [
           {
             venueId: "venue-ofis-noida-sector-62",
@@ -235,11 +252,24 @@ test("recommendations put evidence first and prepare an editable, unsent enquiry
 
   const cards = page.locator(".recommendation-card");
   await expect(cards).toHaveCount(2);
+  const trace = page.locator(".verification-trace");
+  await expect(trace).toContainText("Read 2 Knowledge Base entries · 1 citation check passed · 1 model suggestion rejected");
+  await trace.locator("summary").click();
+  await expect(trace).toContainText("Sanity Context listed 9 entries in Knowledge Base kbFixture; 6 matched Delhi NCR (excluding gurugram)");
+  await expect(trace).toContainText("✓ venues/delhi_ncr/ofis_square_noida → source-ofis-events");
+  await expect(trace).toContainText("✗ venues/delhi_ncr/masters_union → no matched source (not used)");
+  await expect(trace).toContainText("The model proposed 3 leads; 1 failed identity, locality or citation checks; 2 are shown.");
   await expect(cards.nth(0)).toHaveAttribute("data-venue-id", "venue-ofis-noida-sector-62");
   const noida = cards.nth(0);
   const highlights = noida.locator(".evidence-highlights li");
   await expect(highlights.first()).toContainText("Auditorium and theatre space");
   await expect(highlights.nth(1)).toContainText("AV systems");
+  await noida.getByRole("button", { name: "View evidence" }).click();
+  const evidenceDialog = page.getByRole("dialog", { name: /evidence for your brief/ });
+  await expect(evidenceDialog.getByRole("heading", { name: "Knowledge Base evidence for this lead" })).toBeVisible();
+  await expect(evidenceDialog).toContainText("venues/delhi_ncr/ofis_square_noida");
+  await expect(evidenceDialog).toContainText("Citations matched to published sources: source-ofis-events");
+  await page.keyboard.press("Escape");
   await expect(
     noida.getByRole("link", { name: /Official hosting information/ }),
   ).toHaveAttribute("href", "https://ofissquare.com/events-spaces/");

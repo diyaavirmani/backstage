@@ -4,9 +4,13 @@ Start at the deployed app: **[https://backstage-production-0849.up.railway.app](
 
 Backstage helps organizers describe what they are hosting, then retrieves source-backed venue leads from Sanity. The six researched venues are not Backstage partners: organizers can prepare private application drafts, but cannot submit booking requests to them. The host approval and calendar workflow uses fictional demo hosts. Switching between Organizer and Host is a simulation, not production account authentication.
 
-## Redesign branch navigation
+## What to look for (about five minutes)
 
-The green workspaces and illustrated presentation are now live at the URL above (source revision `c8ff4f1`, deployed from `feat/green-saas-redesign`). The navigation below works on the public app. The external design-reference PR remains unmerged.
+1. **Homepage, “Keyword search would have said yes.”** Four real traps from the published records, with the measured score: 26 organizer questions, keyword match 17 correct, Backstage's structured verifier 25. The [full table, method and misses](structure-eval.md) is reproducible with `npm run eval:structure`.
+2. **A live search** (below), then open **How these leads were verified**. It shows the Knowledge Base outline size, the exact entries the agent read over Sanity Context MCP, each citation check, and how many model suggestions the server rejected.
+3. **A lead's View evidence.** It shows every requirement status and the evidence behind it, the Knowledge Base entries and citations for that lead, and its published enquiry routes.
+4. **Change the audience to *Students* and search again.** Shifu Den's founder-community access must stay unknown rather than become a yes.
+5. **Layout-aware capacity.** Search Bengaluru for an 80-person **Workshop**. SAIACS's card should say capacity needs confirmation: its largest cluster-style hall seats 60, and its two official sources disagree (30–80). Change the gathering type to **Talk or panel** with 90 attendees, and Jacaranda hall (100 theatre-style) is documented as enough. Its evidence view shows the conflicting ground capacities (500 vs 400) side by side with both sources.
 
 ## Try discovery in your own browser
 
@@ -14,7 +18,8 @@ The green workspaces and illustrated presentation are now live at the URL above 
 2. In **Try an example**, choose **Bengaluru founders · qualified eligibility**, then click **Load example**. This fills the form only; it does not save a brief, create an application, or reserve anything.
 3. Use **Continue** through Event details and Space and requirements. Review the complete brief, then click **Find suitable venues** and wait for live discovery. Backstage reads the current Sanity Context outline and actual Knowledge Base entries before showing recommendations.
 4. Review the Shifu Den card. Open its source link to `https://den.shifuventures.com/`. The source describes pro-bono access for a founder community; it does not establish that every organizer qualifies. Room/layout capacity, current availability, price terms, and Backstage booking authority remain unknown.
-5. Ask a follow-up such as “What founder eligibility does the source establish, and what would the host still need to confirm?” The saved event brief remains attached to the follow-up.
+5. Open **How these leads were verified** above the leads to see the entries read and the citation checks.
+6. Ask a follow-up such as “What founder eligibility does the source establish, and what would the host still need to confirm?” The saved event brief remains attached to the follow-up.
 
 Discovery uses a shared daily limit of five requests per browser session and fifty across the demo. The limits are persisted; please avoid repeated refreshes or retry loops.
 

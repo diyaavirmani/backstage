@@ -657,3 +657,80 @@ GitHub Docker CI and Railway health/page verification for the pushed correction 
 - Every returned source URL belonged to reviewed records; every contact's venue IDs included its lead; no Noida identity or locality appeared after the exclusion. Metadata (no credentials) is ignored at `.playwright-artifacts/live-journey/live-journey.json`. The live citation checker afterwards still verified identity- and URL-matched evidence for all 6 venues (2026-10-04T21:16:07Z UTC).
 - Docker CI passed for each pushed feature revision: [37232306123](https://github.com/diyaavirmani/backstage/actions/runs/37232306123) for `2ca6be8` and [37235052602](https://github.com/diyaavirmani/backstage/actions/runs/37235052602) for `b76cc4d`. Both were manually dispatched; the workflow does not run on feature-branch pushes.
 - Remaining limitations: published phone numbers and emails are not tested as active or authorized; no venue granted image permission (Ofis, SAIACS and Shifu photos are embedded with credit under “all rights reserved” footers, and Masters' Union is link-only); the photos' own dates are unknown; Shifu's events page mentions hosting 30–40 people, but that is not stored as a claim because it pairs no room with a layout; this live check is three calls, not a statistical evaluation; and the hosted Railway service was neither redeployed nor tested. No merge or deployment was performed.
+
+## Production deployment of sourced organizer tools — 5 October 2026
+
+- The user merged PR #3 into `main` as `e08ed194475fd5ff7ec2066714e76d31d22cce66`; it contains feature head `19aa7dc` with no further content differences. The Railway service is GitHub-connected, so the merge auto-started deployment `f84ac7c9-38b1-4f5c-a6f8-7adadbea99b3`. Railway reports `SUCCESS` with `branch main` and `commitHash e08ed19`. No manual upload, IaC apply, variable, volume, replica, quota or billing change was made. Docker CI [37236056111](https://github.com/diyaavirmani/backstage/actions/runs/37236056111) passed for `e08ed19`.
+- Hosted HTTPS checks: `/api/health` returned 200 `{"status":"ready"}`, and `/`, `/venues`, `/organizer` and `/host` returned 200. `/venues` identified **Published Sanity content** and served six “Why consider this venue” sections and six “How to ask” blocks. Ofis's sales `tel:` route appeared on both Ofis cards, the Noida-only email on one card and the SAIACS events email; there were four “View photos” galleries, the Masters' Union “Official photos” link and Paytm's no-route message.
+- Cache-disabled Chromium at 1440px and 390px (touch emulation on mobile) passed 16 direct-navigation/refresh document checks (all 200) with no console or runtime errors and no horizontal overflow. On the Sector 62 card the real thumbnail loaded, the gallery opened, and all six photos loaded from the official host (natural widths 500, 1024, 500, 768, 768, 765). The labelled hosting source link stayed visible after closing. Screenshots are ignored under `.playwright-artifacts/railway-sourced/`.
+- No hosted discovery, provider calls or operational mutations were made, to avoid spending the shared demo quota; live discovery was verified locally beforehand (final integration entry above). These deployment notes are committed on the feature branch rather than `main`, because a push to `main` would redeploy the service.
+
+## Judge-readiness pass — 5 October 2026
+
+- Researched the official DEV challenge page, the Path One template and criteria (meaningful use of Sanity Context and structured content, technical implementation, use of Knowledge Bases, usability; the deadline is 4 Oct 11:59 PM PDT, which is 12:29 PM IST on 5 Oct), the Sanity Context docs and notable entries. Standout entries show measured comparisons against keyword baselines and visible tool traces. On branch `feat/judge-ready`.
+- **Measured keyword vs structure:** added `npm run eval:structure` (deterministic, no network calls) and `docs/structure-eval.md`. It runs 22 real organizer questions over the reviewed catalog: keyword match scored 14 correct, the production verifier 21. On six final cases written after the last tuning fix it was 5/6 each, with the structured miss a cautious “unknown”. Regression tests assert the verifier makes no false positives.
+- **Verifier corrections found by that comparison:**
+  - A caveat anywhere in a claim had hidden documented facts (display screens, catering, workshops); caveats are now clause-scoped.
+  - Event types were never classified.
+  - Plural equipment names were missed.
+  - Facilities listed inside a hosting claim were ignored.
+  - Matching is now whole-word, so “main” cannot match “remain”.
+  - Capacity, availability, price and booking authority remain strict.
+- **SAIACS was silently dropped from Bengaluru searches.** Its Knowledge Base entry cites its source inline rather than with numbered footnotes, so citation checks passed with no source IDs and the candidate was rejected. Inline links inside a venue's own section that match its published sources now count, only when the whole check is valid. Swapped footnotes still fail closed.
+- **Audit trail:** discovery returns a sanitized `verification` record, and the UI shows “How these leads were verified” plus per-lead Knowledge Base entries and citations. The homepage adds “Keyword search would have said yes.”, with four real traps and the measured numbers computed at build time. The submission is rewritten to DEV's exact Path One template, and the judge guide and README are refreshed.
+- **Checks:** unit 55/55 (agent, provenance, enrichment and evaluation), operations 33/33, deployment controls 6/6, provider failures 4/4, catalog validation, lint and TypeScript. Full production-build Playwright: 30 passed, 3 opt-in live tests skipped (run before the inline-provenance fix; the affected evidence and homepage specs passed afterwards).
+- **Two single live discovery calls** (local build, isolated SQLite):
+  - The first (Bengaluru founders) returned the trace with KB `kbPFAVeDOOjD`, 9 outline entries, 2 entries read and 1 rejected candidate. That was SAIACS, which exposed the inline-citation bug.
+  - The second, after the fix (Bengaluru developer workshop), returned SAIACS and Shifu with 0 rejected; SAIACS showed Parking and Wi-Fi supported, both stated on its site.
+- **Not done:** new venues, and SAIACS's official hall × layout capacity table and its conflicting parent-site figures. Both need venue claim patches and a Knowledge Base rebuild that would change live production content, and are left for explicit approval.
+
+## SAIACS hall capacities, source conflicts and a Knowledge Base rebuild incident — 5 October 2026
+
+- With the user's approval, added SAIACS's official hall table from `conference-and-events.html`, verified against the raw page: Mysore 40/60, Rudra 50/70, Joel 40/50 and Jacaranda 60/100 in cluster/theatre seating. Also added the hall equipment statement and two genuine conflicts with the SAIACS institute page `saiacs.org/ceo-centre/`, which answered HTTP 500 to automated requests while serving the full page:
+  - ground capacity: 500 versus 400;
+  - largest cluster seating: 60 versus 30–80.
+  The auditorium's “approximately 350” stays unknown for any layout.
+- Capacity is now layout-aware. Hands-on events need cluster or classroom seating, talks need theatre, and anything else accepts any documented layout. Each result carries a plain-language basis such as “Largest documented room for cluster or classroom seating: Jacaranda hall, 60; 80 needed”, and names only the conflicts relevant to it. Cards show a Capacity check line. The evaluation grows to 26 cases: keyword 17, structured 25. The capacity cases score 2/4 versus 4/4 and were written with the data, not held out. On the final untuned round, keyword matching now scores 6/6 and the structured verifier 5/6, reported unchanged.
+- **Sanity:**
+  - The seed created 2 sources and 4 hall spaces.
+  - A new `scripts/sync-venue-records.mjs` (dry run first) appended 11 claims, 2 source references and 4 spaces to the published SAIACS venue. It replaced one reviewed claim only after confirming the published copy still matched git HEAD.
+  - A first run hit a client limit of one array insert per patch, which dropped two appends. The script now patches separately; a rerun and dry run confirmed it is idempotent.
+  - `sanity:verify-seed`: 67/67 documents and 197 references.
+- **Knowledge Base incident:**
+  - `sanity context refresh` re-checked the six sources but did not rewrite entries. A full `build` then replaced the nine per-venue entries with city- and topic-level entries.
+  - Its generated source lists number items in dataset order while in-text markers follow first appearance, so most footnotes point at a neighbouring venue. Masters' Union was absent.
+  - A second build had the same misattribution. Only Paytm and Shifu verified.
+  - The checker failed closed throughout, so no wrong citation was shown. But the app's per-venue outline matching found no eligible entries, so hosted discovery stopped returning leads from the first rebuild onward.
+  - The known-good build is job `ctx-build-…-1790948631445` (2 Oct, all six venues verified). The CLI has no restore command, so restoring it from the Sanity Dashboard is the recommended recovery.
+- **Robustness changes (fail-closed):**
+  - Outline eligibility accepts per-venue, per-city or topic entries for the brief's city and never the other city's, via the tested `outlineEntryIsEligible`.
+  - A candidate keeps only the entry paths verified for that venue.
+  - A section is valid when all its citations are the venue's own and at least one venue source is cited; uncited sources stay in the strict checker's report.
+  - A heading needs the venue's name and one locality word, while the section body keeps the full locality.
+- **Checks:** unit 59/59, lint and TypeScript clean; full Playwright 30 passed, 3 opt-in skipped (run before the final checker-only heading change).
+
+## Knowledge Base grounding check — 5 October 2026
+
+- **Audit (user request: confirm leads come from the Knowledge Base, not hardcoded data):**
+  - The discovery handler imports no checked-in venue data, and organizer lead cards render only the API response.
+  - Published Sanity records supply venue identities and the structured claims used for requirement statuses. A venue becomes a lead only when an entry read through Context MCP in that request contains a section whose citations match that venue's published sources.
+  - Checked-in JSON is used only outside search: the homepage's labelled illustrative preview and build-time comparison; the `/venues` fallback, labelled “Local research preview” and shown only when Sanity is unreachable; and the private-draft venue picker. Draft evidence itself is resolved from published Sanity at save time.
+- **New `scripts/discovery-kb-grounding.test.mjs`** (in `test:provider-failures`, 7/7 with the existing provider tests) runs the real handler and verifiers with mocked providers:
+  - A venue published in Sanity but absent from the read entry is dropped, along with an invented ID.
+  - A wrongly attributed citation yields no leads and no fallback.
+  - Without a read, or without an entry for the city, nothing is published.
+- **One live local call** (Delhi NCR, current faulty build):
+  - The agent read `facilities_and_capacity` and `venues/delhi_ncr` and proposed three Delhi venues.
+  - All three were rejected by citation checks, so zero leads were returned although Sanity holds four Delhi venues.
+  - This confirms both Knowledge Base grounding and that hosted results stay empty until the 2 Oct build is restored.
+
+## Dashboard “Knowledge base not found”: read-only diagnosis — 5 October 2026
+
+- Started from clean `feat/judge-ready` at `a92d675c673f5088a4ea3d2224b5a2114bc2fa36`; PR #4 is open and its existing Docker check succeeded. Preserved application code, backend rules and all Sanity resources.
+- Executed both requested commands with CLI account authentication: `npx sanity context list --organization o8mue7lt8 --json` and `npx sanity context get kbPFAVeDOOjD --json`. Both exited **0**, without an error code. `sanity api users/me` identifies the intended personal Google account; `sanity organizations list` confirms membership in Backstage (`o8mue7lt8`). No CLI auth override was configured and no credential values were printed.
+- Knowledge Base `kbPFAVeDOOjD` exists in that organization. State `review`, two open issues, one instruction, six dataset sources, no build in progress or pending source changes. Current build job ending `1791167554196` is `succeeded` (completed `2026-10-05T02:35:58.640Z`, no error); the previously verified job ending `1790948631445` remains accessible and `succeeded`.
+- Existing MCP initialization, tool listing and `initial_context` succeeded with the configured organization Context token; no authentication, authorization or not-found error was returned. Tools: `initial_context`, `knowledge_base_read`, `knowledge_base_search`. Actual outline paths: `booking_and_pricing_status`, `event_hosting_history`, `facilities_and_capacity`, `venues/bengaluru`, `venues/delhi_ncr`.
+- Ran the unchanged live citation checker at `2026-10-05T03:25:52.495Z`. It verified all six published venue/source records and successfully read all five MCP paths, but exited **1** on content validation: Paytm and Shifu each have a valid section; Masters' Union, Ofis Sohna Road, Ofis Sector 62 and SAIACS have no valid source-backed section. Examples include Sohna Road's footnote pointing to Sector 62, the reverse association for Sector 62, and SAIACS's footnote pointing to Shifu. Missing locality/unknown qualifications are also reported. A successful read is not successful source-grounded discovery.
+- Found the user's open Sanity Dashboard tab, but DOM inspection is blocked by Chrome's AppleScript error **12** (JavaScript from Apple Events disabled); no browser/CDP connector is attached. Browser account identity and the Dashboard request's HTTP status remain unobserved. The UI message cannot establish deletion or an HTTP 404. The minimum next diagnostic is opening the Knowledge Base from the Backstage Context list in the intended account; local page automation requires enabling the Chrome inspection option. Requested that capability, without changing Sanity permissions.
+- Official documentation confirms **Entries → earlier outline version → Restore this version**. No restore was performed. No rebuild, refresh, recreation, deletion, permissions change or citation relaxation was attempted. The two contradiction issues remain optional and unresolved. The post-restoration live agent search is pending; **zero OpenAI calls** were made. PR #4 remains unmerged.
+- Focused outline/citation regressions: **10/10 passed**. No application changes required a build or browser regression rerun. Private diagnostic output is outside Git; `git diff --check` passed before these documentation updates.

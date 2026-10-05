@@ -1,0 +1,21 @@
+export type StructureEvalRow = {
+  id: string;
+  question: string;
+  venueId: string;
+  venueName: string;
+  requirement: string;
+  expected: string;
+  why: string;
+  keyword: string;
+  structured: string;
+  status: string;
+  keywordCorrect: boolean;
+  structuredCorrect: boolean;
+  heldOut?: boolean;
+};
+export function venuesFromCatalog(catalog: unknown): Array<Record<string, unknown>>;
+export function venueText(venue: Record<string, unknown>): string;
+export function keywordVerdict(text: string, requirement: string): boolean;
+export function structuredStatus(venue: Record<string, unknown>, brief: Record<string, unknown>, requirement: string): string;
+export function runStructureEval(venues: Array<Record<string, unknown>>, cases: unknown[]): StructureEvalRow[];
+export function evalMarkdown(rows: StructureEvalRow[]): string;

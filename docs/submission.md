@@ -1,67 +1,92 @@
 ---
-title: "Backstage: source-backed venue discovery with Sanity"
+title: "Backstage: a venue-scouting agent that knows “350 seats” isn’t a yes"
 published: false
 tags: devchallenge, sanitychallenge, sanity, ai
 ---
 
-# Backstage: venue discovery grounded in structured Sanity knowledge
-
-**Sanity Challenge Path One:** an agent querying a Sanity Context MCP endpoint backed by a Knowledge Base.
+*This is a submission for the [Sanity Challenge, Path One: Ship an Agent That Queries Real Content](https://dev.to/challenges/sanity-2026-09-16)*
 
 ## What I Built
 
-I built Backstage for organizers in Delhi NCR and Bengaluru who are tired of stitching together venue details through repeated outreach and personal connections. An organizer describes an event once: its audience, date, headcount, rooms, equipment, timing, budget, and which requirements are essential. Backstage then finds potential hosts whose documented conditions may fit, explains what the evidence supports, and calls out what still needs confirmation.
+**Backstage** helps community organizers in Delhi NCR and Bengaluru find a venue without weeks of cold outreach. You describe the event once: the audience, headcount, date, equipment, what's essential and what's optional. An agent reads a Sanity Knowledge Base and returns source-backed venue leads. Each lead says what the official pages actually establish and what still needs confirmation, and gives the published contact route for asking.
 
-The organizer can ask follow-up questions while keeping the same event brief, open source links, and prepare a private application draft from a recommendation. Saving the draft snapshots the published venue evidence and unanswered questions. The six researched venues are leads, not partners; Backstage has no verified authority to contact or book them, so their drafts cannot be submitted.
+Venue research is a domain where a confident wrong answer costs real money and real trust. The public text is full of traps that keyword search walks straight into:
 
-I also built an operational demonstration for hosts: incoming requests, review and approval, finite room and equipment allocation, a monthly calendar, and a shared preparation checklist. Those workflows use two explicitly fictional hosts and fictional inventory. Role switching is a workflow simulation, not production authentication.
+- **Negation.** An Ofis Square record reads “this does not establish outside-food permission”. Keyword search sees `outside`, `food` and `permission`, and says yes.
+- **Numbers without a layout.** SAIACS mentions “approximately 350 seats” for its auditorium, but gives no layout. Its own hall table is precise: Jacaranda seats 100 theatre-style but only 60 in cluster seating. So a 90-person talk fits, and a 90-person hands-on workshop doesn't. Backstage counts capacity only when a source pairs a *named room* with a *seating layout* that suits the event.
+- **Sources that disagree.** The CEO Centre says its ground hosts up to 500; its parent institute says 400. The hall table tops out at 60 in cluster seating; the institute says 30–80. Backstage shows both figures with both sources and doesn't pick one.
+- **Audience conditions.** Shifu Den is “completely pro bono” *for founders*. A student meetup does not inherit that.
+- **Past events.** A listing says Paytm's Noida office hosted a meetup in 2026. That is historical evidence, not availability, and “2026” is not a seat count.
+- **Shared pages.** One Ofis page describes two locations. The Sector 62 auditorium must never leak into the Sohna Road lead.
 
-Structured content matters because a venue name alone cannot tell an organizer whether they have found the right place. Backstage checks venue identity and locality, ties claims to sources, keeps qualifications attached to claims, and tests eligibility against the organizer’s audience. Capacity is meaningful only when it names a room and layout. Missing availability, price, access terms, or booking authority stays unknown. This structure also keeps the two Ofis Square locations distinct even though they share a source page, and preserves Paytm as historical event evidence rather than present-day availability.
+**It only works because the content is structured.** Every claim in Sanity carries a subject, an evidence type (documented, historical, unknown or conflicting), a qualification, its source and a check date. Capacity claims point to a specific space and layout. The model never decides whether a requirement is met. It picks which Knowledge Base entries to read. The server then classifies each requirement from structured claims, with caveats scoped to the clause they appear in.
+
+**Measured, not claimed.** I asked 26 real organizer questions of the *same* published text. A transparent keyword match answered **17** correctly; Backstage's structured verifier answered **25**. Keyword matching fails toward a confident yes. Backstage fails toward “needs confirmation”, and it never claimed something the sources don't establish.
+
+The comparison also found bugs in my own verifier: one caveat anywhere in a claim was hiding documented facts like display screens and catering. I fixed it and then wrote six fresh cases I did not tune on. On those, keyword matching scored 6/6 and Backstage 5/6, and Backstage's miss was a cautious “unknown”. I'm reporting that rather than hiding it. The [full table, method and misses](https://github.com/diyaavirmani/backstage/blob/main/docs/structure-eval.md) are reproducible with `npm run eval:structure`.
+
+What organizers get:
+
+- **A guided brief:** audience presets that never imply eligibility, equipment kept separate from policies and services, and essentials kept separate from optional extras. A **suggested event setup** is proposed from the activities and is never inferred from headcount alone.
+- **Evidence-first leads:** “Why consider this venue” comes first, with direct links to the exact cited pages and visible qualifications and conflicts.
+- **“How these leads were verified”:** a trace of the Knowledge Base outline, the exact entries the agent read over MCP, each citation check, and how many model suggestions the server rejected.
+- **Actionable unknowns:** each lead lists open questions next to published enquiry routes, labelled as venue-specific or organization-wide. An editable enquiry is built from the brief; it is copied, never sent.
+- **Official photos** with branch-level location evidence and credit. Masters’ Union's terms forbid republishing, so its card links out instead.
+- **Private drafts:** a lead can be saved with the server-resolved evidence snapshot. Real venues are research leads, never bookable through Backstage. A clearly fictional host workspace demonstrates approvals and conflict-safe resource allocation.
 
 ## Demo
 
-**Live app:** [https://backstage-production-0849.up.railway.app](https://backstage-production-0849.up.railway.app)
+**Live app (no login):** https://backstage-production-0849.up.railway.app
 
-**Recording:** <!-- PLACEHOLDER: add the public walkthrough recording URL or embed after recording. -->
+Try **Organizer → Try an example → Bengaluru founders**, continue to Review, then **Find suitable venues**. Open **How these leads were verified** and a lead's **View evidence**. Then change the audience to *Students* and search again: founder eligibility stays unknown. The homepage shows the keyword-vs-structure comparison.
 
-The live organizer flow uses the deployed app and real Sanity Context retrieval. Fictional host operations are clearly labeled in the app.
+**Recording:** <!-- PLACEHOLDER: add the public walkthrough recording URL or embed. -->
+
+Live discovery is rate-limited to five searches per browser per day so shared credits survive judging.
 
 ## Code
 
-**Repository:** [github.com/diyaavirmani/backstage](https://github.com/diyaavirmani/backstage)
+**Repository:** https://github.com/diyaavirmani/backstage
 
-The project uses Next.js App Router and TypeScript. Published venue knowledge lives in Sanity. The organizer agent reads Sanity Context Knowledge Base entries and validates their claims and citations against published Sanity records. Operational applications and allocations are handled separately by the application’s SQLite backend.
-
-The illustrated presentation on the unmerged feature branch is inspired by the visual direction Vaibhav Pathak (`vkpdeveloper`) proposed in [PR #2](https://github.com/diyaavirmani/backstage/pull/2). That design assistance is acknowledged here. The feature branch implements its own presentation and original AI illustration without merging the PR or importing its code or assets. The user subsequently authorized the feature release, and the public app now serves that illustrated presentation (source revision `c8ff4f1`).
+Next.js App Router and TypeScript, the Vercel AI SDK with an OpenAI model, `@ai-sdk/mcp` for Sanity Context, and SQLite for the fictional operations demo. The tests cover 52 provenance, verifier and enrichment unit cases, 33 operations and concurrency tests, and 30 deterministic Playwright journeys. An opt-in live journey is capped at three discovery calls.
 
 ## How I Used Sanity
 
-I modeled venues, host organizations, spaces, shared resources, policies, hosting opportunities, claims, and source references in Sanity. A claim carries its value, evidence type, source, and date checked; room capacity also identifies its room and layout. The catalog query reads published research records and their related claims and sources. It excludes drafts, demonstration inventory, private organizer information, and operational bookings.
+**What I pointed Sanity Context at.** The Knowledge Base `kbPFAVeDOOjD` is built from my own Sanity dataset through a GROQ import. The query takes eligible research venues and dereferences their claims, sources, spaces, resources, policies and hosting opportunities. It excludes drafts, demonstration inventory and anything private. Context distilled this into 9 navigable entries: one per venue plus `facilities_and_equipment`, `event_hosting_history` and `unknown_and_unverified`.
 
-Backstage uses two distinct Sanity read paths:
+**Which tools the agent uses.** For each discovery, the agent:
 
-- The server-rendered `/venues` catalog queries eligible published dataset records with the project-scoped read-only Sanity client. It resolves source references and structured venue details for filtering and display.
-- The organizer agent connects to the Knowledge Base-only Sanity Context MCP endpoint. It calls `initial_context`, discovers current entry paths, and calls `knowledge_base_read` on selected entries before it can publish recommendations. The configured endpoint also exposes `knowledge_base_search`; the current recommendation flow uses outline discovery and actual entry reads. OpenAI selects relevant paths, while the server verifies venue IDs, locality, claim support, source identity, citation scope, and original URLs against published records.
+1. Calls `initial_context` to get the current outline.
+2. Narrows that outline to the event's city and any locality the organizer asked for (“exclude Noida”).
+3. Calls `knowledge_base_read` through a constrained tool that only accepts entry IDs from that outline, up to six reads.
 
-I encountered a real citation-attribution failure in generated Knowledge Base content. In the raw MCP entry text, numbered source references were assigned to the wrong venue sections; for example, the Shifu Den footnote pointed to SAIACS. The MCP response carried text but no structured citation metadata, and independent reads of the published Sanity records showed that the source relationships themselves were correct. That established the problem as generated entry content, not response formatting or our parser. I added a source-scoped provenance instruction and rebuilt the Knowledge Base. Then I strengthened validation to require all six venues, match source IDs and canonical URLs within the correct venue and claim scope, resolve footnotes only within their entry section, and preserve separate Ofis locations. Regression cases cover swapped citations, missing venues, valid original URLs inside footnotes, and shared source URLs across distinct locations. A live checker subsequently verified all six venue profiles against the rebuilt entries and the published source records.
+It must read before it may answer. The endpoint also exposes `knowledge_base_search`, which is BM25 keyword search. I deliberately do not let it decide answers, because keyword matching is exactly the failure mode measured above.
 
-SQLite owns demo applications, resource allocations, holds, reservations, checklist items, and transition history. Approval and allocation run transactionally there; Sanity remains the read-only knowledge layer. Demo inventory is never added to the real Knowledge Base.
+**What the agent does with what it reads.** The model returns only venue IDs, localities and the entry paths it read. The server then:
+
+- Verifies every venue section's numbered footnotes against that venue's published `sourceReference` documents and original URLs, so a citation for one venue can't vouch for another.
+- Rejects any identity, locality or path the reads don't support.
+- Classifies every requirement from structured claims.
+- Attaches published contacts and photos for the exact verified venue ID. These never reach the model.
+
+**A real Knowledge Base lesson.** An early build put the numbered sources under the wrong venue section: Shifu Den's footnote pointed to SAIACS. Independent reads proved the dataset relationships were correct, so the problem was in the generated entries. I added a source-scoped provenance instruction to the Knowledge Base and rebuilt it. Then I made the citation checker fail closed: section-scoped footnotes, all six venues present, canonical URLs, and shared URLs allowed across distinct locations. `npm run sanity:context-check` re-verifies all six live entries; it passed again today.
+
+**Structured content beyond the Knowledge Base.** Enquiry routes and photo galleries are separate `venueContact` and `venueGallery` documents. Each holds its venue, published purpose or caption, scope, source and check date. They are applied by an additive, idempotent enrichment script that reports differences instead of overwriting editors' work. The server validates them per venue against an allowlist of official image hosts.
 
 ## Sanity Project Details
 
-- **Project:** `1428jmxu`
-- **Organization:** `o8mue7lt8`
-- **Dataset:** private `production`
-- **Knowledge Base:** `kbPFAVeDOOjD` — Backstage Venue Knowledge
-- **Context MCP:** `backstage-venues`, configured with the Knowledge Base as its only source
-- **Tools available:** `initial_context`, `knowledge_base_read`, `knowledge_base_search`
+- **Project ID:** `1428jmxu` (dataset `production`, private)
+- **Knowledge Base:** `kbPFAVeDOOjD`, Backstage Venue Knowledge (9 entries)
+- **Context MCP endpoint:** Knowledge Base mode; tools `initial_context`, `knowledge_base_read` and `knowledge_base_search`
+- **Published documents:** 67 (6 venues, 17 source references, 13 spaces including SAIACS's four named halls, 10 enquiry routes, 5 photo galleries, plus resources, host organizations and opportunities)
 
-The project contains 37 published research documents. A verified outline path for Shifu Den is `venues/bengaluru/shifu_den`; its source identity is `source-shifu-den`, linked to [the original source](https://den.shifuventures.com/). The Knowledge Base also contains the distinct Delhi NCR venue entries and preserves historical evidence, eligibility qualifications, and explicit unknowns.
+**Honest limits:**
 
-Backstage is deployed on Railway with a single 500 MB persistent SQLite volume. Hosted discovery uses separate server-side Sanity read and Context credentials plus an OpenAI key; the content-import token is not present in the runtime. Real venue availability, prices, partnerships, and booking permissions are not inferred from the public evidence.
-
-<!-- The illustrated feature revision is deployed. Preserve the real recording and public agent-session placeholders until their actual URLs exist. -->
+- Six researched venues is a small catalogue. So far only SAIACS publishes room × layout capacities; elsewhere capacity stays “needs confirmation”, which is the truthful answer.
+- Published phone numbers and emails are not verified as active.
+- Photos are embedded with credit under “all rights reserved” footers; no reuse licence was granted.
+- The 26-case comparison is a demonstration built from real records, not a general benchmark.
 
 ## Agent Session
 
-<!-- PLACEHOLDER: upload and review the redacted native Codex recording in DEV Agent Sessions, make the session public, then insert its public embed here. -->
+<!-- PLACEHOLDER: upload the redacted session at https://dev.to/agent_sessions/new, click "Make Public", then embed it here. -->

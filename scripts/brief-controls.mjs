@@ -37,13 +37,20 @@ export function deduplicateRequirements(items) {
       return true;
     });
 }
+/** Seating style implied by the stated activities; shared by the setup proposal and capacity checks. */
+export function seatingStyle(brief) {
+  const activities = `${brief.eventType} ${brief.title} ${(brief.essentialRequirements || []).join(" ")}`;
+  return /hackathon|coding|workshop|hands.on/i.test(activities) ? "hands-on" : /talk|panel|screening/i.test(activities) ? "presentation" : "mixed";
+}
+
 export function suggestEventSetup(brief) {
   const activities = `${brief.eventType} ${brief.title} ${brief.essentialRequirements.join(" ")}`;
-  const handsOn = /hackathon|coding|workshop|hands.on/i.test(activities);
+  const style = seatingStyle(brief);
+  const handsOn = style === "hands-on";
   const parallel = /parallel|simultaneous|breakout/i.test(activities);
   const layout = handsOn
     ? "classroom or grouped-table layout for laptop work"
-    : /talk|panel|screening/i.test(activities)
+    : style === "presentation"
       ? "seated presentation layout"
       : "mixed seating layout for discussion and networking";
   return {

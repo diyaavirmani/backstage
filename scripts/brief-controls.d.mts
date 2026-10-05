@@ -11,6 +11,7 @@ export function serializeAudience(value: {
   community: string;
 }): string;
 export function deduplicateRequirements(items: string[]): string[];
+export function seatingStyle(brief: Pick<EventBrief, "eventType" | "title" | "essentialRequirements">): "hands-on" | "presentation" | "mixed";
 export function suggestEventSetup(brief: EventBrief): {
   rooms: string[];
   reason: string;

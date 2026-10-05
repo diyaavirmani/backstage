@@ -21,8 +21,11 @@ export function ResearchLeadCard({
   venue,
   onPrepare,
   brief,
+  retrieval,
 }: {
   venue: VenueRecommendation;
+  /** Knowledge Base entries and citations that verified this lead in the current discovery run. */
+  retrieval?: { entryPaths: string[]; sourceReferenceIds: string[] };
   /** The discovery snapshot that produced this lead; never the live, edited form. */
   brief?: EventBrief;
   onPrepare: () => void;
@@ -35,6 +38,9 @@ export function ResearchLeadCard({
     brief,
   );
   const questions = confirmationQuestions(venue);
+  const capacity = venue.requirementCoverage.find(
+    (item) => item.basis && /^Capacity for \d+ guests$/.test(item.requirement),
+  );
   const qualifications = [
     ...new Set(
       venue.requirementCoverage
@@ -104,6 +110,18 @@ export function ResearchLeadCard({
             {qualification}
           </p>
         ))}
+        {capacity && (
+          <p className="capacity-check">
+            <Badge
+              tone={capacity.status === "supported" ? "supported" : "unknown"}
+            >
+              {capacity.status === "supported"
+                ? "Capacity documented"
+                : "Capacity needs confirmation"}
+            </Badge>{" "}
+            {capacity.basis}
+          </p>
+        )}
       </section>
       {venue.documentedConflicts.map((item, index) => (
         <p className="conflict-note" key={index}>
@@ -228,6 +246,7 @@ export function ResearchLeadCard({
                       : "Unknown"}
                 </Badge>
                 <strong>{item.requirement}</strong>
+                {item.basis && <p className="requirement-basis">{item.basis}</p>}
                 {item.evidence.map((claim, index) => (
                   <p key={index}>
                     {claim.claim}: {claim.value} {claim.qualification || ""}
@@ -266,6 +285,21 @@ export function ResearchLeadCard({
             availability, or booking authority.
           </p>
         </section>
+        {retrieval && (
+          <section className="coverage-section">
+            <h3>Knowledge Base evidence for this lead</h3>
+            <p>
+              Read through Sanity Context:{" "}
+              {retrieval.entryPaths.map((path) => (
+                <code key={path}>{path} </code>
+              ))}
+            </p>
+            <p className="ops-muted">
+              Citations matched to published sources:{" "}
+              {retrieval.sourceReferenceIds.join(", ")}
+            </p>
+          </section>
+        )}
         <section className="recommendation-sources">
           <h3>Original sources verified for this lead</h3>
           {sources.map((source) => (

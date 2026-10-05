@@ -184,6 +184,8 @@ export type RequirementStatus = "supported" | "unknown" | "contradicted";
 export type RequirementCoverage = {
   requirement: string;
   status: RequirementStatus;
+  /** Plain-language rule result, e.g. which documented room and layout fits. */
+  basis?: string;
   evidence: Array<{
     claim: string;
     value: string;
@@ -217,6 +219,19 @@ export type VenueRecommendation = {
   contacts?: VenueContact[];
   gallery?: VenueGallery | null;
   nextStep: string;
+};
+
+/** Sanitized record of one discovery run: what was read and what passed source checks. */
+export type DiscoveryVerification = {
+  knowledgeBaseIds: string[];
+  outlineEntryCount: number;
+  scopedEntryCount: number;
+  localityFilter: {included: string[]; excluded: string[]};
+  entriesRead: Array<{path: string; tag: string | null}>;
+  readToolCalls: number;
+  modelCandidateCount: number;
+  rejectedCandidateCount: number;
+  citationChecks: Array<{venueId: string; path: string; valid: boolean; sourceIds: string[]}>;
 };
 
 export type BookingRequest = {

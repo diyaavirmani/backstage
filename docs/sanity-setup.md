@@ -194,6 +194,16 @@ The installed CLI documents `--watch` as waiting and exiting non-zero for build 
 
 ## 5. Create a Knowledge Base-backed Context MCP
 
+### Read-only access diagnosis — 5 October 2026
+
+The reported Dashboard message **“Knowledge base not found”** does not match the observed CLI or MCP access. Both `npx sanity context list --organization o8mue7lt8 --json` and `npx sanity context get kbPFAVeDOOjD --json` exited 0. The authenticated CLI user is the intended personal account, has Backstage organization access, and owns the existing Knowledge Base. Its current state is `review`, with two open issues and one provenance instruction; it is not deleted. Its latest build job `ctx-build-65e4c6c0-2470-4b40-ba3c-b90a958f5ed6-1791167554196` reports `succeeded` with no job error. Review state continues to serve built entries; resolving contradictions is not required to establish connectivity.
+
+The configured organization token successfully connected to the existing MCP, listed `initial_context`, `knowledge_base_read`, and `knowledge_base_search`, and obtained a five-entry outline. The citation checker read all five paths and verified the six published venue/source records. It exited 1 because only Paytm and Shifu had valid source-backed sections; the other four lacked a valid section, including swapped Ofis locality citations and SAIACS citations assigned to another venue. There was no observed CLI or MCP authentication, authorization, or not-found error. This is a content-attribution failure distinct from the reported Dashboard access failure. Do not loosen validation to make it pass.
+
+The actual Dashboard tab is open, but Chrome denied scripted page inspection with AppleScript error **12** (“Executing JavaScript through AppleScript is turned off”). Consequently the Dashboard's signed-in identity, failed request status and exact route failure have not been established. Do not label the browser message as HTTP 404, claim an account mismatch, or recreate the Knowledge Base on that evidence. First open **Backstage → Context → Knowledge Bases → Backstage Venue Knowledge** from the Dashboard's own list under the same personal account, rather than relying on a copied deep link. If inspection is needed, Chrome's **View → Developer → Allow JavaScript from Apple Events** enables local inspection of that page; this is not a Sanity permission change.
+
+The earlier verified build job `ctx-build-65e4c6c0-2470-4b40-ba3c-b90a958f5ed6-1790948631445` also remains accessible and reports `succeeded`. Sanity documents restoration through **Entries → open an earlier outline version → Restore this version** in [Keep a Knowledge Base current](https://www.sanity.io/docs/ai/sanity-context-maintain-knowledge-base). No restoration has been performed during this diagnosis. After an authorized Dashboard restoration, rerun the unchanged citation checker against current published sources, then one live local agent search. PR #4 must remain unmerged until these checks succeed. No rebuild, refresh, source edit, permission change, recreation, deletion or contradiction resolution was performed.
+
 For this project, in the Sanity Dashboard open the **Context app → Create MCP** and configure:
 
 1. Endpoint name: `backstage-venues`.
