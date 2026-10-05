@@ -38,8 +38,7 @@ What organizers get:
 
 ## Demo
 
-<!-- PLACEHOLDER: upload video/out/backstage-intro-1920x1080.mp4 to YouTube, then replace the next line with the video's URL. -->
-{% embed https://www.youtube.com/watch?v=YOUR_VIDEO_ID %}
+{% embed https://youtu.be/RB1jf3wNA2g %}
 
 *45-second intro: real app footage of a live discovery, with AI-generated narration.*
 
